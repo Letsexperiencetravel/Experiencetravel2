@@ -1,0 +1,1002 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;font-family:'Inter',sans-serif;background:#fff}
+:root{--Y:#F5E420;--YD:#D4C000;--P:#E535A0;--PD:#C8208A;--D2:#1A1A1A;--D3:#242424;--G:#22C55E;--cream:#F8F4EF}@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes flyPlane{0%{transform:translate(-80px,5px);opacity:0}10%{opacity:1}100%{transform:translate(110vw,-5px);opacity:.95}}
+@keyframes trailFade{0%{opacity:0}10%{opacity:.5}100%{opacity:0}}
+@keyframes popIn{0%{transform:scale(.7);opacity:0}60%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+@keyframes shimmer{0%,100%{opacity:.4}50%{opacity:1}}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@keyframes chIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+@keyframes tScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.pg{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px;animation:fadeUp .4s ease both}
+.pg-w{background:#fff}.pg-c{background:var(--cream)}
+.lc{background:#fff;border:1.5px solid rgba(0,0,0,.09);border-radius:18px;padding:32px 28px;width:100%;max-width:460px;box-shadow:0 2px 24px rgba(0,0,0,.07)}
+.lc-w{max-width:560px}.dc{background:var(--D2);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:28px 24px;width:100%;max-width:560px}
+.fgrp{margin-bottom:14px}.fgrp label,.fgdk label{display:block;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.fgrp label{color:#888}.fgdk label{color:rgba(255,255,255,.35)}
+.inp{width:100%;padding:12px 15px;background:#F2EDE5;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;color:#111;font-family:'Inter',sans-serif;font-size:14px;outline:none;transition:border .18s}
+.inp:focus{border-color:var(--P);background:#fff}.inp::placeholder{color:#bbb}
+.inp-dk{width:100%;padding:12px 15px;background:var(--D3);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-family:'Inter',sans-serif;font-size:14px;outline:none}
+.inp-dk:focus{border-color:var(--Y)}.inp-dk::placeholder{color:rgba(255,255,255,.3)}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ferr{font-size:11.5px;color:#DC2626;margin-top:5px}
+.divl{display:flex;align-items:center;gap:10px;margin:16px 0;color:#bbb;font-size:12px}
+.divl::before,.divl::after{content:'';flex:1;height:1px;background:rgba(0,0,0,.1)}
+.err-b{padding:10px 13px;border-radius:9px;font-size:13px;margin-bottom:14px;background:#FFF5F5;border:1px solid rgba(239,68,68,.25);color:#DC2626}
+.dots{display:flex;gap:5px;justify-content:center;margin-bottom:18px}
+.dot{width:6px;height:6px;border-radius:50%;background:#ddd;transition:all .3s}.dot.on{background:var(--P);width:20px;border-radius:4px}
+.prog{height:3px;border-radius:3px;overflow:hidden;margin-bottom:14px}.prog-l{background:#E5DDD4}.prog-d{background:var(--D3)}
+.prog-b{height:100%;background:linear-gradient(90deg,var(--Y),var(--P));transition:width .4s}
+.bdg{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase}
+.by{background:rgba(245,228,32,.18);color:#7A5C00;border:1px solid rgba(245,228,32,.4)}.bp{background:rgba(229,53,160,.13);color:var(--P);border:1px solid rgba(229,53,160,.3)}.bg{background:rgba(34,197,94,.12);color:#16A34A;border:1px solid rgba(34,197,94,.3)}.bbl{background:rgba(99,102,241,.12);color:#6366F1;border:1px solid rgba(99,102,241,.3)}.br{background:rgba(239,68,68,.12);color:#DC2626;border:1px solid rgba(239,68,68,.3)}
+.opts-l{display:flex;flex-direction:column;gap:7px;margin:10px 0}
+.opt-l{padding:11px 14px;background:#F2EDE5;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;cursor:pointer;font-size:14px;color:#555;display:flex;align-items:center;gap:11px;line-height:1.4;transition:all .15s}
+.opt-l:hover,.opt-l.s{border-color:var(--P);background:#F8EBF5}.opt-l.s{color:var(--P);font-weight:600}
+.opts-d{display:flex;flex-direction:column;gap:7px;margin:10px 0}
+.opt-d{padding:11px 14px;background:var(--D3);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;cursor:pointer;font-size:14px;color:rgba(255,255,255,.7);display:flex;align-items:center;gap:11px;line-height:1.4;transition:all .15s}
+.opt-d:hover,.opt-d.s{border-color:var(--Y);color:#fff;background:rgba(245,228,32,.1)}.opt-d.s{color:var(--Y);font-weight:500}
+.qdot{width:17px;height:17px;border-radius:50%;border:2px solid currentColor;opacity:.4;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.s .qdot{opacity:1;background:currentColor}.qdin{width:7px;height:7px;border-radius:50%;background:#111;opacity:0;transition:opacity .15s}.s .qdin{opacity:1}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.chip{padding:7px 13px;border-radius:20px;font-size:13px;cursor:pointer;border:1.5px solid rgba(0,0,0,.12);background:#F2EDE5;color:#666;transition:all .15s}.chip.s{border-color:var(--P);background:#F8EBF5;color:var(--P);font-weight:600}
+.cdb{padding:7px 13px;border-radius:20px;font-size:13px;cursor:pointer;border:1.5px solid rgba(239,68,68,.25);background:#FFF5F5;color:#DC2626;transition:all .15s}.cdb.s{border-color:#DC2626;background:#FEE2E2;font-weight:600}
+.cok{padding:7px 13px;border-radius:20px;font-size:13px;cursor:pointer;border:1.5px solid rgba(34,197,94,.3);background:#F0FDF4;color:#15803D;transition:all .15s}.cok.s{border-color:var(--G);background:#DCFCE7;font-weight:600}
+.crow{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:#F2EDE5;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;margin-bottom:8px}.crow.s{border-color:var(--P);background:#F8EBF5}
+.cleft{display:flex;align-items:center;gap:10px;cursor:pointer;flex:1}.cchk{width:20px;height:20px;border-radius:6px;border:2px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}.crow.s .cchk{background:var(--P);border-color:var(--P);color:#fff}
+.counter{display:flex;align-items:center;gap:8px}.cbtn{width:28px;height:28px;border-radius:8px;border:1.5px solid rgba(0,0,0,.12);background:#fff;color:#555;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700}.cval{font-size:15px;font-weight:700;color:#111;min-width:20px;text-align:center}
+.sbnr{position:fixed;top:0;left:0;right:0;z-index:260;background:var(--Y);padding:0 12px;display:flex;align-items:center;gap:8px;min-height:46px;box-shadow:0 2px 12px rgba(0,0,0,.12)}
+.sbnr-x{background:rgba(0,0,0,.15);border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:13px;color:#111;font-weight:700;flex-shrink:0}
+.sbnr-btn{display:inline-flex;align-items:center;gap:5px;background:#000;color:#fff;border:none;border-radius:8px;padding:7px 13px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0}
+.sbnr-msg{font-size:12.5px;font-weight:700;color:#111;flex:1;text-align:center;padding:8px 0;line-height:1.35}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:13px;font-weight:600;padding:10px 20px;border-radius:10px;z-index:600;animation:fadeUp .3s ease;pointer-events:none}
+.nav{position:fixed;left:0;right:0;z-index:200;background:rgba(255,255,255,.96);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.08);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-av{width:34px;height:34px;border-radius:50%;background:var(--Y);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#111;font-family:'Syne',sans-serif;border:2px solid var(--P);box-shadow:2px 2px 0 var(--P)}
+.nav-br{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#111}.nav-br em{color:var(--P);font-style:normal}
+.spl{font-size:11px;color:#999;background:#F5F5F5;border:1px solid rgba(0,0,0,.1);padding:3px 9px;border-radius:8px}.ppl{font-size:10px;font-weight:700;padding:3px 9px;border-radius:8px;background:linear-gradient(90deg,var(--Y),var(--P));color:#111}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:720px}
+.tile{border-radius:18px;padding:22px 20px;cursor:pointer;transition:all .22s;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;border:1.5px solid transparent}.tile:hover{transform:translateY(-3px)}
+.t-pk{background:linear-gradient(135deg,var(--P),#A01470);border-color:var(--PD)}.t-pk:hover{box-shadow:0 12px 40px rgba(229,53,160,.35)}
+.t-yw{background:linear-gradient(135deg,var(--Y),#D4C000);border-color:var(--YD)}.t-yw:hover{box-shadow:0 12px 40px rgba(245,228,32,.4)}
+.t-dk{background:var(--D2);border-color:rgba(255,255,255,.06)}.t-dk:hover{border-color:var(--Y)}
+.tlb{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;line-height:1.3}.t-pk .tlb,.t-dk .tlb{color:#fff}.t-yw .tlb{color:#111}
+.tdc{font-size:12.5px;line-height:1.45}.t-pk .tdc,.t-dk .tdc{color:rgba(255,255,255,.75)}.t-yw .tdc{color:rgba(0,0,0,.6)}
+.tar{font-size:18px;margin-top:auto}.t-pk .tar,.t-dk .tar{color:rgba(255,255,255,.4)}.t-yw .tar{color:rgba(0,0,0,.4)}
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:740px}
+.rc{background:var(--D2);border:1.5px solid rgba(255,255,255,.06);border-radius:18px;overflow:hidden;animation:fadeUp .4s ease both;cursor:pointer;transition:all .2s;display:flex;flex-direction:column}
+.rc:hover{transform:translateY(-4px);border-color:var(--Y);box-shadow:0 16px 48px rgba(0,0,0,.3)}
+.rc:nth-child(1){animation-delay:.05s}.rc:nth-child(2){animation-delay:.1s}.rc:nth-child(3){animation-delay:.15s}.rc:nth-child(4){animation-delay:.2s}
+.rc-img{height:150px;position:relative;flex-shrink:0;overflow:hidden}
+.rc-body{padding:16px 18px 18px;flex:1;position:relative}.rc-body::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--Y),var(--P))}
+.sb{height:4px;background:var(--D3);border-radius:4px;overflow:hidden}.sf{height:100%;background:linear-gradient(90deg,var(--Y),var(--P));transition:width 1.2s ease}
+.rhl{list-style:none}.rhl li{font-size:12.5px;color:rgba(255,255,255,.8);padding:3px 0;display:flex;align-items:flex-start;gap:7px;line-height:1.4}
+.rhl li::before{content:'◆';color:var(--Y);font-size:7px;margin-top:4px;flex-shrink:0}
+.ov{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);display:flex;align-items:flex-start;justify-content:center;padding:12px;overflow-y:auto}
+.md{background:#fff;border-radius:20px;max-width:660px;width:100%;margin:auto;position:relative;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.4)}.md::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--Y),var(--P))}
+.tabs{display:flex;border-bottom:2px solid rgba(0,0,0,.08);margin-bottom:18px;overflow-x:auto}
+.tab{padding:9px 15px;font-size:12.5px;font-weight:600;color:#999;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;font-family:'Syne',sans-serif;transition:all .18s}.tab.on{color:var(--P);border-bottom-color:var(--P)}.tab:hover:not(.on){color:#333}
+.dsh h4{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#111;margin-bottom:10px}
+.drow{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)}.drow:last-child{border:none}
+.fb{background:#FFFBD6;border:1px solid rgba(245,228,32,.4);border-left:3px solid var(--YD);border-radius:9px;padding:10px 13px;font-size:13px;color:#5A4800;margin-bottom:8px;line-height:1.6}
+.sti{display:flex;gap:11px;margin-bottom:13px;align-items:flex-start}.stn{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--Y),var(--P));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#111;flex-shrink:0}
+.vc{background:#F8F4EF;border:1.5px solid rgba(0,0,0,.08);border-radius:11px;padding:14px;margin-bottom:11px}
+.vp{font-size:10.5px;padding:3px 10px;border-radius:20px;background:rgba(245,228,32,.2);color:#5A4800;border:1px solid rgba(245,228,32,.4);font-weight:600}.vp2{background:rgba(229,53,160,.1);color:var(--P);border-color:rgba(229,53,160,.25)}
+.req{font-size:12.5px;color:#555;padding:3.5px 0;display:flex;align-items:flex-start;gap:8px;line-height:1.5}.req::before{content:'✓';color:var(--G);font-weight:700;flex-shrink:0;margin-top:1px}
+.iday{background:#F8F4EF;border:1px solid rgba(0,0,0,.07);border-radius:11px;padding:14px;margin-bottom:10px}
+.slt{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--P);margin-bottom:3px}.slc{font-size:13px;color:#555;line-height:1.55;margin-bottom:8px}.tipb{padding:8px 11px;background:rgba(245,228,32,.15);border-radius:8px;font-size:12px;color:#5A4800}
+.ch-h{background:linear-gradient(135deg,rgba(245,228,32,.15),rgba(229,53,160,.1));border:1.5px solid rgba(229,53,160,.2);border-radius:12px;padding:16px;margin-bottom:14px;text-align:center}
+.sb2{height:8px;background:#EDE8E0;border-radius:8px;overflow:hidden;margin:6px 0 4px}.sb2f{height:100%;border-radius:8px}
+.pw-pl{border:2px solid rgba(0,0,0,.1);border-radius:12px;padding:18px;cursor:pointer;text-align:center;position:relative;background:#fff}.pw-pl.f{border-color:var(--P);background:#FDF0F9}
+.pwf{list-style:none;margin:13px 0;text-align:left}.pwf li{font-size:13px;color:#666;padding:4px 0;display:flex;gap:7px}.pwf li::before{content:'✓';color:var(--G);font-weight:700}
+.si{background:var(--D3);border:1.5px solid rgba(255,255,255,.1);border-radius:11px;padding:13px 15px;display:flex;align-items:center;gap:12px;margin-bottom:9px}
+.tc{padding:7px 12px;border-radius:8px;font-size:12.5px;cursor:pointer;border:1.5px solid rgba(0,0,0,.1);background:#F2EDE5;color:#666;transition:all .15s}.tc.s{border-color:var(--P);background:#F8EBF5;color:var(--P);font-weight:600}
+.tt-tog{display:flex;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.tt-opt{flex:1;padding:10px;font-size:13px;font-weight:600;text-align:center;cursor:pointer;transition:all .2s;color:#888;background:#F8F4EF}.tt-opt.on{background:var(--P);color:#fff}
+.ap{position:fixed;top:0;right:0;bottom:0;width:min(360px,100vw);background:var(--D2);border-left:1px solid rgba(255,255,255,.1);z-index:400;overflow-y:auto;box-shadow:-12px 0 50px rgba(0,0,0,.4);animation:slideIn .28s ease}
+.asec{padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08)}.asec h4{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px}
+.ssh{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin:16px 0 10px;display:flex;align-items:center;gap:8px}
+.ps{min-height:100vh;background:linear-gradient(135deg,#0F0F0F 0%,#1A0A1A 40%,#0F0F1A 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow:hidden;position:relative}
+.pt{width:100%;height:100px;position:relative;overflow:hidden;margin:24px 0}.pe{position:absolute;font-size:52px;top:50%;transform:translateY(-50%);animation:flyPlane 4.2s linear forwards}.ptr{position:absolute;top:50%;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(245,228,32,.4),transparent);transform:translateY(-50%);animation:trailFade 2.4s ease-in-out forwards}
+.dt{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#fff;text-align:center;line-height:1.2;animation:popIn .6s .2s ease both}
+.lh{background:linear-gradient(135deg,#111 0%,#1a0a1a 50%,#0a0a1a 100%);border-radius:24px 24px 0 0;padding:28px 28px 22px;position:relative;overflow:hidden;width:100%;max-width:440px}
+.lh::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(245,228,32,.15),transparent 70%)}
+.lc2{background:#fff;border:1.5px solid rgba(0,0,0,.09);border-radius:0 0 24px 24px;padding:24px 28px;width:100%;max-width:440px;box-shadow:0 12px 40px rgba(0,0,0,.1)}
+.ibb{position:sticky;bottom:0;background:#111;border-top:2px solid rgba(245,228,32,.4);padding:10px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 -22px -24px}
+.ibb-t{font-size:12.5px;color:rgba(255,255,255,.8);line-height:1.4;flex:1}
+.ibb-b{display:inline-flex;align-items:center;gap:6px;background:var(--Y);color:#111;border:none;border-radius:8px;padding:9px 16px;font-family:'Syne',sans-serif;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.pcg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+.pcp{background:#F0FDF4;border:1.5px solid rgba(34,197,94,.2);border-radius:12px;padding:14px}.pcc{background:#FFF5F5;border:1.5px solid rgba(239,68,68,.15);border-radius:12px;padding:14px}
+.pch{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}.pcp .pch{color:#16A34A}.pcc .pch{color:#DC2626}
+.pci{font-size:12.5px;color:#555;padding:4px 0;display:flex;align-items:flex-start;gap:7px;line-height:1.45;border-bottom:1px solid rgba(0,0,0,.05)}.pci:last-child{border:none}
+.pci-p::before{content:'✓';color:#16A34A;font-weight:800;flex-shrink:0;margin-top:1px}.pci-c::before{content:'✗';color:#DC2626;font-weight:800;flex-shrink:0;margin-top:1px}
+.pws{display:flex;gap:4px;margin-top:6px}.pws-s{height:3px;flex:1;border-radius:3px;background:#E5E7EB}.pws-s.wk{background:#EF4444}.pws-s.fr{background:#F97316}.pws-s.gd{background:#22C55E}
+.comm{width:100%;max-width:720px;margin-top:16px;background:var(--D2);border-radius:18px;padding:24px;position:relative;overflow:hidden}
+.comm::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--Y),var(--P))}
+.cpk{font-size:12px;padding:4px 11px;border-radius:20px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.1)}
+.ch-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;animation:chIn .5s ease both}
+.qi-screen{min-height:100vh;background:linear-gradient(135deg,#0c0c1a 0%,#1a0a1a 50%,#0c1a0c 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;animation:fadeIn .5s ease both;position:relative;overflow:hidden}
+.qi-lc{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);margin-bottom:10px;animation:fadeUp .4s ease both}
+.rv-layer{margin-bottom:24px}.rv-lhdr{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid rgba(0,0,0,.08)}
+.rv-ln{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#111;flex-shrink:0}
+.rv-q{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;margin-bottom:6px;background:#F8F4EF;border:1.5px solid transparent}.rv-q:hover{border-color:var(--P)}
+.rv-qt{flex:1}.rv-ql{font-size:11px;color:#aaa;margin-bottom:3px}.rv-qa{font-size:13px;font-weight:600;color:#111;line-height:1.4}
+.rv-ed{background:none;border:1.5px solid var(--P);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--P);cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:'Syne',sans-serif}.rv-ed:hover{background:var(--P);color:#fff}
+.cn-inner{background:linear-gradient(135deg,#111827,#0a1628);border:2px solid rgba(245,228,32,.35);border-radius:16px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.book-btn{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--Y),#F0D800);color:#111;border:none;border-radius:12px;padding:14px 28px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .2s}
+.book-btn-sm{display:inline-flex;align-items:center;gap:8px;background:var(--Y);color:#111;border:none;border-radius:10px;padding:10px 20px;font-family:'Syne',sans-serif;font-size:13.5px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.topup-md{background:var(--D2);border-radius:20px;max-width:400px;width:100%;margin:auto;overflow:hidden;border:1.5px solid rgba(245,228,32,.25)}
+.topup-hero{background:linear-gradient(135deg,#1a0a00,#2a1000);padding:28px 24px;text-align:center}
+.todo-row{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:9px;background:#F8F4EF;margin-bottom:6px;border:1.5px solid transparent;transition:border .15s}
+.todo-row:hover{border-color:rgba(0,0,0,.1)}.todo-row.done-row{background:#F0FDF4;border-color:rgba(34,197,94,.15)}
+.todo-chk{width:18px;height:18px;border-radius:5px;border:2px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;cursor:pointer;transition:all .15s}
+.done-row .todo-chk{background:var(--G);border-color:var(--G);color:#fff}
+.todo-txt{flex:1;font-size:13px;color:#333;background:transparent;border:none;outline:none;font-family:'Inter',sans-serif;min-width:0;padding:0}
+.todo-txt:focus{background:rgba(229,53,160,.05);border-radius:4px;padding:0 4px}
+.done-row .todo-txt{text-decoration:line-through;color:#aaa}
+.todo-ord{display:flex;flex-direction:column;gap:1px;flex-shrink:0}
+.todo-ord button{width:22px;height:18px;background:rgba(0,0,0,.08);border:1px solid rgba(0,0,0,.15);cursor:pointer;color:#444;font-size:11px;font-weight:700;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;border-radius:4px}
+.todo-ord button:hover{background:#e5e7eb;color:#555}
+.todo-del{width:24px;height:24px;border-radius:6px;border:1.5px solid rgba(220,38,38,.35);background:rgba(220,38,38,.1);color:#DC2626;cursor:pointer;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.todo-del:hover{background:#FEE2E2;color:#DC2626}
+.perm-v{display:inline-flex;align-items:center;gap:4px;background:rgba(99,102,241,.12);color:#6366F1;border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700}
+.perm-e{display:inline-flex;align-items:center;gap:4px;background:rgba(34,197,94,.12);color:#16A34A;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700}
+.rq-screen{min-height:100vh;background:linear-gradient(135deg,#0a1a0a,#0f0f0f,#0a0a1a);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px}
+.rq-res{min-height:100vh;background:linear-gradient(135deg,#0F0F0F,#1A1A0A);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px}
+.action-item{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:#F8F4EF;border-radius:10px;margin-bottom:8px}
+.t-wrapper{overflow:hidden;width:100%;margin-top:14px;-webkit-mask:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);mask:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
+.t-track{display:flex;gap:14px;animation:tScroll 28s linear infinite;width:max-content}
+.t-track:hover{animation-play-state:paused}
+.t-card{width:330px;flex-shrink:0;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);border-radius:14px;padding:14px 16px}
+.cmp-pp{background:#F0FDF4;border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:12px}
+.cmp-cc{background:#FFF5F5;border:1px solid rgba(239,68,68,.12);border-radius:10px;padding:12px;margin-top:6px}
+.cmp-ph{font-size:10.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;color:#16A34A}
+.cmp-ch{font-size:10.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;color:#DC2626}
+.cmp-pi{font-size:12px;color:#555;padding:3px 0;display:flex;gap:6px;border-bottom:1px solid rgba(0,0,0,.04);line-height:1.4}.cmp-pi:last-child{border:none}
+.cmp-pi-p::before{content:'✓';color:#16A34A;font-weight:800;flex-shrink:0;margin-top:1px}
+.cmp-pi-c::before{content:'✗';color:#DC2626;font-weight:800;flex-shrink:0;margin-top:1px}
+@media(max-width:540px){.dg,.rg{grid-template-columns:1fr}.lc,.dc{padding:24px 18px}.r2{grid-template-columns:1fr}.pcg{grid-template-columns:1fr}.cn-inner{flex-direction:column}}
+</style></head><body><div id="app"></div><script>function destImg(city,flag){
+  const d=DC[city]||{grad:'linear-gradient(135deg,#1A1A2E,#16213E)'};
+  const P={'Lisbon':'https://images.unsplash.com/photo-1588464083073-212b66f18851?w=600&q=80','Porto':'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=600&q=80','Barcelona':'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80','Madrid':'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?w=600&q=80','Medell\u00edn':'https://images.unsplash.com/photo-1599413988844-90ae5b2bafce?w=600&q=80','Tbilisi':'https://images.unsplash.com/photo-1565008576549-57569a49371d?w=600&q=80','Tokyo':'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80','Kyoto':'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600&q=80','Osaka':'https://images.unsplash.com/photo-1590559899731-a382839e5549?w=600&q=80','Bali':'https://images.unsplash.com/photo-1537953773345-d172ccf13cf4?w=600&q=80','Mexico City':'https://images.unsplash.com/photo-1518638150340-f706e86654de?w=600&q=80','Puerto Vallarta':'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80','Playa del Carmen':'https://images.unsplash.com/photo-1510097467424-192d713fd8b2?w=600&q=80','Paris':'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80','Amsterdam':'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=600&q=80','Berlin':'https://images.unsplash.com/photo-1560969184-10fe8719e047?w=600&q=80','Prague':'https://images.unsplash.com/photo-1541849546-216549ae216d?w=600&q=80','Vienna':'https://images.unsplash.com/photo-1516550893923-42d28e5677af?w=600&q=80','Budapest':'https://images.unsplash.com/photo-1541351155248-3d34cd7a51a2?w=600&q=80','Athens':'https://images.unsplash.com/photo-1555993539-1732b0258235?w=600&q=80','Rome':'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&q=80','Florence':'https://images.unsplash.com/photo-1541370976299-4d24be63c4fb?w=600&q=80','Istanbul':'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=600&q=80','Dubai':'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80','Bangkok':'https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=600&q=80','Chiang Mai':'https://images.unsplash.com/photo-1523731407965-2430cd12f5e4?w=600&q=80','Phuket':'https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=600&q=80','Singapore':'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=600&q=80','Kuala Lumpur':'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=600&q=80','Seoul':'https://images.unsplash.com/photo-1546874177-9e664107314e?w=600&q=80','Ho Chi Minh City':'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=600&q=80','Hanoi':'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=600&q=80','Cape Town':'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=600&q=80','Buenos Aires':'https://images.unsplash.com/photo-1589909202802-8f4aadce1849?w=600&q=80','Marrakech':'https://images.unsplash.com/photo-1597211684565-dca64d72bdfe?w=600&q=80','Bogot\u00e1':'https://images.unsplash.com/photo-1596531762083-f62a0f3c3b4e?w=600&q=80','Cartagena':'https://images.unsplash.com/photo-1583531172056-b34a2454fa3f?w=600&q=80','Ubud':'https://images.unsplash.com/photo-1537953773345-d172ccf13cf4?w=600&q=80','Seville':'https://images.unsplash.com/photo-1619928771523-93099a9dd3c1?w=600&q=80','Da Nang':'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=600&q=80','Hoi An':'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=600&q=80','Taipei':'https://images.unsplash.com/photo-1546874177-9e664107314e?w=600&q=80'};
+  const img=P[city];
+  return`<div style="height:150px;position:relative;overflow:hidden;background:${d.grad}">${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover;display:block" loading="lazy" onerror="this.style.display='none'"/>`:''}><div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.05),rgba(0,0,0,.55))"></div><div style="position:absolute;top:10px;left:12px;font-size:28px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))">${flag}</div><div style="position:absolute;bottom:10px;left:12px;font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.8)">${city}</div></div>`
+}
+const FREE_LIMIT=1,PRO_LIMIT=3,TOPUP_LIMIT=3;
+const Y='#F5E420',P='#E535A0',DK='#111',W='#fff',BH=46;
+const bY=(l,o)=>`<button onclick="${o}" style="display:block;width:100%;padding:13px 20px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px">${l}</button>`;
+const bP=(l,o)=>`<button onclick="${o}" style="display:block;width:100%;padding:13px 20px;background:${P};color:${W};border:2.5px solid #C8208A;border-radius:10px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px">${l}</button>`;
+const bPo=(l,o)=>`<button onclick="${o}" style="display:block;width:100%;padding:13px 20px;background:${W};color:${P};border:2.5px solid ${P};border-radius:10px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px">${l}</button>`;
+const bSm=(l,o,bg,col,bor)=>`<button onclick="${o}" style="display:inline-flex;align-items:center;padding:10px 18px;background:${bg};color:${col};border:2.5px solid ${bor};border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">${l}</button>`;
+window.updShareNote=function(id,val){if(!S.shareData[id])S.shareData[id]={people:[]};S.shareData[id].note=val};
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2800)}
+function share(){if(navigator.share)navigator.share({title:'Experience Travel',url:'https://experiencereality.com'}).catch(()=>{});else toast('Link copied!')}
+function shareResult(city,score,flag,country){
+  const isST=S.tt==='st';
+  const label=isST?'Short-Term Travel Match':'Long-Term Relocation Match';
+  const scoreLabel=score>=90?'Perfect Match':score>=80?'Strong Match':score>=70?'Great Match':'Good Match';
+  // Create canvas card
+  const canvas=document.createElement('canvas');
+  canvas.width=1080;canvas.height=1080;
+  const ctx=canvas.getContext('2d');
+  // Background gradient
+  const bg=ctx.createLinearGradient(0,0,1080,1080);
+  bg.addColorStop(0,'#0A0A0F');bg.addColorStop(0.5,'#12080F');bg.addColorStop(1,'#0A0F12');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,1080,1080);
+  // Pink glow top
+  const glow=ctx.createRadialGradient(540,0,0,540,0,600);
+  glow.addColorStop(0,'rgba(229,53,160,.18)');glow.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=glow;ctx.fillRect(0,0,1080,1080);
+  // Yellow glow bottom right
+  const glow2=ctx.createRadialGradient(1080,1080,0,1080,1080,500);
+  glow2.addColorStop(0,'rgba(245,228,32,.1)');glow2.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=glow2;ctx.fillRect(0,0,1080,1080);
+  // Score ring
+  const cx=540,cy=370,r=200;
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,.06)';ctx.lineWidth=20;ctx.stroke();
+  const prog=(score/100)*Math.PI*2;
+  ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+prog);
+  const grad=ctx.createLinearGradient(cx-r,cy,cx+r,cy);
+  grad.addColorStop(0,'#F5E420');grad.addColorStop(1,'#E535A0');
+  ctx.strokeStyle=grad;ctx.lineWidth=20;ctx.lineCap='round';ctx.stroke();
+  // Flag emoji
+  ctx.font='120px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(flag||'✈️',cx,cy);
+  // Score number
+  ctx.font='bold 80px Helvetica';ctx.fillStyle='#fff';ctx.textAlign='center';
+  ctx.fillText(score+'%',cx,cy+r+60);
+  ctx.font='28px Helvetica';ctx.fillStyle='rgba(255,255,255,.5)';
+  ctx.fillText('match score',cx,cy+r+100);
+  // City name
+  ctx.font='bold 72px Helvetica';ctx.fillStyle='#fff';ctx.textAlign='center';
+  ctx.fillText(city+(country?', '+country:''),cx,cy+r+180);
+  // Label badge
+  ctx.font='bold 26px Helvetica';ctx.fillStyle='#F5E420';
+  ctx.fillText(scoreLabel.toUpperCase(),cx,cy+r+230);
+  // Tag line
+  ctx.font='32px Helvetica';ctx.fillStyle='rgba(255,255,255,.45)';
+  ctx.fillText(isST?'My travel match on':'My relocation match on',cx,900);
+  // Branding
+  ctx.font='bold 42px Helvetica';
+  const br=ctx.createLinearGradient(cx-150,0,cx+150,0);
+  br.addColorStop(0,'#F5E420');br.addColorStop(1,'#E535A0');
+  ctx.fillStyle=br;ctx.fillText('Experience Travel',cx,960);
+  // Share the canvas
+  canvas.toBlob(blob=>{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='my-match-'+city.toLowerCase().replace(/\s/g,'-')+'.png';
+    // Try native share first (mobile)
+    if(navigator.share){
+      const file=new File([blob],'my-match.png',{type:'image/png'});
+      navigator.share({title:'I matched '+score+'% with '+city+' on Experience Travel!',text:'Find your perfect destination at experiencereality.com',files:[file]}).catch(()=>{a.click()});
+    }else{
+      a.click();
+      toast('Card downloaded! Share it anywhere 🎉');
+    }
+    setTimeout(()=>URL.revokeObjectURL(url),3000);
+  },'image/png');
+}
+
+function canSearch(){if(!S.isPro)return S.freeCnt<FREE_LIMIT;return S.proCnt<PRO_LIMIT+(S.topupUsed?TOPUP_LIMIT:0)}
+function searchesLeft(){if(!S.isPro)return Math.max(0,FREE_LIMIT-S.freeCnt);return Math.max(0,PRO_LIMIT+(S.topupUsed?TOPUP_LIMIT:0)-S.proCnt)}
+function navPill(){if(S.isPro){const l=searchesLeft();if(l>0)return`<span class="ppl">PRO · ${l} left today</span>`;return`<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(239,68,68,.15);color:#EF4444;border:1px solid rgba(239,68,68,.3)">0 left today</span>`}return S.freeCnt>=FREE_LIMIT?`<span class="spl" style="color:#DC2626;border-color:rgba(239,68,68,.3)">0 free left</span>`:`<span class="spl">1 free search</span>`}
+function calcRQ(){let s=0;for(let i=0;i<5;i++){const a=S.rqA[i];if(a!==undefined)s+=RQ[i].sc[a]}return Math.min(100,s)}
+function rqLabel(s){if(s>=80)return{lbl:'Ready to Launch',icon:'🚀',col:'#22C55E',msg:"You have all the key pieces in place. The biggest barrier now is booking the flight."};if(s>=60)return{lbl:'Almost There',icon:'✈️',col:Y,msg:"You're close. A few targeted steps and you'll be ready within months."};if(s>=40)return{lbl:'Building Momentum',icon:'🌱',col:'#F97316',msg:"Good foundations — a focused 3-month plan will get you move-ready."};return{lbl:'Just Getting Started',icon:'🗺️',col:'#6366F1',msg:"Exciting early stage. Use this as your roadmap to get there step by step."}}
+function rqActions(a){const acts=[];if(a[2]===2)acts.push({icon:'🛂',text:'Renew your passport — allow 6–8 weeks processing time.'});if(a[2]===3)acts.push({icon:'🛂',text:'Apply for your passport now. Without it, no visa is possible.'});if(a[4]>=3)acts.push({icon:'🔍',text:'Deep-dive research on your top matched destination: visa, neighbourhoods, cost of living.'});if(a[4]===1||a[3]===4)acts.push({icon:'💻',text:'Set up provable remote income. Most digital nomad visas require 3 months of bank statements.'});if(a[1]===0)acts.push({icon:'💰',text:'Build your moving fund. Aim for $10,000 — 3 months of costs plus flights and deposit.'});if(a[0]>=3)acts.push({icon:'📅',text:'Set a concrete move date. Deadlines make plans real. Work backwards from the date.'});acts.push({icon:'📞',text:'Book a free planning consultation. A consultant will review your full profile and build your step-by-step plan.'});return acts.slice(0,4)}
+function defaultNotes(tt){
+  if(tt==='st')return{text:'',todos:[{id:1,text:'Book flights',done:false},{id:2,text:'Book accommodation',done:false},{id:3,text:'Research local transport',done:false},{id:4,text:'Create packing list',done:false},{id:5,text:'Check passport / visa requirements',done:false},{id:6,text:'Set up travel insurance',done:false},{id:7,text:'Exchange currency or notify bank',done:false},{id:8,text:'Download offline maps',done:false}]};
+  return{text:'',todos:[{id:1,text:'Check visa requirements',done:false},{id:2,text:'Research neighbourhoods',done:false},{id:3,text:'Get health insurance quote',done:false},{id:4,text:'Open international bank account',done:false},{id:5,text:'Join local expat Facebook group',done:false},{id:6,text:'Apostille background check documents',done:false}]};
+}
+
+const TDATA=[
+  {name:"Sarah M.",loc:"🇺🇸 → 🇵🇹",role:"Remote Product Designer",quote:"I moved to Lisbon 6 months ago and this app was the first thing that made it feel possible. Matched at 95% — here I am, living proof it works."},
+  {name:"James T.",loc:"🇬🇧 → 🇨🇴",role:"Freelance Developer",quote:"Genuinely accurate matching. Found Medellín through Experience Reality, booked a free consultation call, and I've been here 3 months. The readiness quiz showed me exactly what I was missing."},
+  {name:"Aisha K.",loc:"🇨🇦 → 🇪🇸",role:"Digital Nomad & Educator",quote:"The destination journal keeps me coming back. I use it to track visa checklists and housing links. It's my entire relocation hub. Matched with Barcelona and never looked back."},
+];
+const CITYDB={
+'Portugal':{visas:[{name:'D8 Digital Nomad Visa',dur:'1 year (renewable)',cost:'~$75 application fee',proc:'4–8 weeks',req:['Proof of remote income ($1,070+/month)','Valid passport 6+ months','Health insurance','Criminal background check','NIF tax number']},{name:'D7 Passive Income Visa',dur:'2 years (renewable)',cost:'~$90 application fee',proc:'6–10 weeks',req:['Proof of passive income ($760+/month)','Bank statements (3 months)','Health insurance','Clean criminal record','Accommodation proof']},{name:'Golden Visa (Investment)',dur:'2 years (leads to PR)',cost:'€250k–500k investment',proc:'3–6 months',req:['Investment in Portugal','Clean criminal record','Valid passport','Health insurance']}],areas:{'Lisbon':['Príncipe Real — upscale, boutique shops, central','Alfama — historic, authentic, budget-friendly','Chiado — cultural hub, great restaurants','Intendente — up-and-coming, affordable, artsy','Belém — quiet, family-friendly, riverside'],'Porto':['Baixa — city centre, easy transport','Bonfim — local vibe, increasingly popular','Foz do Douro — upscale beachside living','Paranhos — student area, affordable','Matosinhos — beach town, great seafood']}},
+'Spain':{visas:[{name:'Digital Nomad Visa',dur:'1 year (renewable to 3)',cost:'~€75 fee',proc:'4–8 weeks',req:['Proof of remote work/self-employment','Income 200% of minimum wage (~$2,400/month)','Health insurance','Criminal background check','No prior Spanish criminal record']},{name:'Non-Lucrative Visa',dur:'1 year (renewable)',cost:'~€80 fee',proc:'4–8 weeks',req:['Proof of passive income ($2,400+/month)','Health insurance full coverage','Criminal background check','No intention to work in Spain']},{name:'Entrepreneur Visa',dur:'1 year (renewable)',cost:'~€250 fee',proc:'3–6 months',req:['Viable business plan','Sufficient capital','Spanish company formation','Health insurance']}],areas:{'Barcelona':['Eixample — elegant, central, LGBTQ+ friendly','Gràcia — bohemian, local feel, less touristy','Poblenou — tech hub, beach access, modern','El Born — trendy, historic, restaurants','Sarrià-Sant Gervasi — upscale, quiet, family-friendly'],'Madrid':['Malasaña — indie, young, creative','Lavapiés — multicultural, affordable, artsy','Chamberí — elegant, residential, local','Chueca — LGBTQ+ hub, vibrant, central','La Latina — historic, tapas scene, lively']}},
+'Colombia':{visas:[{name:'Digital Nomad Visa (V Migrante)',dur:'2 years',cost:'~$55 USD',proc:'2–4 weeks',req:['Proof of remote work','Income $684+/month','Valid passport','Health insurance']},{name:'Pensioner Visa (TP-7)',dur:'3 years renewable',cost:'~$55 USD',proc:'2–4 weeks',req:['Proof of pension $684+/month','Valid passport','Criminal background check','Health insurance']},{name:'Resident Visa (R Residente)',dur:'5 years',cost:'~$55 USD',proc:'4–8 weeks',req:['2+ years on previous visa','Clean immigration record','Financial self-sufficiency']}],areas:{'Medellín':['El Poblado — expat hub, safe, restaurants, nightlife','Laureles — local feel, safe, great coffee shops','Envigado — quieter, family-friendly, affordable','Sabaneta — suburban, very safe, local','Belén — authentic Paisa neighbourhood, affordable']}},
+'Georgia':{visas:[{name:'Visa-Free Stay',dur:'365 days/year',cost:'Free',proc:'On arrival',req:['US, EU, UK and 90+ other passports','Valid passport','Proof of onward travel']},{name:'Temporary Residence Permit',dur:'1–6 years',cost:'~$130 USD',proc:'4–6 weeks',req:['Proof of income or employment','Registered address in Georgia','Valid passport','Application at Public Service Hall']},{name:'Legal Entity Residency',dur:'Linked to business',cost:'~$200 setup',proc:'2–4 weeks',req:['Register Georgian company','Business bank account','Valid passport']}],areas:{'Tbilisi':['Vera — leafy, expat-friendly, central','Vake — upscale, embassies, safe','Saburtalo — large, affordable, good transport','Old Town (Dzveli Tbilisi) — atmospheric, touristy','Didube — local, very affordable, authentic']}},
+'Japan':{visas:[{name:'Digital Nomad Visa',dur:'6 months (no extension)',cost:'~¥3,000 fee',proc:'2–4 weeks',req:['Income $68,000+/year','Valid passport','Proof of remote work','Health insurance']},{name:'Highly Skilled Professional Visa',dur:'1–5 years',cost:'~¥4,000 fee',proc:'4–8 weeks',req:['Points-based system (70+ points)','University degree or experience','Japanese employer or investor','Health insurance']},{name:'Business Manager Visa',dur:'1–5 years',cost:'~¥4,000 fee',proc:'2–4 months',req:['Japanese company registration','Office address in Japan','$50,000+ capital investment']}],areas:{'Tokyo':['Shinjuku — buzzing, transport hub, diverse','Shibuya — trendy, young, shopping','Shimokitazawa — bohemian, vintage shops, indie music','Yanaka — old Tokyo, quiet, historic','Minato — upscale, embassies, expat-friendly'],'Kyoto':['Gion — traditional, geisha district, expensive','Nakagyo — central, local shops','Fushimi — quieter, sake breweries','Arashiyama — scenic, western hills','Kamigyo — authentic, near imperial palace']}},
+'Indonesia':{visas:[{name:'B211 Visitor Visa (Social)',dur:'60 days + 4x30 day extensions (180 days)',cost:'~$35 USD',proc:'On arrival or online',req:['Valid passport','Return ticket or onward travel','Sufficient funds']},{name:'E33G Digital Nomad Visa',dur:'6 months (extendable)',cost:'~$200 USD',proc:'1–2 weeks online',req:['Remote work proof','Income $2,000+/month','Valid passport','Health insurance']},{name:'KITAS Retirement Visa',dur:'1 year renewable',cost:'~$300–500 USD',proc:'4–8 weeks',req:['Age 55+','Passive income $1,500+/month','KITAP sponsor','Health insurance']}],areas:{'Bali':['Canggu — digital nomad hub, surf, cafes, trendy','Seminyak — upscale, beach clubs, restaurants','Ubud — spiritual, jungle, yoga, arts','Sanur — quiet, family-friendly, reef-protected beach','Nusa Dua — resort area, clean beaches, gated']}},
+'Mexico':{visas:[{name:'Temporary Resident Visa',dur:'1–4 years',cost:'~$36 USD consulate fee',proc:'2–4 weeks at consulate',req:['Proof of income $1,620+/month','Bank statements 12 months','Valid passport','Application at Mexican consulate']},{name:'Permanent Resident Visa',dur:'Permanent',cost:'~$36 USD fee',proc:'4–8 weeks',req:['4 years on Temporary Resident Visa','OR income 500x daily minimum wage','Valid passport']},{name:'Retiree Resident Visa',dur:'1–4 years',cost:'~$36 USD fee',proc:'2–4 weeks',req:['Pension $1,620+/month','Proof of retirement income','Valid passport']}],areas:{'Mexico City':['Roma Norte — hipster, restaurants, walkable, LGBTQ+ friendly','Condesa — art deco, parks, upscale, expats','Polanco — luxury, shopping, embassies','Coyoacán — historic, bohemian, Frida Kahlo','Narvarte — local, affordable, safe, up-and-coming'],'Puerto Vallarta':['Romantic Zone — LGBTQ+ hub, cobblestone, beach','Marina Vallarta — resort area, golf, families','Versalles — local, affordable, authentic','El Centro — historic, budget-friendly, central'],'Playa del Carmen':['Centro — walkable, nightlife, 5th Avenue','Playacar — gated, resort, upscale','Colosio — local, affordable, growing neighbourhood']}},
+'Thailand':{visas:[{name:'LTR (Long-Term Resident) Visa',dur:'10 years',cost:'~$200 USD',proc:'4–8 weeks',req:['Income $80,000+/year OR assets $250,000','Health insurance','Valid passport','Background check']},{name:'Thailand Elite Visa',dur:'5–20 years',cost:'$15,000–$30,000 USD',proc:'4–6 weeks',req:['Application fee paid','Valid passport','No criminal record']},{name:'METV (Multiple Entry Tourist Visa)',dur:'6 months (60 days/entry)',cost:'~$200 USD',proc:'1–2 weeks at consulate',req:['Bank statements','Valid passport','Travel insurance']}],areas:{'Bangkok':['Silom — business district, nightlife, easy BTS access','Sukhumvit — expat central, malls, international restaurants','Ari — trendy, local cafes, young Thais and expats','Thonglor — upscale, Japanese expats, rooftop bars','Lad Prao — affordable, local, good transport'],'Chiang Mai':['Nimman — digital nomad hub, cafes, modern','Old City — historic moat area, temples, central','Santitham — local, affordable, authentic Thai','Hang Dong — suburban, expats, nature nearby']}},
+'France':{visas:[{name:'Digital Nomad / Freelancer Visa (VLS-TS)',dur:'1 year',cost:'~€99 fee',proc:'4–8 weeks',req:['Proof of freelance income','French client or global income','Health insurance','Accommodation proof']},{name:'Talent Passport',dur:'4 years',cost:'~€269 fee',proc:'4–12 weeks',req:['Exceptional talent or skills','Employment contract or project','University degree','Health insurance']}],areas:{'Paris':['Le Marais (3rd/4th) — LGBTQ+ hub, Jewish quarter, trendy','Oberkampf (11th) — nightlife, young, affordable','Montmartre (18th) — artistic, views, charming','République (10th/11th) — multicultural, affordable, lively','Saint-Germain (6th) — upscale, intellectual, central']}},
+'Netherlands':{visas:[{name:'Highly Skilled Migrant Visa',dur:'3 years',cost:'~€345 fee',proc:'2–4 weeks',req:['Dutch employer sponsor','Minimum salary €4,752/month','Valid passport','Health insurance']},{name:'Orientation Year Visa',dur:'1 year',cost:'~€192 fee',proc:'2–4 weeks',req:['University graduate (past 3 years)','Valid passport','Health insurance','Proof of financial means']}],areas:{'Amsterdam':['Jordaan — canals, galleries, charming, expensive','De Pijp — multicultural, Albert Cuyp market, vibrant','Oud-West — young professionals, cafes, parks','Amsterdam Noord — creative, affordable, across the IJ','Buitenveldert — quiet, family-friendly, near Vondelpark']}},
+'Germany':{visas:[{name:'Freelancer Visa (Freiberufler)',dur:'1–3 years',cost:'~€100 fee',proc:'4–8 weeks at embassy',req:['Freelance profession (creative, IT, consultant)','Proof of clients/contracts','Financial means','Health insurance']},{name:'Job Seeker Visa',dur:'6 months',cost:'~€75 fee',proc:'2–4 weeks',req:['University degree','Financial means ($5,000+)','German language (helpful)','Health insurance']}],areas:{'Berlin':['Mitte — central, tourist, expensive','Prenzlauer Berg — family-friendly, cafes, gentrified','Kreuzberg — multicultural, nightlife, LGBTQ+ friendly','Neukölln — affordable, trendy, international','Charlottenburg — upscale, western Berlin, shopping']}},
+'Czech Republic':{visas:[{name:'Long-Stay Visa (D Visa)',dur:'1 year',cost:'~$100 USD',proc:'4–8 weeks',req:['Valid purpose (work/study/family)','Accommodation proof','Financial means','Health insurance']},{name:'Employee Card',dur:'2 years renewable',cost:'~$100 USD',proc:'4–8 weeks',req:['Czech employer','Employment contract','Accommodation','Health insurance']}],areas:{'Prague':['Vinohrady — elegant, expat-friendly, restaurants','Žižkov — bohemian, affordable, local bars','Holešovice — creative, industrial-chic, affordable','Smíchov — local, improving, good transport','Dejvice — quiet, embassies, upscale']}},
+'Georgia (Country)':{visas:[{name:'Visa-Free Stay',dur:'365 days/year',cost:'Free',proc:'On arrival',req:['Most Western passports','Valid passport','Onward travel proof']}],areas:{'Tbilisi':['Vera — expat favourite, leafy streets','Vake — upscale, safe, families','Old Town — atmospheric, historic']}},
+};
+
+let S={scr:'login',user:null,reg:{},ans:{},qi:0,tt:null,fA:{},fI:0,res:null,err:null,freeCnt:0,proCnt:0,topupCount:0,isPro:false,saved:[],sIds:new Set(),showPW:false,showAc:false,acMsg:'',acPwMsg:'',selR:null,det:null,dTab:'overview',showSv:false,bkTm:null,pwPl:'year',lc:0,bdDis:false,coSent:false,showCo:false,coTripType:'lt',acTab:'info',editMode:false,cmpSel:[],showCmp:false,cmpType:'lt',showTopup:false,showFP:false,fpSent:false,rqA:{},rqI:0,notes:{},showNotes:false,notesId:null,shareData:{},showShare:false,shareId:null};
+function st(u){if(u.sIds!==undefined)S.sIds=u.sIds;Object.assign(S,u);render()}
+function gi(n){if(!n)return'?';return n.split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2)}
+function nt(){return S.bdDis?0:BH}function pp(){return S.bdDis?62:62+BH}
+function selA(i){S.ans[S.qi]=i;document.querySelectorAll('.opt-l,.opt-d').forEach((el,idx)=>el.classList.toggle('s',idx===i));const nb=document.getElementById('nb');if(nb){nb.style.background=P;nb.style.color=W;nb.style.opacity='1';nb.style.pointerEvents='auto'}}
+function tCh(i){const p=Array.isArray(S.ans[S.qi])?S.ans[S.qi]:[];const n=p.includes(i)?p.filter(x=>x!==i):[...p,i];S.ans[S.qi]=n;document.querySelectorAll('.chip').forEach((el,idx)=>el.classList.toggle('s',n.includes(idx)));const nb=document.getElementById('nb');if(nb){if(n.length){nb.style.background=P;nb.style.color=W;nb.style.opacity='1';nb.style.pointerEvents='auto'}else{nb.style.background='#ddd';nb.style.color='#aaa';nb.style.opacity='.5';nb.style.pointerEvents='none'}}}
+function tDB(i,ni){const p=Array.isArray(S.ans[S.qi])?S.ans[S.qi]:[];let n;if(i===ni){n=[ni]}else{n=p.filter(x=>x!==ni);n=n.includes(i)?n.filter(x=>x!==i):[...n,i]}S.ans[S.qi]=n;document.querySelectorAll('.cdb,.cok').forEach((el,idx)=>el.classList.toggle('s',n.includes(idx)));const nb=document.getElementById('nb');if(nb){if(n.length){nb.style.background=P;nb.style.color=W;nb.style.opacity='1';nb.style.pointerEvents='auto'}else{nb.style.background='#ddd';nb.style.color='#aaa';nb.style.opacity='.5';nb.style.pointerEvents='none'}}}
+function tFC(i){const p=Array.isArray(S.fA[S.fI])?S.fA[S.fI]:[];const n=p.includes(i)?p.filter(x=>x!==i):[...p,i];S.fA[S.fI]=n;document.querySelectorAll('.fc').forEach((el,idx)=>el.classList.toggle('s',n.includes(idx)));[document.getElementById('nb'),document.getElementById('sb')].forEach(b=>{if(!b)return;if(n.length){b.style.background=b.id==='sb'?Y:P;b.style.color=b.id==='sb'?DK:W;b.style.opacity='1';b.style.pointerEvents='auto'}else{b.style.background='#333';b.style.color='#777';b.style.opacity='.6';b.style.pointerEvents='none'}})}
+function sFT(val){S.fA[S.fI]=val;[document.getElementById('nb'),document.getElementById('sb')].forEach(b=>{if(!b)return;b.style.background=b.id==='sb'?Y:P;b.style.color=b.id==='sb'?DK:W;b.style.opacity='1';b.style.pointerEvents='auto'})}
+function sFL(i){S.fA[S.fI]=i;document.querySelectorAll('.opt-d').forEach((el,idx)=>el.classList.toggle('s',idx===i));const nb=document.getElementById('nb');if(nb){nb.style.background=P;nb.style.color=W;nb.style.opacity='1';nb.style.pointerEvents='auto'}const sb=document.getElementById('sb');if(sb){sb.style.background=Y;sb.style.color=DK;sb.style.opacity='1';sb.style.pointerEvents='auto'}}
+function pQ(){if(S.qi===0)st({scr:'quiz_intro'});else st({qi:S.qi-1})}
+function pF(){st({fI:S.fI-1})}
+function nF(){
+  const qs=S.tt==='lt'?LTQ:STQ;
+  const q=qs[S.fI];
+  if(!q)return;
+  if(q.t==='text'&&S.fA[S.fI]===undefined)S.fA[S.fI]='';
+  st({fI:S.fI+1});
+}
+function nQ(){const s=S.ans[S.qi];if(s===undefined||s===null||(Array.isArray(s)&&s.length===0))return;if(S.editMode){st({scr:'quiz_review',editMode:false});return}if(S.qi===11){st({scr:'chapter',chNum:2,chTitle:'How You Live',chIcon:'🏠',chColor:P,chDesc:'Questions about your lifestyle, living preferences, health and what home really means to you.',qi:12});return}if(S.qi===21){st({scr:'chapter',chNum:3,chTitle:'How You Travel',chIcon:'✈️',chColor:'#22C55E',chDesc:'Questions about your travel style, pace and what you look for in a destination.',qi:22});return}if(S.qi===QS.length-1){st({scr:'qd'});return}st({qi:S.qi+1})}
+window.toggleCmp=function(id,tt){const already=S.cmpSel.find(x=>x.id===id);if(already){S.cmpSel=S.cmpSel.filter(x=>x.id!==id)}else if(S.cmpSel.filter(x=>x.tt===tt).length>=2){toast('Select only 2 of the same type to compare')}else{const item=S.saved.find(x=>x.id===id);if(item)S.cmpSel=[...S.cmpSel,item]}render()};
+window.toggleTodo=function(id,tid){
+  const n=getNotes(id);
+  n.todos=n.todos.map(t=>t.id===tid?{...t,done:!t.done}:t);
+  S.notes[id]=n;
+  // Update just the todo row without full re-render
+  const row=document.querySelector('[data-tid="'+tid+'"]');
+  if(row){
+    const t=n.todos.find(x=>x.id===tid);
+    if(t){
+      row.classList.toggle('done-row',t.done);
+      const chk=row.querySelector('.todo-chk');
+      if(chk){chk.textContent=t.done?'✓':'';chk.style.background=t.done?'var(--G)':'';chk.style.borderColor=t.done?'var(--G)':'#ccc';}
+      const txt=row.querySelector('.todo-txt');
+      if(txt){txt.style.textDecoration=t.done?'line-through':'';txt.style.color=t.done?'#aaa':'#333';}
+    }
+    // Update progress count
+    const done=n.todos.filter(x=>x.done).length;
+    const prog=document.getElementById('todo-prog');
+    if(prog)prog.textContent=done+'/'+n.todos.length+' done';
+  }else{render()}
+}
+window.deleteTodo=function(id,tid){
+  const n=getNotes(id);n.todos=n.todos.filter(t=>t.id!==tid);S.notes[id]=n;
+  const row=document.querySelector('[data-tid="'+tid+'"]');
+  if(row){row.remove();const done=n.todos.filter(x=>x.done).length;const prog=document.getElementById('todo-prog');if(prog)prog.textContent=done+'/'+n.todos.length+' done';}else{render()}
+}
+window.moveTodo=function(id,tid,dir){const n=getNotes(id);const idx=n.todos.findIndex(t=>t.id===tid);const ni=idx+dir;if(ni<0||ni>=n.todos.length)return;const arr=[...n.todos];[arr[idx],arr[ni]]=[arr[ni],arr[idx]];n.todos=arr;S.notes[id]=n;render()}
+window.updateTodoText=function(id,tid,val){const n=getNotes(id);n.todos=n.todos.map(t=>t.id===tid?{...t,text:val}:t);S.notes[id]=n}
+window.addTodo=function(id){const inp=document.getElementById('ntodo-inp');if(!inp||!inp.value.trim())return;const n=getNotes(id);n.todos=[...n.todos,{id:Date.now(),text:inp.value.trim(),done:false}];S.notes[id]=n;inp.value='';render()}
+window.updNoteDate=function(id,key,val){const n=getNotes(id);n[key]=val;S.notes[id]=n;};
+window.updNoteDate=function(id,field,val){const n=getNotes(id);n[field]=val;S.notes[id]=n;render()};
+window.saveNote=function(id){const ta=document.getElementById('note-text');if(ta){const n=getNotes(id);n.text=ta.value;n.savedBy=S.user?((S.user.firstName||'')+(S.user.lastName?' '+S.user.lastName:'')):'You';n.savedAt=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});S.notes[id]=n}toast('Notes saved!')}
+window.shareViaMethod=function(id,method){const saved=S.saved.find(x=>x.id===id);if(!saved)return;const link='https://'+getShareLink(id);const note=S.shareData[id]?.note||'';const msg='Check out '+saved.city+', '+saved.country+' on Experience Travel!'+(note?'\n'+note:'')+'\n'+link;if(method==='copy'){navigator.clipboard?.writeText(link).catch(()=>{});toast('Link copied!')}else if(method==='native'){if(navigator.share){navigator.share({title:'Experience Travel — '+saved.city,text:msg,url:link}).catch(()=>{})}else{navigator.clipboard?.writeText(link).catch(()=>{});toast('Link copied!')}}else if(method==='whatsapp'){window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}else if(method==='email'){window.open('mailto:?subject='+encodeURIComponent(saved.city+' on Experience Travel')+'&body='+encodeURIComponent(msg),'_blank')}};
+window.addSharePerson=function(id){const inp=document.getElementById('sh-email');if(!inp||!inp.value.trim()){toast('Please enter a name or email');return;}const e=inp.value.trim();const radios=document.querySelectorAll('[name="sh-perm-'+id+'"]');const checked=[...radios].find(r=>r.checked);if(!checked){toast('Please select a permission level \u2014 required');return;}const perm=checked.value;const sd=S.shareData[id]||{people:[]};const noteEl=document.getElementById('share-note');if(noteEl)sd.note=noteEl.value;sd.people=[...sd.people,{email:e,perm}];S.shareData[id]=sd;inp.value='';radios.forEach(r=>r.checked=false);['pcard-view-'+id,'pcard-edit-'+id].forEach(cid=>{const el=document.getElementById(cid);if(el){el.style.borderColor='rgba(0,0,0,.1)';el.style.background='#fff'}});render()}
+window.removeSharePerson=function(id,email){const sd=S.shareData[id];if(sd)sd.people=sd.people.filter(p=>p.email!==email);render()}
+window.copyShareLink=function(link){navigator.clipboard?.writeText('https://'+link).catch(()=>{});toast('Link copied!')}
+function rBnr(){if(S.bdDis)return'';return`<div class="sbnr"><button class="sbnr-x" onclick="st({bdDis:true})">✕</button><span class="sbnr-msg">Enjoying the app? Share it with a friend!</span><button class="sbnr-btn" onclick="share()">Share</button></div>`}
+function rNav(){const u=S.user,nm=(u?.firstName||'User');return`<div class="nav" style="top:${nt()}px"><div style="display:flex;align-items:center;gap:10px"><div class="nav-br">Experience <em>Travel</em></div></div><div style="display:flex;align-items:center;gap:8px">${navPill()}${S.scr!=='dash'?bSm('← Home',"st({scr:'dash'})",P,W,'#C8208A'):''}<button onclick="st({showAc:true,acMsg:'',acPwMsg:'',acTab:'info'})" style="display:flex;align-items:center;gap:7px;background:rgba(0,0,0,.04);border:1.5px solid rgba(0,0,0,.1);border-radius:10px;padding:6px 12px 6px 8px;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#111"><div style="width:26px;height:26px;border-radius:7px;overflow:hidden;flex-shrink:0"><img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 56 56%22%3E%3Crect width=%2256%22 height=%2256%22 fill=%22%23F5E420%22 rx=%2212%22/%3E%3Crect x=%228%22 y=%228%22 width=%2224%22 height=%2238%22 rx=%224%22 fill=%22%23E535A0%22/%3E%3Crect x=%2212%22 y=%2214%22 width=%2216%22 height=%2222%22 rx=%222%22 fill=%22%23F5E420%22/%3E%3Ccircle cx=%2220%22 cy=%2240%22 r=%222.5%22 fill=%22%23F5E420%22/%3E%3Cpath d=%22M30 28 L50 22 L46 28 L50 34 Z%22 fill=%22%23111%22/%3E%3C/svg%3E" style="width:100%;height:100%;object-fit:cover"/></div>My Account</button></div></div>`}
+function logo(){return`<div style="width:56px;height:56px;border-radius:14px;overflow:hidden;flex-shrink:0;box-shadow:3px 3px 0 #E535A0"><img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 56 56%22%3E%3Crect width=%2256%22 height=%2256%22 fill=%22%23F5E420%22 rx=%2212%22/%3E%3Crect x=%228%22 y=%228%22 width=%2224%22 height=%2238%22 rx=%224%22 fill=%22%23E535A0%22/%3E%3Crect x=%2212%22 y=%2214%22 width=%2216%22 height=%2222%22 rx=%222%22 fill=%22%23F5E420%22/%3E%3Ccircle cx=%2220%22 cy=%2240%22 r=%222.5%22 fill=%22%23F5E420%22/%3E%3Cpath d=%22M30 28 L50 22 L46 28 L50 34 Z%22 fill=%22%23111%22/%3E%3C/svg%3E" style="width:100%;height:100%;object-fit:cover"/></div>`}
+function rLogin(){
+  const b=S.bdDis?0:BH;
+  const tc=[...TDATA,...TDATA].map(T=>`<div class="t-card"><div style="font-size:13px;color:rgba(255,255,255,.9);line-height:1.65;margin-bottom:10px;font-style:italic">"${T.quote}"</div><div><div style="font-size:12.5px;font-weight:700;color:#fff">${T.name} · ${T.role}</div><div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px">${T.loc}</div></div></div>`).join('');
+  return`<div class="pg pg-w" style="padding-top:${b+20}px"><div style="width:100%;max-width:440px;padding:0 16px">
+  <div class="lh">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">${logo()}<div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:#fff">Experience <em style="color:${Y};font-style:normal">Travel</em></div><div style="font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-top:2px">Travel · Connect · Experience</div></div></div>
+    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:8px">Ready to Create<br>Your <em style="color:${Y};font-style:normal">Reality?</em></div>
+    <div style="font-size:12.5px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:14px">Find the perfect place to live or travel — tailored to you.</div>
+    <div class="t-wrapper"><div class="t-track">${tc}</div></div>
+  </div>
+  <div class="lc2">
+    <p style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#111;margin-bottom:16px">Sign In to Continue</p>
+    ${S.err?`<div class="err-b">${S.err}</div>`:''}
+    <div class="fgrp"><label>Email Address</label><input class="inp" id="le" type="email" placeholder="you@email.com"/></div>
+    <div class="fgrp"><label>Password</label><input class="inp" id="lp" type="password" placeholder="••••••••"/></div>
+    ${bY('Sign In →','doLogin()')}
+    <div class="divl">or</div>
+    ${bP('Create an Account',"st({scr:'reg',err:null,reg:{}})")}
+    <p style="text-align:center;margin-top:14px"><span onclick="st({showFP:true,fpSent:false})" style="cursor:pointer;font-size:13px;font-weight:600;color:${P}">Forgot Password?</span></p>
+  </div></div></div>`}
+function doLogin(){const e=document.getElementById('le')?.value.trim(),p=document.getElementById('lp')?.value;if(!e||!p){st({err:'Please fill in all fields.'});return}st({scr:'dash',user:{firstName:'Alex',lastName:'Rivera',email:e,phone:'+1 555-0123',country:'United States',city:'New York'},err:null,lc:S.lc+1})}
+function rFP(){const sent=S.fpSent;return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({showFP:false})"><div class="md" style="max-width:420px"><div style="padding:28px 26px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#111">${sent?'Check Your Email':'Reset Your Password'}</div><button onclick="st({showFP:false})" style="background:#F2EDE5;border:1.5px solid rgba(0,0,0,.1);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px;color:#666">✕</button></div>${sent?`<div style="text-align:center;padding:16px 0"><div style="font-size:48px;margin-bottom:12px">📧</div><p style="font-size:14px;color:#555;line-height:1.7;margin-bottom:6px">Reset link sent to <strong>${S.fpEmail}</strong>.</p><p style="font-size:13px;color:#aaa">Check your inbox and spam folder.</p><div style="margin-top:20px">${bP('← Back to Sign In',"st({showFP:false})")}</div></div>`:`<div><div style="background:#F8F4EF;border-radius:10px;padding:12px;font-size:13px;color:#666;margin-bottom:16px">Enter your account email and we'll send a reset link.</div><div class="fgrp"><label>Email Address</label><input class="inp" id="fpe" type="email" placeholder="you@email.com"/></div>${bP('Send Reset Link →',"doFP()")}<p style="text-align:center;margin-top:14px;font-size:13px;color:#aaa">Remembered it? <span onclick="st({showFP:false})" style="cursor:pointer;font-weight:600;color:${P}">Sign In</span></p></div>`}</div></div></div>`}
+function doFP(){const e=document.getElementById('fpe')?.value.trim();if(!e||!/\S+@\S+\.\S+/.test(e)){toast('Enter a valid email address');return}st({fpSent:true,fpEmail:e})}
+function rReg(){const d=S.reg,step=d._step||1,b=S.bdDis?0:BH,fe=d._fe||{};return`<div class="pg pg-w" style="padding-top:${b+20}px"><div style="width:100%;max-width:440px"><div style="text-align:center;margin-bottom:20px">${logo()}<div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:#111;margin-top:10px">Experience <em style="color:${P};font-style:normal">Travel</em></div></div><div class="lc"><div class="dots"><div class="dot ${step>=1?'on':''}"></div><div class="dot ${step>=2?'on':''}"></div></div><p style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#111;margin-bottom:4px">Create Account</p><p style="color:#888;font-size:13.5px;margin-bottom:18px">Step ${step} of 2 — ${step===1?'Your Details':'Set Your Password'}</p>${step===1?`<div class="r2"><div class="fgrp"><label>First Name</label><input class="inp" id="rfn" type="text" placeholder="Jane" value="${d.fn||''}"/>${fe.fn?`<div class="ferr">⚠ ${fe.fn}</div>`:''}</div><div class="fgrp"><label>Last Name</label><input class="inp" id="rln" type="text" placeholder="Smith" value="${d.ln||''}"/>${fe.ln?`<div class="ferr">⚠ ${fe.ln}</div>`:''}</div></div><div class="fgrp"><label>Email</label><input class="inp" id="rem" type="email" placeholder="jane@email.com" value="${d.em||''}"/>${fe.em?`<div class="ferr">⚠ ${fe.em}</div>`:''}</div><div class="fgrp"><label>Phone</label><input class="inp" id="rph" type="tel" placeholder="+1 (555) 000-0000" value="${d.ph||''}"/>${fe.ph?`<div class="ferr">⚠ ${fe.ph}</div>`:''}</div><div class="fgrp"><label>Country of Origin</label><input class="inp" id="rco" type="text" placeholder="e.g. United States" value="${d.co||''}"/>${fe.co?`<div class="ferr">⚠ ${fe.co}</div>`:''}</div><div class="fgrp"><label>City</label><input class="inp" id="rcy" type="text" placeholder="e.g. New York" value="${d.cy||''}"/>${fe.cy?`<div class="ferr">⚠ ${fe.cy}</div>`:''}</div>${bY('Continue →','rs1()')}`:`<div class="fgrp"><label>New Password</label><input class="inp" id="rp1" type="password" placeholder="Min 6 characters" oninput="upS()"/>${fe.p1?`<div class="ferr">⚠ ${fe.p1}</div>`:''}<div id="pwstr"></div></div><div class="fgrp"><label>Confirm Password</label><input class="inp" id="rp2" type="password" placeholder="Confirm password"/>${fe.p2?`<div class="ferr">⚠ ${fe.p2}</div>`:''}</div>${bY('Continue →','rs2()')}${bPo('← Back',"st({reg:{...S.reg,_step:1,_fe:{}}})")}`}<p style="text-align:center;margin-top:14px;font-size:13px;color:#888">Have an account? <span style="cursor:pointer;font-weight:600;color:${P}" onclick="st({scr:'login',err:null})">Sign In</span></p></div></div></div>`}
+window.upS=function(){const el=document.getElementById('pwstr');if(!el)return;const v=document.getElementById('rp1')?.value||'';const{sc,lb,co}=pwS(v);if(sc>0){const sg=Array.from({length:4},(_,i)=>`<div class="pws-s ${i<sc?(sc<=1?'wk':sc<=2?'fr':'gd'):''}"></div>`).join('');el.innerHTML=`<div class="pws">${sg}</div><div style="font-size:10px;font-weight:600;color:${co};margin-top:4px">${lb}</div>`}else el.innerHTML=''};
+function rs1(){const fn=document.getElementById('rfn')?.value.trim(),ln=document.getElementById('rln')?.value.trim(),em=document.getElementById('rem')?.value.trim(),ph=document.getElementById('rph')?.value.trim(),co=document.getElementById('rco')?.value.trim(),cy=document.getElementById('rcy')?.value.trim();const fe={};if(!fn)fe.fn='Required';if(!ln)fe.ln='Required';if(!em)fe.em='Required';else if(!/\S+@\S+\.\S+/.test(em))fe.em='Invalid email';if(!ph)fe.ph='Required';if(!co)fe.co='Required';if(!cy)fe.cy='Required';if(Object.keys(fe).length){st({reg:{...S.reg,fn,ln,em,ph,co,cy,_fe:fe}});return}st({reg:{...S.reg,fn,ln,em,ph,co,cy,_step:2,_fe:{}}})}
+function rs2(){const p1=document.getElementById('rp1')?.value,p2=document.getElementById('rp2')?.value;const fe={};if(!p1||p1.length<6)fe.p1='Min 6 characters';if(p1&&p1.length>=6&&p2!==p1)fe.p2='Passwords do not match';if(fe.p1||fe.p2){st({reg:{...S.reg,_fe:fe}});return}const d=S.reg;st({scr:'quiz_intro',user:{firstName:d.fn,lastName:d.ln,email:d.em,phone:d.ph,country:d.co,city:d.cy},ans:{},qi:0,err:null,lc:1})}
+function rQI(){return`<div class="qi-screen"><div style="position:relative;z-index:1;width:100%;max-width:480px;text-align:center"><div style="font-size:48px;margin-bottom:16px;animation:popIn .5s ease both">🌍</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:${Y};opacity:.8;margin-bottom:12px">Before We Begin</div><div style="font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:16px">Time to Get to<br>Know <em style="color:${Y};font-style:normal">You</em></div><p style="font-size:14px;color:rgba(255,255,255,.65);line-height:1.75;margin-bottom:28px">We're about to take you through a quick quiz covering who you are, how you live, and how you travel. The more honest you are, the more accurate your matches will be.</p><div style="display:flex;flex-direction:column;gap:10px;margin-bottom:32px"><div class="qi-lc" style="animation-delay:.1s"><div style="width:38px;height:38px;border-radius:10px;background:rgba(245,228,32,.15);border:1px solid rgba(245,228,32,.25);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🧠</div><div style="text-align:left"><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff">Chapter 1 — Who You Are</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Your identity, values and personality</div></div></div><div class="qi-lc" style="animation-delay:.2s"><div style="width:38px;height:38px;border-radius:10px;background:rgba(229,53,160,.12);border:1px solid rgba(229,53,160,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏠</div><div style="text-align:left"><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff">Chapter 2 — How You Live</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Your lifestyle, health and what home means</div></div></div><div class="qi-lc" style="animation-delay:.3s"><div style="width:38px;height:38px;border-radius:10px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">✈️</div><div style="text-align:left"><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff">Chapter 3 — How You Travel</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Your travel style, pace and priorities</div></div></div></div><div style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:16px">Takes about 5 minutes · Results personalised to you</div><div style="display:flex;flex-direction:column;align-items:center;gap:12px"><button onclick="st({scr:'questionnaire',qi:0})" style="display:inline-flex;align-items:center;gap:10px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:12px;padding:16px 32px;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;cursor:pointer">Start My Quiz →</button>${S.lc>1?`<button onclick="st({scr:'dash'})" style="background:none;border:none;color:rgba(255,255,255,.45);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;text-decoration:underline;padding:4px">← Back to Dashboard</button>`:''}</div></div></div>`}
+function rCh(){const{chNum,chTitle,chIcon,chColor,chDesc,qi}=S;const steps=[{n:1,l:'Who You Are',done:chNum>1},{n:2,l:'How You Live',done:chNum>2,active:chNum===2},{n:3,l:'How You Travel',done:chNum>3,active:chNum===3}];const bg=chNum===2?'linear-gradient(135deg,#0a0a1a,#1a0a1a)':'linear-gradient(135deg,#0a1a0a,#0a0a1a)';return`<div class="ch-screen" style="background:${bg}"><div style="position:relative;z-index:1;text-align:center;max-width:460px"><div style="display:flex;justify-content:center;gap:6px;margin-bottom:32px">${steps.map(s=>`<div style="display:flex;align-items:center;gap:6px"><div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;${s.done?`background:${Y};color:#111`:`background:${s.active?chColor:'rgba(255,255,255,.12)'};color:${s.active?'#fff':'rgba(255,255,255,.4)'}`}">${s.n}</div><div style="font-size:11px;font-weight:600;color:${s.done?Y:s.active?'#fff':'rgba(255,255,255,.3)'}">${s.l}</div></div>`).join(`<div style="width:24px;height:1px;background:rgba(255,255,255,.15);margin:0 4px;align-self:center"></div>`)}</div><div style="font-size:52px;margin-bottom:12px;animation:popIn .4s ease">${chIcon}</div><div style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:#fff;margin-bottom:12px;line-height:1.2">${chTitle}</div><p style="font-size:15px;color:rgba(255,255,255,.6);line-height:1.7;margin-bottom:32px">${chDesc}</p><button onclick="st({scr:'questionnaire',qi:${qi}})" style="display:inline-flex;align-items:center;gap:10px;background:${chColor};color:${chNum===2?W:'#111'};border:none;border-radius:12px;padding:16px 32px;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;cursor:pointer">Continue to ${chTitle} →</button></div></div>`}
+function rRev(){const layers=[{num:1,title:'Who You Are',icon:'🧠',color:Y,range:[0,11]},{num:2,title:'How You Live',icon:'🏠',color:P,range:[12,21]},{num:3,title:'How You Travel',icon:'✈️',color:'#22C55E',range:[22,29]}];const ua=QS.length-Object.keys(S.ans).length;return`<div class="pg pg-c" style="justify-content:flex-start;padding-top:20px;padding-bottom:40px"><div style="width:100%;max-width:600px;padding-top:20px"><div style="text-align:center;margin-bottom:28px"><div style="font-size:36px;margin-bottom:10px">📋</div><div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#111;margin-bottom:8px">Review Your Answers</div><p style="font-size:14px;color:#888;line-height:1.6">Check everything — tap <strong>Edit</strong> to change any answer.</p>${ua>0?`<div style="background:#FFF5F5;border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:10px 14px;font-size:13px;color:#DC2626;margin-top:12px">⚠ ${ua} unanswered</div>`:''}</div>${layers.map(layer=>{const qs=QS.slice(layer.range[0],layer.range[1]+1);return`<div class="rv-layer"><div class="rv-lhdr"><div class="rv-ln" style="background:${layer.color};color:${layer.num===2?W:'#111'}">${layer.num}</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#111">${layer.icon} ${layer.title}</div><div style="font-size:11px;color:#aaa;margin-left:auto">${qs.filter((_,i)=>S.ans[layer.range[0]+i]!==undefined).length}/${qs.length}</div></div>${qs.map((q,i)=>{const qi=layer.range[0]+i,a=S.ans[qi];let at='Not answered',hA=false;if(a!==undefined&&a!==null){hA=true;if(Array.isArray(a))at=a.map(x=>q.o[x]).join(', ');else if(typeof a==='number')at=q.o[a];else at=String(a)}return`<div class="rv-q"><div class="rv-qt"><div class="rv-ql">${q.q.length>60?q.q.slice(0,60)+'…':q.q}</div><div class="rv-qa" style="color:${hA?'#111':'#bbb'}">${hA?at:'—'}</div></div><button class="rv-ed" onclick="st({scr:'questionnaire',qi:${qi},editMode:true})">Edit</button></div>`}).join('')}</div>`}).join('')}<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px">${bSm('← Back',"st({scr:'questionnaire',qi:29})",'#fff',P,P)}<button onclick="goR()" style="display:inline-flex;align-items:center;gap:8px;padding:13px 28px;background:${P};color:#fff;border:2.5px solid #C8208A;border-radius:10px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Everything Looks Good — Find My Matches →</button></div></div></div>`}
+function goR(){st({scr:'dash'})}
+function wBar(w){const col=w>=9?'#DC2626':w>=7?'#F97316':w>=4?'#EAB308':'#6B7280';const lb=w>=9?'Critical':w>=7?'High':w>=4?'Medium':'Low';return`<div style="display:flex;align-items:center;gap:5px;margin-bottom:8px"><span style="font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:${col}">⚖ ${lb} Weight</span><div style="display:flex;gap:2px;margin-left:4px">${Array.from({length:10},(_,i)=>`<div style="background:${i<w?col:'#E5E7EB'};width:5px;height:5px;border-radius:50%"></div>`).join('')}</div></div>`}
+function rQ(){const tot=QS.length,q=QS[S.qi],pct=Math.round((S.qi/tot)*100);const sel=S.ans[S.qi]!==undefined?S.ans[S.qi]:(q.t==='m'||q.t==='db'?[]:null);const isId=S.qi===9||S.qi===10,isDb=q.t==='db',isWk=S.qi===11;const hA=q.t==='m'||q.t==='db'?(Array.isArray(sel)&&sel.length>0):(sel!==null&&sel!==undefined);const b=S.bdDis?0:BH;const bTxt=isDb?'Deal-Breakers':isId?'Identity':isWk?'Work & Income':`Chapter ${q.l} · ${q.ln}`;const bCls=isDb?'br':isId?'bbl':q.l===1?'by':q.l===2?'bp':'bg';let opt='';if(isDb){const ni=q.o.length-1;opt=`<div class="chips">${q.o.map((o,i)=>`<div class="${i===ni?'cok':'cdb'} ${Array.isArray(sel)&&sel.includes(i)?'s':''}" onclick="tDB(${i},${ni})">${o}</div>`).join('')}</div>`}else if(q.t==='s'){opt=`<div class="opts-l">${q.o.map((o,i)=>`<div class="opt-l ${sel===i?'s':''}" onclick="selA(${i})"><div class="qdot"><div class="qdin"></div></div>${o}</div>`).join('')}</div>`}else{opt=`<div class="chips">${q.o.map((o,i)=>`<div class="chip ${Array.isArray(sel)&&sel.includes(i)?'s':''}" onclick="tCh(${i})">${o}</div>`).join('')}</div>`}const nLbl=S.editMode?'Save & Return →':S.qi<tot-1?'Next →':'Create My Destination Profile →';const bkBtn=S.qi===0?`<button onclick="st({scr:'quiz_intro'})" style="display:inline-flex;align-items:center;padding:10px 16px;background:#fff;color:${P};border:2px solid ${P};border-radius:10px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer">← Back</button>`:S.editMode?`<button onclick="st({scr:'quiz_review'})" style="display:inline-flex;align-items:center;padding:10px 16px;background:#fff;color:${P};border:2px solid ${P};border-radius:10px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer">← Back to Review</button>`:bSm('← Back','pQ()',W,P,P);return`<div class="pg pg-c" style="padding-top:${b+20}px"><div class="lc lc-w"><div style="margin-bottom:6px"><span class="bdg ${bCls}">${bTxt}</span></div><div class="prog prog-l"><div class="prog-b" style="width:${pct}%"></div></div>${wBar(q.w)}${isDb?`<div style="background:#FFF5F5;border:1px solid rgba(239,68,68,.2);border-radius:9px;padding:8px 12px;font-size:12px;color:#DC2626;margin-bottom:10px">These become <strong>hard filters</strong> — destinations that fail will never appear.</div>`:''}${isId?`<div style="background:#F0F4FF;border:1px solid rgba(99,102,241,.2);border-radius:9px;padding:8px 12px;font-size:12px;color:#4338CA;margin-bottom:10px">This helps ensure your matches are safe and welcoming for <em>you</em>.</div>`:''}${isWk?`<div style="background:#FFFBD6;border:1px solid rgba(245,228,32,.3);border-radius:9px;padding:8px 12px;font-size:12px;color:#7A5C00;margin-bottom:10px">This helps match you with destinations and visas that suit your income type.</div>`:''}<p style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#111;line-height:1.45;margin-bottom:4px">${q.q}</p><p style="font-size:12px;color:#aaa;margin-bottom:2px">${q.t==='s'?'Choose one':'Select all that apply'}</p>${opt}<div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px">${bkBtn}<button id="nb" onclick="nQ()" style="display:inline-flex;align-items:center;padding:10px 20px;background:${hA?P:'#ddd'};color:${hA?W:'#aaa'};border:2.5px solid ${hA?'#C8208A':'#ccc'};border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:${hA?'pointer':'default'};opacity:${hA?1:.6}">${nLbl}</button></div></div></div>`}
+function rQD(){setTimeout(()=>{if(S.scr==='qd')st({scr:'qd_done'})},2800);return`<div class="ps"><div style="position:absolute;inset:0;pointer-events:none">${Array.from({length:24},(_,i)=>`<div style="position:absolute;left:${Math.random()*100}%;top:${Math.random()*100}%;width:${Math.random()*3+1}px;height:${Math.random()*3+1}px;border-radius:50%;background:#fff;animation:shimmer ${1.5+Math.random()*2}s ${Math.random()*2}s infinite"></div>`).join('')}</div><div style="position:relative;z-index:1;text-align:center;padding:0 20px"><div class="dt" style="color:${Y}">Let's Create</div><div class="dt">Your New <em style="color:${P};font-style:normal">Reality!</em></div><div class="pt"><div class="ptr"></div><div class="pe">🛫</div></div><div style="font-size:14px;color:rgba(255,255,255,.5);text-align:center;margin-top:8px;animation:fadeUp .6s .5s ease both">Finding your perfect destinations…</div></div></div>`}
+function rQDDone(){return`<div class="ps" style="padding:40px 20px"><div style="position:relative;z-index:1;text-align:center;max-width:480px"><div style="font-size:64px;margin-bottom:20px;animation:popIn .6s ease both">🌍</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:${Y};opacity:.8;margin-bottom:14px">Quiz Complete</div><div style="font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:16px">Your Profile Is<br>Ready <em style="color:${Y};font-style:normal">✓</em></div><p style="font-size:14px;color:rgba(255,255,255,.65);line-height:1.75;margin-bottom:32px;max-width:360px;margin-left:auto;margin-right:auto">We've built your personalised destination profile. Time to see where you belong.</p><button onclick="st({scr:'dash'})" style="display:inline-flex;align-items:center;gap:12px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:14px;padding:18px 36px;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;cursor:pointer">See My Customised Destinations →</button><div style="margin-top:20px;font-size:12px;color:rgba(255,255,255,.3)">Matched across ${QS.length} weighted dimensions</div></div></div>`}
+function rRQ(){const qi=S.rqI,q=RQ[qi],tot=RQ.length,sel=S.rqA[qi],hA=sel!==undefined,pct=Math.round((qi/tot)*100),isLast=qi===tot-1;return`<div class="rq-screen"><div style="width:100%;max-width:540px"><div style="text-align:center;margin-bottom:24px"><div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#22C55E;opacity:.8;margin-bottom:8px">How Ready Am I? — Moving Abroad</div><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;line-height:1.3;margin-bottom:8px">${q.q}</div><div style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:14px">Question ${qi+1} of ${tot}</div><div style="height:3px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#22C55E,${Y});transition:width .4s"></div></div></div><div class="opts-d" style="margin-bottom:24px">${q.o.map((o,i)=>`<div class="opt-d ${sel===i?'s':''}" onclick="st({rqA:{...S.rqA,${qi}:${i}}})"><div class="qdot"><div class="qdin"></div></div>${o}</div>`).join('')}</div><div style="display:flex;justify-content:space-between;align-items:center">${qi>0?bSm('← Back',"st({rqI:S.rqI-1})",'rgba(255,255,255,.1)',W,'rgba(255,255,255,.2)'):bSm('← Dashboard',"st({scr:'dash'})",'rgba(255,255,255,.1)',W,'rgba(255,255,255,.2)')}<button onclick="${hA?(isLast?"st({scr:'rq_results'})":'st({rqI:S.rqI+1})'):'void(0)'}" style="display:inline-flex;align-items:center;padding:11px 22px;background:${hA?'#22C55E':'#333'};color:${hA?W:'#666'};border:2.5px solid ${hA?'#16A34A':'#444'};border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:${hA?'pointer':'default'};opacity:${hA?1:.6}">${isLast?'See My Score →':'Next →'}</button></div></div></div>`}
+function rRQRes(){const score=calcRQ();const{lbl,icon,col,msg}=rqLabel(score);const actions=rqActions(S.rqA);const grads={'Ready to Launch':'linear-gradient(135deg,#16A34A,#22C55E)','Almost There':'linear-gradient(135deg,#A16207,#D4C000)','Building Momentum':'linear-gradient(135deg,#C2410C,#F97316)','Just Getting Started':'linear-gradient(135deg,#4338CA,#6366F1)'};const grad=grads[lbl]||'linear-gradient(135deg,#374151,#6B7280)';return`<div class="rq-res"><div style="width:100%;max-width:520px;text-align:center"><div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#22C55E;opacity:.8;margin-bottom:16px">Your Readiness Score</div><div style="width:140px;height:140px;border-radius:50%;background:${grad};display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 0 40px ${col}40"><div style="font-family:'Syne',sans-serif;font-size:44px;font-weight:800;color:#fff;line-height:1">${score}</div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">out of 100</div></div><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">${icon} ${lbl}</div><p style="font-size:14px;color:rgba(255,255,255,.65);line-height:1.65;margin-bottom:24px;max-width:380px;margin-left:auto;margin-right:auto">${msg}</p><div style="background:rgba(255,255,255,.08);border-radius:20px;height:10px;overflow:hidden;margin-bottom:24px"><div style="height:100%;width:${score}%;background:${grad};border-radius:20px;transition:width 1.2s ease"></div></div><div style="text-align:left;margin-bottom:20px"><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:#fff;margin-bottom:12px;text-align:center">Your Personalised Action Plan</div>${actions.map((a,i)=>`<div class="action-item"><div style="width:24px;height:24px;border-radius:50%;background:${grad};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#111;flex-shrink:0;min-width:24px">${i+1}</div><div style="font-size:13.5px;color:#555;line-height:1.6"><span style="font-size:16px;margin-right:6px">${a.icon}</span>${a.text}</div></div>`).join('')}</div><div style="background:linear-gradient(135deg,#0a1628,#111827);border:2px solid rgba(245,228,32,.35);border-radius:16px;padding:18px 20px;margin-bottom:16px"><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#fff;margin-bottom:6px">Want help with your plan?</div><p style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:14px;line-height:1.6">Book a free 30-min call — a consultant reviews your score and builds your personalised roadmap.</p><button class="book-btn" style="width:100%;justify-content:center" onclick="st({showCo:true,coSent:false,coTripType:'lt'})">Book My Free Planning Call</button></div><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">${bSm('Retake',"st({rqA:{},rqI:0,scr:'readiness'})",'rgba(255,255,255,.1)',W,'rgba(255,255,255,.2)')} ${bSm('← Dashboard',"st({scr:'dash'})",'rgba(255,255,255,.1)',W,'rgba(255,255,255,.2)')}</div></div></div>`}
+function rDash(){
+  const nm=S.user?.firstName||'Traveler',tot=S.saved.length;
+  const sFU=!S.isPro&&S.freeCnt>=FREE_LIMIT,sPM=S.isPro&&!canSearch();
+  const rqDone=Object.keys(S.rqA).length>=6;
+  const rqScore=rqDone?calcRQ():null;
+  const rqL=rqDone?rqLabel(rqScore):null;
+  return`<div>${rNav()}
+<div style="min-height:100vh;background:linear-gradient(160deg,#0A0A0F 0%,#12080F 50%,#0A0F12 100%);padding-top:${pp()}px;padding-bottom:60px">
+
+<div style="position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;overflow:hidden">
+  <div style="position:absolute;top:-150px;left:50%;transform:translateX(-50%);width:700px;height:500px;border-radius:50%;background:radial-gradient(ellipse,rgba(229,53,160,.08) 0%,transparent 65%)"></div>
+  <div style="position:absolute;bottom:-150px;right:-80px;width:500px;height:400px;border-radius:50%;background:radial-gradient(ellipse,rgba(245,228,32,.04) 0%,transparent 65%)"></div>
+</div>
+
+<div style="position:relative;z-index:1;max-width:720px;margin:0 auto;padding:40px 20px 0">
+
+  <!-- Hero -->
+  <div style="text-align:center;margin-bottom:48px">
+    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:7px 16px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:24px">👋 Welcome, ${nm}</div>
+    <div style="font-family:'Syne',sans-serif;font-size:clamp(22px,3.8vw,40px);font-weight:800;color:#fff;line-height:1.1;margin-bottom:4px">Where Will You</div>
+    <div style="font-family:'Syne',sans-serif;font-size:clamp(28px,5vw,48px);font-weight:800;line-height:1.1;margin-bottom:20px;background:linear-gradient(135deg,${Y} 0%,#FF8C42 45%,${P} 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Create Your Reality?</div>
+    <p style="font-size:15px;color:rgba(255,255,255,.4);line-height:1.75;max-width:440px;margin:0 auto">Your profile is ready — explore destinations matched to your lifestyle, identity and travel style.</p>
+  </div>
+
+  <!-- Alerts -->
+  ${sFU?`<div style="background:rgba(229,53,160,.08);border:1px solid rgba(229,53,160,.2);border-radius:14px;padding:13px 18px;font-size:13px;color:rgba(255,255,255,.8);display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px"><span>You've used your free search. Upgrade to keep exploring.</span><button onclick="st({showPW:true})" style="background:${P};color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0">Upgrade →</button></div>`:''}
+  ${sPM?`<div style="background:rgba(245,228,32,.06);border:1px solid rgba(245,228,32,.15);border-radius:14px;padding:13px 18px;font-size:13px;color:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px"><span>Daily searches used. Resets at midnight.</span><button onclick="st({showTopup:true})" style="background:${Y};color:#111;border:none;border-radius:8px;padding:7px 16px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0">Get 3 More — $5</button></div>`:''}
+
+  <!-- FIND YOUR DESTINATION -->
+  <div style="margin-bottom:32px">
+    <div style="font-size:10.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.28);margin-bottom:14px">Find Your Destination</div>
+    <div class="dg">
+      <div onclick="st({scr:'fu',tt:'lt',fA:{},fI:0})"
+        style="background:rgba(255,255,255,.04);border:1.5px solid rgba(229,53,160,.2);border-radius:18px;padding:24px 22px;cursor:pointer;transition:all .22s;position:relative;overflow:hidden"
+        onmouseenter="this.style.borderColor='rgba(229,53,160,.5)';this.style.background='rgba(229,53,160,.07)';this.style.transform='translateY(-2px)'"
+        onmouseleave="this.style.borderColor='rgba(229,53,160,.2)';this.style.background='rgba(255,255,255,.04)';this.style.transform=''">
+        <div style="position:absolute;top:-16px;right:-16px;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(229,53,160,.2),transparent 70%);pointer-events:none"></div>
+        <div style="font-size:28px;margin-bottom:14px">🏡</div>
+        <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff;margin-bottom:7px;line-height:1.3">Move Abroad</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.4);line-height:1.6;margin-bottom:16px">6 months to forever. Find your perfect home base.</div>
+        <div style="font-size:13px;font-weight:700;color:${P}">Get Matched →</div>
+      </div>
+      <div onclick="st({scr:'fu',tt:'st',fA:{},fI:0})"
+        style="background:rgba(255,255,255,.04);border:1.5px solid rgba(180,155,0,.2);border-radius:18px;padding:24px 22px;cursor:pointer;transition:all .22s;position:relative;overflow:hidden"
+        onmouseenter="this.style.borderColor='rgba(212,192,0,.5)';this.style.background='rgba(245,228,32,.06)';this.style.transform='translateY(-2px)'"
+        onmouseleave="this.style.borderColor='rgba(180,155,0,.2)';this.style.background='rgba(255,255,255,.04)';this.style.transform=''">
+        <div style="position:absolute;top:-16px;right:-16px;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(245,228,32,.18),transparent 70%);pointer-events:none"></div>
+        <div style="font-size:28px;margin-bottom:14px">🌴</div>
+        <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff;margin-bottom:7px;line-height:1.3">Travel Short-Term</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.4);line-height:1.6;margin-bottom:16px">Plan the perfect vacation or weekend escape.</div>
+        <div style="font-size:13px;font-weight:700;color:${Y}">Get Matched →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Divider -->
+  <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);margin-bottom:32px"></div>
+
+  <!-- YOUR TOOLS -->
+  <div style="margin-bottom:32px">
+    <div style="font-size:10.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.28);margin-bottom:14px">Your Tools</div>
+    <div class="dg">
+      <div onclick="st({scr:'readiness',rqA:{},rqI:0})"
+        style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:18px;padding:20px 18px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:all .2s"
+        onmouseenter="this.style.borderColor='rgba(34,197,94,.3)';this.style.background='rgba(34,197,94,.05)';this.style.transform='translateY(-2px)'"
+        onmouseleave="this.style.borderColor='rgba(255,255,255,.08)';this.style.background='rgba(255,255,255,.04)';this.style.transform=''">
+        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(34,197,94,.15),rgba(16,163,74,.1));border:1px solid rgba(34,197,94,.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📊</div>
+        <div><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#fff;margin-bottom:3px">Readiness Score</div><div style="font-size:12px;color:rgba(255,255,255,.38)">${rqDone?rqL.icon+' '+rqScore+'/100 — '+rqL.lbl:'How ready are you to move?'}</div></div>
+      </div>
+      <div onclick="st({showSv:true,cmpSel:[]})"
+        style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:18px;padding:20px 18px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:all .2s"
+        onmouseenter="this.style.borderColor='rgba(229,53,160,.3)';this.style.background='rgba(229,53,160,.05)';this.style.transform='translateY(-2px)'"
+        onmouseleave="this.style.borderColor='rgba(255,255,255,.08)';this.style.background='rgba(255,255,255,.04)';this.style.transform=''">
+        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(229,53,160,.15),rgba(124,58,237,.12));border:1px solid rgba(229,53,160,.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🗂️</div>
+        <div><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#fff;margin-bottom:3px">My Destinations</div><div style="font-size:12px;color:rgba(255,255,255,.38)">${tot} saved · Compare · Notes · Share</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Divider -->
+  <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);margin-bottom:32px"></div>
+
+  <!-- Consultation -->
+  <div style="background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(229,53,160,.06));border:1.5px solid rgba(99,102,241,.2);border-radius:20px;padding:26px 24px;margin-bottom:14px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#6366F1,${P})"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#818CF8;margin-bottom:8px">Free · No commitment</div>
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#fff;margin-bottom:5px">Speak With a Travel Expert</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.45);line-height:1.6">30 min call · Your full profile reviewed · Personalised plan</div>
+      </div>
+      <button onclick="st({showCo:true,coSent:false,coTripType:S.tt||'lt'})" style="background:linear-gradient(135deg,${P},#7C3AED);color:#fff;border:none;border-radius:10px;padding:13px 24px;font-family:'Syne',sans-serif;font-size:13.5px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0;box-shadow:0 4px 14px rgba(229,53,160,.3)">Book Free Call →</button>
+    </div>
+  </div>
+
+  <!-- Community -->
+  <div style="background:rgba(255,255,255,.03);border:1.5px solid rgba(255,255,255,.07);border-radius:20px;padding:26px 24px;margin-bottom:32px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,${Y},${P})"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${Y};margin-bottom:8px">Stay Connected &amp; Updated</div>
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#fff;margin-bottom:5px">Private Community</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.45);line-height:1.6">Moving abroad tips · Remote income · Like-minded members</div>
+      </div>
+      <a href="https://stan.store/experiencereality/p/come-join-my-community-h9prwos5" target="_blank" style="background:${Y};color:#111;text-decoration:none;border-radius:10px;padding:13px 24px;font-family:'Syne',sans-serif;font-size:13.5px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">Join Now →</a>
+    </div>
+  </div>
+
+  <!-- Retake -->
+  <div style="text-align:center">
+    <button onclick="st({scr:'quiz_intro',ans:{},qi:0})" style="background:none;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:9px 22px;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:rgba(255,255,255,.3);cursor:pointer">🔄 Retake Profile Quiz</button>
+  </div>
+
+</div>
+</div>
+</div>`;
+}
+
+function rFU(){const qs=S.tt==='lt'?LTQ:STQ,q=qs[S.fI],tot=qs.length,pct=Math.round((S.fI/tot)*100);const isL=S.fI===tot-1,isC=q.t==='companion',isM=q.t==='m';const sel=S.fA[S.fI]!==undefined?S.fA[S.fI]:null;const isText=q.t==='text';const hA=isText?true:isC?csOk():isM?(Array.isArray(sel)&&sel.length>0):(sel!==null);let opt='';if(isC){opt=`<div style="margin-top:12px"><div id="c-solo" class="crow ${CS.solo?'s':''}"><div class="cleft" onclick="tgC('solo')"><div class="cchk">${CS.solo?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.solo?P:'#555'}">🧳 Moving Solo — Just Me</span></div></div><div id="c-partner" class="crow ${CS.partner?'s':''}"><div class="cleft" onclick="tgC('partner')"><div class="cchk">${CS.partner?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.partner?P:'#555'}">💑 Partner / Spouse</span></div></div><div id="c-kids" class="crow ${CS.kids>0?'s':''}"><div class="cleft" onclick="tgC('kids-toggle')" style="flex:1"><div class="cchk">${CS.kids>0?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.kids>0?P:'#555'}">👶 Children</span></div><div class="counter"><button class="cbtn" onclick="event.stopPropagation();adjC('kids',-1)">−</button><span class="cval" id="cv-kids">${CS.kids}</span><button class="cbtn" onclick="event.stopPropagation();adjC('kids',1)">+</button></div></div><div id="c-pets" class="crow ${CS.pets>0?'s':''}"><div class="cleft" onclick="tgC('pets-toggle')" style="flex:1"><div class="cchk">${CS.pets>0?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.pets>0?P:'#555'}">🐾 Pets</span></div><div class="counter"><button class="cbtn" onclick="event.stopPropagation();adjC('pets',-1)">−</button><span class="cval" id="cv-pets">${CS.pets}</span><button class="cbtn" onclick="event.stopPropagation();adjC('pets',1)">+</button></div></div></div>`}else if(isM){const sa=Array.isArray(sel)?sel:[];opt=`<div style="margin-top:10px"><div class="chips">${q.o.map((o,i)=>`<div class="chip fc ${sa.includes(i)?'s':''}" onclick="tFC(${i})">${o}</div>`).join('')}</div></div>`}else if(isText){const tv=typeof sel==='string'?sel:'';opt=`<div style="margin-top:14px"><input class="inp-dk" type="text" id="txt-ans" placeholder="e.g. Portugal, Japan, Mexico... (optional)" value="${tv}" oninput="sFT(this.value)" style="font-size:15px;padding:14px 16px;width:100%;"/><div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:10px">Leave blank to get recommendations across all countries</div></div>`}else{opt=`<div class="opts-d" style="margin-top:10px">${q.o.map((o,i)=>`<div class="opt-d ${sel===i?'s':''}" onclick="sFL(${i})"><div class="qdot"><div class="qdin"></div></div>${o}</div>`).join('')}</div>`}return`<div style="min-height:100vh;background:#fff">${rNav()}<div style="padding-top:${pp()}px;padding-bottom:30px;display:flex;justify-content:center;padding-left:16px;padding-right:16px"><div class="dc" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span class="bdg bp">${S.tt==='lt'?'Moving Abroad':'Short-Term Travel'}</span><span style="font-size:11.5px;color:rgba(255,255,255,.35);font-weight:600">${S.fI+1} / ${tot}</span></div><div class="prog prog-d"><div class="prog-b" style="width:${pct}%"></div></div><p style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#fff;line-height:1.45;margin-bottom:2px">${q.q}</p><p style="font-size:12px;color:rgba(255,255,255,.4);margin-top:2px">${isM?'Select all that apply':isC?'Select all that apply':'Choose one'}</p>${opt}<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">${S.fI>0?bSm('← Back','pF()',P,W,'#C8208A'):bSm('← Home',"st({scr:'dash'})",P,W,'#C8208A')} ${!isL?`<button id="nb" onclick="nF()" style="display:inline-flex;align-items:center;padding:10px 20px;background:${hA?P:'#333'};color:${hA?W:'#777'};border:2.5px solid ${hA?'#C8208A':'#444'};border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;opacity:1">Next →</button>`:`<button id="sb" onclick="doSearch()" style="display:inline-flex;align-items:center;padding:10px 20px;background:${hA?Y:'#333'};color:${hA?DK:'#777'};border:2.5px solid ${hA?'#D4C000':'#444'};border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;opacity:1">Find My Places →</button>`}</div></div></div></div>`}
+function doSearch(){
+  if(!S.isPro){
+    if(S.freeCnt>=FREE_LIMIT){st({showPW:true});return}
+    st({scr:'loading',freeCnt:S.freeCnt+1});
+  }else{
+    if(S.proCnt>=PRO_LIMIT+(S.topupCount*TOPUP_LIMIT)){st({showTopup:true});return}
+    st({scr:'loading',proCnt:S.proCnt+1});
+  }
+
+  const isST=S.tt==='st';
+  const qs=isST?STQ:LTQ;
+
+  // Build quiz summary from answers
+  const quizLines=QS.map((q,i)=>{
+    const a=S.ans[i];
+    if(a===undefined||a===null)return null;
+    if(q.t==='s')return q.q+': '+q.o[a];
+    if(q.t==='m'&&Array.isArray(a))return q.q+': '+a.map(x=>q.o[x]).join(', ');
+    if(q.t==='db'&&Array.isArray(a))return 'Deal-breakers: '+a.map(x=>q.o[x]).join(', ');
+    if(q.t==='text')return q.q+': '+(a||'No preference');
+    return null;
+  }).filter(Boolean);
+
+  const fuLines=qs.map((q,i)=>{
+    const a=S.fA[i];
+    if(a===undefined||a===null||a==='')return null;
+    if(q.t==='text')return q.q+': '+(a||'No preference');
+    if(q.t==='s')return q.q+': '+q.o[a];
+    if(q.t==='m'&&Array.isArray(a))return q.q+': '+a.map(x=>q.o[x]).join(', ');
+    if(q.t==='companion')return null;
+    return null;
+  }).filter(Boolean);
+
+  const prompt=`You are a world-class travel and relocation expert. Based on this person's profile, recommend the 4 best ${isST?'short-term travel destinations':'cities to move to long-term'}.
+
+PROFILE:
+${quizLines.join('\n')}
+
+${fuLines.length?'FOLLOW-UP ANSWERS:\n'+fuLines.join('\n'):''}
+
+Return ONLY valid JSON — no markdown, no explanation. Format:
+{
+  "results": [
+    {
+      "city": "City Name",
+      "country": "Country Name",
+      "flag": "🇵🇹",
+      "score": 95,
+      "scoreLabel": "Exceptional Match",
+      "highlights": ["reason 1", "reason 2", "reason 3", "reason 4"]
+    }
+  ]
+}
+
+Rules:
+- Exactly 4 results, ordered best to worst match
+- Score between 60-98 (no two scores the same)
+- scoreLabel must be one of: "Exceptional Match", "Excellent Match", "Great Match", "Good Match"
+- highlights: 4 short specific reasons this city fits THIS person's answers (reference their actual profile)
+- Use the correct flag emoji for each country
+- Consider their deal-breakers as hard filters — never recommend a city that violates them
+- ${isST?'Focus on trip experience, activities, and short stays':'Focus on visa access, cost of living, expat community, and lifestyle fit'}`;
+
+  // 25 second timeout
+  const controller=new AbortController();
+  const timeoutId=setTimeout(()=>controller.abort(),25000);
+  fetch('/api/proxy',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1500,
+      messages:[{role:'user',content:prompt}]
+    })
+  })
+  .then(r=>r.json())
+  .then(data=>{
+    clearTimeout(timeoutId);
+    const text=data.content?.[0]?.text||'';
+    const clean=text.replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(clean);
+    st({scr:'results',res:parsed.results});
+  })
+  .catch(err=>{
+    console.error('doSearch error:',err.message);
+    const isST=S.tt==='st';
+    const dl=[{city:"Lisbon",country:"Portugal",flag:"🇵🇹",score:95,scoreLabel:"Exceptional Match",highlights:["Strong LGBTQ+ legal protections","D8 Digital Nomad Visa","Large expat community","45% cheaper than US"]},{city:"Barcelona",country:"Spain",flag:"🇪🇸",score:88,scoreLabel:"Excellent Match",highlights:["Progressive rights","Spain Digital Nomad Visa","Mediterranean climate","World-class food"]},{city:"Medellín",country:"Colombia",flag:"🇨🇴",score:81,scoreLabel:"Great Match",highlights:["Eternal spring climate","60% cheaper than US","Growing expat community","Direct US flights"]},{city:"Tbilisi",country:"Georgia",flag:"🇬🇪",score:74,scoreLabel:"Good Match",highlights:["Visa-free 365 days","70% cheaper than US","Very low crime","Fast internet"]}];
+    const ds=[{city:"Lisbon",country:"Portugal",flag:"🇵🇹",score:94,scoreLabel:"Exceptional Match",highlights:["One of Europe's safest cities","Rich culture","English widely spoken","Affordable food"]},{city:"Tokyo",country:"Japan",flag:"🇯🇵",score:90,scoreLabel:"Exceptional Match",highlights:["Safest major city","Deep culture","World-class food","Ancient meets modern"]},{city:"Bali",country:"Indonesia",flag:"🇮🇩",score:84,scoreLabel:"Great Match",highlights:["Tropical climate","Spiritual atmosphere","Very affordable","Thriving creative scene"]},{city:"Mexico City",country:"Mexico",flag:"🇲🇽",score:78,scoreLabel:"Good Match",highlights:["World-class food","Extraordinary culture","Affordable","Safe neighbourhoods"]}];
+    st({scr:'results',res:isST?ds:dl});
+  });
+}
+function rLoad(){
+  const isST=S.tt==='st';
+  const db=(S.ans[1]||[]);
+  const dbNames=['Anti-LGBTQ+','Extreme heat','Extreme cold','High humidity','High crime','No English','Strict religion','Unstable govt','No direct flights','Very expensive','Limited amenities'];
+  const dbStr=Array.isArray(db)&&db.length>0&&!db.includes(11)?db.slice(0,2).map(i=>dbNames[i]||'').filter(Boolean).join(', '):null;
+  const workAns=S.ans[11];
+  const workStr=workAns===0?'remote worker':workAns===1?'freelancer':workAns===2?'entrepreneur':workAns===3?'retiree':'traveler';
+  const paceAns=S.fA&&S.fA[3];
+  const budgetAns=isST?S.fA&&S.fA[4]:S.fA&&S.fA[5];
+  const budgetStr=budgetAns||'your budget';
+  const steps=[
+    dbStr?`Filtering out destinations with ${dbStr}…`:'Applying your deal-breaker filters…',
+    `Reading your identity & values profile…`,
+    `Matching your lifestyle as a ${workStr}…`,
+    `Scoring ${isST?'short-term trips':'relocation destinations'} across 47 cities…`,
+    `Weighing safety, cost & visa access…`,
+    `Ranking your top personalised matches…`
+  ];
+  setTimeout(()=>{let i=0;const iv=setInterval(()=>{const el=document.getElementById('ls');if(el&&i<steps.length){el.style.opacity='0';setTimeout(()=>{el.textContent=steps[i++];el.style.opacity='1'},200)}else clearInterval(iv)},900)},200);
+  return`<div class="ps"><div style="position:relative;z-index:1;text-align:center;padding:0 20px;width:100%;max-width:500px">
+    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:4px">${isST?'Finding Your Perfect Trip…':'Finding Your Perfect Home…'}</div>
+    <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:24px">Analysing your full profile across every dimension</p>
+    <div class="pt"><div class="ptr"></div><div class="pe">🛫</div></div>
+    <div id="ls" style="font-size:13px;color:${Y};min-height:20px;margin-bottom:16px;transition:opacity .2s">${steps[0]}</div>
+    <div style="display:flex;justify-content:center;gap:5px;margin-top:8px">${Array.from({length:6},(_,i)=>`<div id="ldot-${i}" style="width:6px;height:6px;border-radius:50%;background:rgba(245,228,32,.2);transition:background .3s"></div>`).join('')}</div>
+  </div></div>`;
+  setTimeout(()=>{let i=0;const dv=setInterval(()=>{document.querySelectorAll('[id^="ldot-"]').forEach((d,j)=>d.style.background=j<=i?'#F5E420':'rgba(245,228,32,.2)');if(++i>=6)clearInterval(dv)},900)},200);
+}
+function rRes(){const res=S.res||[],tl=S.tt==='lt'?'Long-Term Relocation':'Short-Term Travel',isST=S.tt==='st';const topCity=res[0]?.city||'your top match';return`<div>${rNav()}<div class="pg pg-w" style="padding-top:${pp()}px;padding-bottom:36px;justify-content:flex-start"><div style="text-align:center;margin-bottom:14px;max-width:580px;padding-top:16px"><span class="bdg bp">${tl}</span><div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;line-height:1.2;margin-bottom:4px;color:#111;margin-top:8px">Your Top Matched <span style="color:${P}">Destinations</span></div><p style="color:#999;font-size:13px">${isST?'Tap any card for your itinerary':'Tap any card for visa info, costs & pros/cons'}</p></div>
+<div class="rg" style="margin-top:12px">${res.map((r,idx)=>{const sv=S.sIds.has(`${r.city}-${r.country}`);return`<div class="rc" onclick="oD(${idx})"><div class="rc-img">${destImg(r.city,r.flag)}<div style="position:absolute;top:10px;right:10px;display:flex;gap:5px"><button onclick="event.stopPropagation();shareResult('${r.city}',${r.score},'${r.flag}','${r.country}')" style="background:rgba(0,0,0,.5);border:1.5px solid rgba(255,255,255,.3);border-radius:8px;padding:4px 8px;font-size:11px;color:#fff;cursor:pointer;backdrop-filter:blur(4px)">Share</button><button onclick="sC(event,'${r.city}','${r.country}',${idx})" style="background:${sv?P:'rgba(0,0,0,.5)'};border:1.5px solid ${sv?P:'rgba(255,255,255,.3)'};border-radius:8px;padding:4px 9px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:'Syne',sans-serif;backdrop-filter:blur(4px)">${sv?'Saved':'Save'}</button></div></div><div class="rc-body"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.35);font-weight:600">#${idx+1} Match</span><span style="color:${Y};font-weight:700;font-size:14px">${r.score}/100</span></div><div class="sb" style="margin-bottom:6px"><div class="sf" style="width:0%" id="sf-${idx}"></div></div><div style="font-size:10px;color:${P};margin-bottom:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">${r.scoreLabel}</div><ul class="rhl">${r.highlights.map(h=>`<li>${h}</li>`).join('')}</ul></div></div>`}).join('')}</div>
+<div style="width:100%;max-width:740px;margin-top:20px"><div class="cn-inner"><div style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.55"><strong style="color:#fff;font-size:15px">Not sure if ${topCity} is right for you?</strong><br><span style="font-size:13px;color:rgba(255,255,255,.6)">Book a free 30-min call — a consultant reviews your full profile.</span></div><button class="book-btn-sm" onclick="st({showCo:true,coSent:false,coTripType:S.tt||'lt'})">Book Free Call</button></div></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px">${bSm('Refine Search',"st({scr:'fu',fI:0,fA:{}})",P,W,'#C8208A')}${bSm('← Dashboard',"st({scr:'dash'})",W,P,P)}</div></div></div>`}
+const QS=[
+{l:1,ln:"Who You Are",w:3,q:"When you have a completely free day, what do you naturally do?",t:"s",o:["Being outdoors in nature","Exploring a city","Staying in and recharging","Being social","Creating something","Seeking adventure"]},
+{l:1,ln:"Who You Are",w:10,q:"Are there any deal-breakers that would rule out a destination?",t:"db",o:["Anti-LGBTQ+ laws or culture","Extreme heat (95°F/35°C+)","Extreme cold or harsh winters","Very high humidity year-round","High crime or safety concerns","No English spoken at all","Strict religious laws","Politically unstable government","No direct international flights","Very expensive (NYC/London level)","Limited Western amenities","None — I'm open to almost anywhere ✓"]},
+{l:1,ln:"Who You Are",w:4,q:"How do you recharge your energy?",t:"s",o:["Completely alone in quiet spaces","Small intimate gatherings","Around lots of people and energy","An equal mix of both"]},
+{l:1,ln:"Who You Are",w:5,q:"How comfortable are you with uncertainty and the unknown?",t:"s",o:["I thrive in it","I can handle it with structure","I need more certainty","I prefer predictability"]},
+{l:1,ln:"Who You Are",w:5,q:"Which words describe you best? (Pick up to 3)",t:"m",o:["Adventurous","Curious","Spiritual","Creative","Ambitious","Grounded","Free-spirited","Analytical","Empathetic","Spontaneous","Disciplined","Wanderer"]},
+{l:1,ln:"Who You Are",w:8,q:"What are your core values?",t:"m",o:["Freedom","Community","Spirituality","Adventure","Creativity","Security","Growth","Peace","Purpose","Connection","Independence","Tradition"]},
+{l:1,ln:"Who You Are",w:9,q:"How important is political/social alignment with where you live?",t:"s",o:["Extremely important — I need to feel safe being myself","Somewhat important","I can adapt","Not important at all"]},
+{l:1,ln:"Who You Are",w:7,q:"How do you feel immersed in a completely different culture?",t:"s",o:["I absolutely love it","I enjoy it with some familiar comforts","I prefer cultures that feel somewhat familiar","I need familiarity to feel comfortable"]},
+{l:1,ln:"Who You Are",w:6,q:"What does your happiest version of yourself look like?",t:"s",o:["Living slowly in a peaceful beautiful place","Always moving and exploring","Building something meaningful somewhere new","Deep in nature every day","Thriving in a vibrant energetic city","Finding spiritual depth and inner peace"]},
+{l:1,ln:"Who You Are",w:10,q:"What is your gender identity?",t:"s",o:["Woman","Man","Non-binary / Gender non-conforming","Transgender woman","Transgender man","Genderfluid","Prefer to self-describe","Prefer not to say"]},
+{l:1,ln:"Who You Are",w:10,q:"What is your sexual orientation?",t:"s",o:["Straight / Heterosexual","Gay or Lesbian","Bisexual","Queer","Pansexual","Asexual","Prefer to self-describe","Prefer not to say"]},
+{l:1,ln:"Who You Are",w:9,q:"What is your current work or income situation?",t:"s",o:["Remote employee — I work for a company online","Freelancer or independent contractor","Business owner / entrepreneur","Retired or financially independent","Student","Between jobs or in transition","Prefer not to say"]},
+{l:2,ln:"How You Live",w:6,q:"What is your relationship or family situation?",t:"s",o:["Single and fully independent","In a relationship, partner travels with me","In a relationship, partner stays home","Have children who would come with me","Have children who stay home","No dependents"]},
+{l:2,ln:"How You Live",w:7,q:"How connected to nature do you need to feel daily?",t:"s",o:["Deeply — nature is essential","Regularly — a few times a week","Occasionally — nice when available","I'm a city person through and through"]},
+{l:2,ln:"How You Live",w:3,q:"How important is food and culinary experience?",t:"s",o:["Central — I travel for food","Very important","Somewhat important","I eat to live, not live to eat"]},
+{l:2,ln:"How You Live",w:2,q:"How adventurous are you with food?",t:"s",o:["I'll eat anything","I love trying new things","I prefer familiar foods","I stick to what I know"]},
+{l:2,ln:"How You Live",w:10,q:"Do you have health conditions a climate would impact?",t:"s",o:["Yes — I need a dry climate","Yes — I need warm weather year-round","Yes — I need a cool or temperate climate","Yes — I have physical mobility limitations","No — I'm in good health","Prefer not to say"]},
+{l:2,ln:"How You Live",w:7,q:"What is your spiritual or religious identity?",t:"s",o:["Deeply religious and practicing","Spiritual but not religious","Curious and open to all beliefs","Secular with no spiritual practice","Prefer not to say"]},
+{l:2,ln:"How You Live",w:8,q:"How important is living somewhere that reflects your political beliefs?",t:"s",o:["Essential — I need to feel ideologically at home","Important but I can tolerate differences","Somewhat important","I separate beliefs from where I live"]},
+{l:2,ln:"How You Live",w:4,q:"What is your relationship with routine?",t:"s",o:["I love routine — it gives me peace","I like a loose structure","Routine feels like a cage","Depends on the season of life"]},
+{l:2,ln:"How You Live",w:7,q:"How sensitive are you to your sensory environment?",t:"s",o:["Very sensitive — noise and chaos drain me","Somewhat sensitive","Mostly adaptable","I love overwhelming sensory environments"]},
+{l:2,ln:"How You Live",w:6,q:"How easily do you miss home?",t:"s",o:["Very easily — I need frequent connection","Somewhat — occasional visits are enough","Not much — I embrace wherever I am","I'm actively seeking distance from home"]},
+{l:3,ln:"How You Travel",w:6,q:"How much travel experience do you have?",t:"s",o:["First time traveling internationally","Visited a handful of countries","Well-traveled — 10 to 20 countries","Seasoned — 20+ countries or lived abroad"]},
+{l:3,ln:"How You Travel",w:7,q:"How do you feel when you cannot speak the local language?",t:"s",o:["Thrilling — I love the challenge","Manageable — I figure it out","Stressful but I push through","It deeply isolates me"]},
+{l:3,ln:"How You Travel",w:9,q:"How important is personal safety to your sense of freedom?",t:"s",o:["Critical — I cannot relax if unsafe","Very important but I can handle moderate risk","Somewhat important — I assess as I go","I feel most alive in edgier environments"]},
+{l:3,ln:"How You Travel",w:5,q:"When you arrive somewhere new, what's the first thing you want to do?",t:"s",o:["Explore on foot with no plan","Find a great local restaurant","Visit the most famous landmark","Sit in a café and people-watch","Find hidden gems","Rest and settle in first"]},
+{l:3,ln:"How You Travel",w:7,q:"What kind of experience do you find most meaningful?",t:"m",o:["Deep cultural immersion","Physical challenges and adventures","Spiritual or reflective experiences","Learning something new","Connecting deeply with local people","Creative exploration","Giving back","Pure rest"]},
+{l:3,ln:"How You Travel",w:6,q:"How do you feel about being visibly different in a place?",t:"s",o:["I love it — it opens doors","I'm comfortable with it","It makes me somewhat self-conscious","It genuinely makes me uncomfortable"]},
+{l:3,ln:"How You Travel",w:6,q:"What is your ideal travel pace?",t:"s",o:["Fast-paced — see and do as much as possible","Balanced — mix of sightseeing and relaxation","Slow — one or two meaningful experiences a day","Spontaneous — no plans, go wherever the day takes me"]},
+{l:3,ln:"How You Travel",w:8,q:"If a destination could only give you one thing, what would matter most?",t:"s",o:["A deep feeling of peace and belonging","Constant excitement and new stimulation","Rich cultural and historical depth","Breathtaking natural beauty every day","A strong community of like-minded people","The freedom to be completely and fully yourself"]},
+];
+const LTQ=[{q:"Do you have any countries in mind?",t:"text",o:[]},{q:"Why are you moving abroad?",t:"s",o:["Career / Remote work","Retirement","Education","Adventure & new experiences","Cost of living / financial freedom"]},{q:"How long do you plan to stay?",t:"s",o:["6–12 months","1–2 years","2–5 years","Permanently"]},{q:"How important is a strong expat community?",t:"s",o:["Essential","Helpful but not required","Not necessary","I'd prefer to integrate with locals"]},{q:"What is your housing preference?",t:"s",o:["City apartment","Beachside or coastal home","Countryside / rural retreat","Coliving or shared community"]},{q:"What is your monthly living abroad budget?",t:"s",o:["Under $1,500/month","$1,500–$2,500/month","$2,500–$4,000/month","$4,000–$6,000/month","$6,000+/month"]},{q:"Who are you moving with?",t:"s",o:["Moving alone","With a partner","With family","With friends"]}];
+const STQ=[{q:"Do you have any countries in mind?",t:"text",o:[]},{q:"How long is your trip?",t:"s",o:["Weekend (2–4 days)","One week","Two weeks","One month+"]},{q:"What kind of trip are you planning?",t:"m",o:["Pure relaxation & beaches","Adventure & outdoor sports","Culture, history & arts","Food & culinary experiences","Nightlife & city life","Wellness & spiritual retreat","Family-friendly exploration","Romance & couples getaway"]},{q:"Who are you traveling with?",t:"s",o:["Solo","Partner / couple","Family with kids","Group of friends"]},{q:"Travel budget per person?",t:"s",o:["Under $1,000","$1,000–$3,000","$3,000–$6,000","$6,000+"]}];
+const IT={Lisbon:{days:[{day:1,title:"Arrival & First Taste",m:"Wander through Alfama — cobblestone streets and hidden viewpoints.",a:"Time Out Market — 35 restaurants under one roof.",e:"Bairro Alto for dinner then rooftop bars.",tip:"Don't miss a pastel de nata warm from the oven."},{day:2,title:"Culture & History",m:"Belém Tower and Jerónimos Monastery.",a:"Tram 28 through the historic hills.",e:"Fado music evening in Alfama.",tip:"Book Fado dinner in advance."},{day:3,title:"Coast & Day Trip",m:"Train to Sintra — fairytale palaces.",a:"Cascais — Atlantic coastal town with seafood.",e:"Final dinner in Príncipe Real.",tip:"Get the Sintra-Cascais combo day ticket."}],eat:["Pastéis de Nata","Bacalhau à Brás","Bifanas","Ginjinha"],time:"September–October.",pack:["Comfortable walking shoes","Light layers","Carris app for trams"]},Tokyo:{days:[{day:1,title:"Shibuya & Harajuku",m:"Meiji Shrine — arrive before 9am.",a:"Takeshita Street then Omotesandō.",e:"Shibuya Crossing at sunset.",tip:"Get a Suica card at any airport kiosk."},{day:2,title:"Old Tokyo",m:"Senso-ji Temple — go before 8am.",a:"Ueno Park and Tokyo National Museum.",e:"Akihabara after dark.",tip:"Standing sushi near Tsukiji."},{day:3,title:"Modern Tokyo",m:"teamLab Borderless — book in advance.",a:"Shinjuku and Golden Gai alleyways.",e:"Tokyo Skytree at sunset.",tip:"Seven-Eleven in Japan is genuinely excellent."}],eat:["Ramen at Ichiran","Fresh sushi at Tsukiji","Yakitori under Yurakucho","Mochi ice cream"],time:"March–April or Oct–Nov.",pack:["Comfortable walking shoes","Portable wifi","Cash — many places cash only"]},Bali:{days:[{day:1,title:"Arrival in Ubud",m:"Sacred Monkey Forest Sanctuary.",a:"Ubud Art Market then Royal Palace.",e:"Kecak fire dance at Pura Uluwatu.",tip:"Hire a local driver through your accommodation."},{day:2,title:"Temples & Rice Terraces",m:"Tegallalang Rice Terraces before sunrise.",a:"Tirta Empul Temple.",e:"Cooking class in Ubud.",tip:"Always carry a sarong."},{day:3,title:"Seminyak & Sunset",m:"Canggu Surf School beginner lesson.",a:"Seminyak boutique shops.",e:"Sunset from Tanah Lot Temple.",tip:"Drink only bottled water."}],eat:["Nasi goreng","Babi guling at Ibu Oka","Satay lilit","Jamu herbal tonic"],time:"April–October.",pack:["Light breathable clothing","Insect repellent","Reef-safe sunscreen"]},"Mexico City":{days:[{day:1,title:"Historic Centre",m:"Zócalo, Cathedral and Templo Mayor.",a:"Palacio de Bellas Artes.",e:"Dinner in Roma Norte.",tip:"Take the Metro."},{day:2,title:"Frida & Culture",m:"Casa Azul — book online.",a:"Mercado de Jamaica.",e:"Mezcal tasting in Condesa.",tip:"Uber is safe in CDMX."},{day:3,title:"Pyramids & Canals",m:"Teotihuacán — climb the Pyramid of the Sun.",a:"Xochimilco gondolas.",e:"World-class CDMX restaurant.",tip:"Altitude 2,240m — drink water."}],eat:["Tacos al pastor","Pozole rojo","Chilaquiles verdes","Churros with dark chocolate"],time:"October–April.",pack:["Light layers","Sunscreen","Comfortable walking shoes"]}};
+const PC={Portugal:{p:["Top 10 Global Peace Index","LGBTQ+ legal protections since 2010","English widely spoken","300+ sunny days","45–55% cheaper than US","D7 and D8 visas accessible"],c:["Rents nearly doubled in Lisbon/Porto","Bureaucracy can be slow","5 years + language test for citizenship","Public healthcare varies"]},Spain:{p:["Rich cultural life","Progressive LGBTQ+ rights","Spain Digital Nomad Visa 2023","Beach, mountains and cities","Strong expat infrastructure"],c:["Rising cost of living","Complex bureaucracy","High unemployment","Regional political tensions"]},Colombia:{p:["Eternal spring — 72°F year-round","60–70% cheaper than US","Digital Nomad Visa M simple","LGBTQ+ rights legally recognized","World-class coffee culture"],c:["Safety varies by neighbourhood","US State Dept advisories","Spanish essential","Healthcare varies"]},Georgia:{p:["Visa-free 365 days for US, EU, UK","Remotely from Georgia program — free","70–80% cheaper than US","Very safe — low crime","Fast internet in Tbilisi"],c:["LGBTQ+ social acceptance lower","Georgian language very difficult","Winters can be cold","Limited direct flights"]}};
+function gPC(c){return PC[c]||{p:["Strong expat community","Lower cost of living","Access to culture and nature"],c:["Language barrier","Healthcare quality varies","Bureaucracy takes time"]}}
+const CMP={Portugal:{cost:"$1,800–$2,800/mo",safety:"8/10",english:"Very High",climate:"Mediterranean",visa:"D7/D8 Digital Nomad",lang:"Portuguese"},Spain:{cost:"$1,600–$2,500/mo",safety:"7/10",english:"High",climate:"Mediterranean",visa:"Digital Nomad Visa",lang:"Spanish"},Colombia:{cost:"$1,000–$1,800/mo",safety:"6/10",english:"Low",climate:"Eternal Spring",visa:"Nomad Visa M",lang:"Spanish"},Georgia:{cost:"$700–$1,300/mo",safety:"8/10",english:"Medium",climate:"Continental",visa:"Visa-Free 365 days",lang:"Georgian"},Japan:{cost:"$1,800–$2,800/mo",safety:"9/10",english:"Medium",climate:"Four Seasons",visa:"Tourist/Work Visa",lang:"Japanese"},Indonesia:{cost:"$800–$1,500/mo",safety:"6/10",english:"Medium",climate:"Tropical",visa:"Social Visa",lang:"Bahasa Indonesia"},Mexico:{cost:"$1,200–$2,000/mo",safety:"6/10",english:"Medium",climate:"Varied",visa:"Temporary Resident",lang:"Spanish"}};
+function getCmpD(c){return CMP[c]||{cost:"~$1,500/mo",safety:"7/10",english:"Varies",climate:"Varies",visa:"Long-Stay Visa",lang:"Local language"}}
+const RQ=[
+  {q:"When are you hoping to move abroad?",o:["Within 3 months — I'm ready to go","3 to 6 months — planning actively","6 to 12 months — building toward it","1 to 2 years — long-term goal","Just exploring ideas for now"],sc:[20,17,13,8,3]},
+  {q:"How much in savings do you have available?",o:["Less than $5,000","$5,000–$15,000","$15,000–$30,000","$30,000 or more","I have passive income or pension"],sc:[3,9,16,20,20]},
+  {q:"Is your passport valid for at least 12 more months?",o:["Yes — fully valid for 2+ years","Valid but expires within 12 months","I need to renew it soon","I don't have a passport yet"],sc:[20,12,6,0]},
+  {q:"How is your income set up for living abroad?",o:["Fully remote job — I work online","Freelance or consulting","Pension or investment income","Retired with enough savings","I still need to figure out remote income"],sc:[20,18,20,20,4]},
+  {q:"How much research have you done on your destination?",o:["Thorough — I know visa, housing, cost of living","Decent — I've researched the basics","Some — a little reading","Very little — just starting","None yet"],sc:[20,15,9,4,1]},
+  {q:"What's holding you back most right now?",o:["Not much — I'm ready","Money and financial stability","Finding remote income or work","Figuring out the visa process","Leaving family and friends","Not knowing where to start"],sc:[0,0,0,0,0,0]},
+];
+const DC={Lisbon:{grad:'linear-gradient(135deg,#2C5F8A,#E8A87C)'},Barcelona:{grad:'linear-gradient(135deg,#C8102E,#FCDD09)'},Medellín:{grad:'linear-gradient(135deg,#003087,#FCD116)'},Tbilisi:{grad:'linear-gradient(135deg,#DA291C,#E8D5C0)'},Tokyo:{grad:'linear-gradient(135deg,#BC002D,#E8E8E8)'},Bali:{grad:'linear-gradient(135deg,#E76F51,#2A9D8F)'},'Mexico City':{grad:'linear-gradient(135deg,#006847,#CE1126)'}};
+const BEST={
+  Lisbon:["Belém Tower & Jerónimos Monastery — UNESCO World Heritage sites","Tram 28 through Alfama — cobblestone streets and hidden viewpoints","Traditional Fado dinner in Mouraria","Sunset from Miradouro da Graça with a pastel de nata","Day trip to Sintra — fairytale palaces in the mountains","Time Out Market — Portugal's best food under one roof","Surfing at Cascais or Ericeira beach"],
+  'Lisbon_st':["Belém Tower at sunrise before the crowds","Tram 28 from Martim Moniz to Estrela","Fado dinner in Alfama — book ahead","Time Out Market for lunch","Sintra day trip — Pena Palace","LX Factory Sunday market","Bar hopping in Bairro Alto at midnight"],
+  Barcelona:["Sagrada Família — Gaudí's masterpiece (book weeks ahead)","Park Güell terraces with city panoramas","La Boqueria Market breakfast","El Born neighbourhood gothic lanes and cocktails","Barceloneta Beach at golden hour","Montjuïc Castle and gardens","Gracia neighbourhood plazas at night"],
+  'Barcelona_st':["Sagrada Família first thing in the morning","Park Güell before 9am — no crowds","La Boqueria for breakfast then El Born for lunch","Barceloneta Beach afternoon","Tickets Bar by Albert Adrià — book months ahead","Montjuïc by cable car for sunset views","Nightlife in Eixample until 5am"],
+  'Medellín':["El Poblado — safe, beautiful, expat-friendly neighbourhood","Guatapé and El Peñol — giant rock 2 hrs from city","Botero Plaza and Museum of Antioquia","Cable car to Santo Domingo — hillside views","Laureles neighbourhood — coffee, locals, no tourists","Flower Festival in August — the world's best parade","Colombian cooking class — bandeja paisa and arepas"],
+  'Medellín_st':["Guatapé day trip — swim in the reservoir","Botero Plaza and the free museums","Coffee tour in the hills above Medellín","Laureles for dinner — try Mondongo's","Parque Lleras at night in El Poblado","Metrocable rides across the city","Street art tour in the escalator neighbourhood"],
+  Tbilisi:["Old Town — winding lanes, balconied houses and sulphur baths","Narikala Fortress and the panoramic cable car","Mtatsminda Park by night — city lights for miles","Georgian wine tasting — 8,000 years of winemaking tradition","Rustaveli Avenue and the National Museum","Day trip to Mtskheta — ancient capital","Fabrika — repurposed factory with bars and street food"],
+  'Tbilisi_st':["Tbilisi Old Town self-guided walk","Narikala Fortress at sunset","Sulphur bath soak in Abanotubani","Georgian feast — khinkali, khachapuri and churchkhela","Mtatsminda Park by cable car","Fabrika bar scene at night","Day trip to Mtskheta ancient churches"],
+  Tokyo:["Senso-ji Temple in Asakusa — before 8am for empty lanes","Shibuya Crossing at rush hour — 3,000 people crossing at once","teamLab Borderless digital art museum — book ahead","Golden Gai in Shinjuku — 200 tiny bars in six alleyways","Tsukiji Outer Market for breakfast sushi","Yanaka — old Tokyo before the earthquakes","Tokyo Skytree at sunset — views to Mount Fuji on clear days"],
+  'Tokyo_st':["Senso-ji Temple at dawn","Shibuya Crossing at rush hour","teamLab Borderless — book weeks ahead","Tsukiji Outer Market for 8am breakfast sushi","Harajuku and Takeshita Street","Golden Gai for late-night drinks","Tokyo DisneySea (the best Disney park on earth)"],
+  Bali:["Tegallalang Rice Terraces at sunrise — before tour buses","Uluwatu Temple clifftop Kecak fire dance at sunset","Sacred Monkey Forest in Ubud","Tirta Empul sacred spring purification ceremony","Warung Babi Guling Ibu Oka — best suckling pig on the island","Beginner surf at Echo Beach, Canggu","Nusa Penida — Kelingking Beach and Crystal Bay"],
+  'Bali_st':["Tegallalang Rice Terraces at 6am","Uluwatu Temple Kecak fire dance — arrive 30 min early","Tirta Empul purification ceremony","Ubud cooking class — make your own satay lilit","Nusa Penida boat trip","Sunset at Tanah Lot temple","Final night at a beach club in Seminyak"],
+  'Mexico City':["Frida Kahlo Museum — book online weeks ahead","Teotihuacán pyramids at sunrise — climb the Pyramid of the Sun","Mercado de Jamaica — the flower market","Xochimilco gondolas through the floating gardens","Roma Norte brunch — the hippest neighbourhood in Latin America","Lucha Libre wrestling — unmissable Mexican spectacle","Pujol or Quintonil — two of the world's greatest restaurants"],
+  'Mexico City_st':["Frida Kahlo Museum morning","Teotihuacán pyramids day trip","Mercado de Coyoacán for lunch tacos","Roma Norte neighbourhood walk and coffee","Lucha Libre evening show","Mezcal tasting in Condesa","Late dinner in Polanco — Mexico City eats after 10pm"]
+};
+function getBest(city,isST){const stKey=city+'_st';return(isST&&BEST[stKey])||BEST[city]||['Explore the historic city centre','Sample the local street food scene','Visit the main cultural museums and galleries']}
+function openSaved(id,e){
+  if(e)e.stopPropagation();
+  const s=S.saved.find(x=>x.id===id);if(!s)return;
+  const isST=s.tt==='st';
+  const itin=isST?IT[s.city]:null;
+  const pc=gPC(s.country);
+  const det={why:[`${s.city}'s environment aligns with your profile answers around safety and identity`,`Your work situation gives access to ${s.country}'s preferred visa pathways`,`Your personality and travel pace are a strong fit for ${s.city}`],cost:{m:isST?"$80–$200/day":"$1,000–$2,800/mo",rent:isST?"Included":"$400–$1,400/mo",food:isST?"$20–$60/day":"$200–$500/mo",tr:isST?"$5–$20/day":"$30–$80/mo",ut:isST?"N/A":"$40–$100/mo",cmp:"40–65% cheaper than US"},sft:{sc:s.score>=90?8:s.score>=80?7:6,lb:s.score>=90?"Very Safe":s.score>=80?"Generally Safe":"Research Recommended",nt:`${s.country} is considered a good destination for international travelers.`},best:itin?[`Day 1: ${itin.days[0].m}`,`Day 2: ${itin.days[1].m}`,`Must eat: ${itin.eat[0]}`]:[`Historic neighbourhoods of ${s.city}`,`World-renowned food scene`,`Strong expat community`],itin,pc,visa:[{name:`${s.country} Long-Stay Visa`,dur:"1–2 years renewable",cost:"$50–$150 USD",proc:"4–10 weeks",req:["Valid passport with 6+ months","Proof of income or remote employment","Criminal background check","Health insurance","Proof of accommodation"]}],steps:[`Research the specific visa for ${s.country}`,`Gather and apostille your documents`,`Arrange health insurance valid in ${s.country}`,`Book your consulate appointment early`,`Join expat groups for ${s.city}`,`Consider a 2-week scouting trip first`]};
+  S.tt=s.tt;
+  st({selR:{city:s.city,country:s.country,flag:s.flag,score:s.score,scoreLabel:s.scoreLabel||'Match',highlights:s.highlights||[]},det,dTab:isST?'overview':'overview',showSv:false});
+}
+function sC(e,city,country,idx){
+  e.stopPropagation();
+  const k=`${city}-${country}`;
+  const ns=new Set(S.sIds);
+  if(ns.has(k)){ns.delete(k);S.saved=S.saved.filter(x=>x.id!==k)}
+  else{ns.add(k);const r=S.res[idx];S.saved=[...S.saved,{id:k,tt:S.tt,city,country,flag:r.flag,score:r.score,scoreLabel:r.scoreLabel,highlights:r.highlights,date:new Date().toLocaleDateString()}]}
+  S.sIds=ns;
+  // Update just the save button without re-rendering the whole page
+  const btn=e.target.closest('button');
+  if(btn){
+    const saved=ns.has(k);
+    btn.style.background=saved?'#E535A0':'rgba(0,0,0,.5)';
+    btn.style.borderColor=saved?'#E535A0':'rgba(255,255,255,.3)';
+    btn.textContent=saved?'✔ Saved':'Save';
+  }
+  // Update nav pill
+  const pill=document.querySelector('.ppl,.spl');
+  if(pill)pill.outerHTML=navPill();
+}
+function oD(idx){const r=S.res[idx],isST=S.tt==='st';const itin=isST?IT[r.city]:null;const pc=gPC(r.country);const det={why:[`${r.city}'s environment aligns with your critical answers around safety and identity`,`Your work situation gives you access to ${r.country}'s preferred visa pathways`,`Your personality profile and travel pace are a strong fit for ${r.city}`],cost:{m:isST?"$80–$200/day":r.country==='Portugal'?"$1,800–$2,800":"$1,000–$2,200",rent:isST?"Included":r.country==='Portugal'?"$800–$1,400/mo":"$400–$900/mo",food:isST?"$20–$60/day":"$200–$500/mo",tr:isST?"$5–$20/day":"$30–$80/mo",ut:isST?"N/A":"$40–$100/mo",cmp:r.country==='Portugal'?'45–55% cheaper than US':'40–65% cheaper than US',areas:(CITYDB[r.country]?.areas?.[r.city]||['City centre — walkable and lively','Expat neighbourhoods — best services','Suburbs — quieter and more affordable'])},sft:{sc:r.score>=90?8:r.score>=80?7:6,lb:r.score>=90?"Very Safe":r.score>=80?"Generally Safe":"Research Recommended",nt:`${r.country} is considered a good destination for international travelers.`},best:getBest(r.city,isST),itin,pc,visa:(CITYDB[r.country]?.visas||CITYDB[r.country+' (Country)']?.visas||[{name:r.country+' Long-Stay Visa',dur:'1–2 years renewable',cost:'$50–$150 USD',proc:'4–10 weeks',req:['Valid passport (6+ months)','Proof of income or savings','Criminal background check','Health insurance','Accommodation proof']},{name:r.country+' Retirement/Passive Income Visa',dur:'1–2 years renewable',cost:'$50–$200 USD',proc:'4–10 weeks',req:['Proof of passive income $1,000+/month','Bank statements','Health insurance','Clean criminal record']},{name:'Tourist Visa Extension',dur:'30–90 days',cost:'$20–$50 USD',proc:'1–2 weeks in-country',req:['Valid tourist visa','Proof of funds','Application at immigration office']}]),steps:[`Research the specific visa for ${r.country} at your consulate`,`Gather and apostille your documents — allow 2–3 months`,`Arrange health insurance valid in ${r.country}`,`Book your consulate appointment early`,`Join expat Facebook groups for ${r.city} for on-the-ground advice`,`Take a 2-week scouting trip before fully committing`]};st({selR:r,det,dTab:'overview',tt:S.tt})}
+function rDet(){const r=S.selR,d=S.det,isST=S.tt==='st';const tabs=isST?['overview','itinerary']:['overview','proscons','costs','visa','steps'];const tbLb=isST?['Overview','📅 Itinerary']:['Overview','Pros & Cons','Cost of Living','Visa Options','Getting Started'];return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({selR:null,det:null,showSv:S.fromSv||false,fromSv:false})"><div class="md"><div style="position:relative;height:160px;overflow:hidden">${destImg(r.city,r.flag)}<button onclick="st({selR:null,det:null,showSv:S.fromSv||false,fromSv:false})" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.5);border:1.5px solid rgba(255,255,255,.3);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px;color:#fff">✕</button><div style="position:absolute;bottom:0;left:0;right:0;padding:12px 18px;background:linear-gradient(to top,rgba(0,0,0,.8),transparent)"><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.8)">${r.city}, ${r.country} ${r.flag}</div><div style="font-size:12px;color:#F5E420;font-weight:700;margin-top:2px">${r.scoreLabel} · ${r.score}/100</div></div></div><div style="padding:0"><div><div class="tabs">${tabs.map((t,i)=>`<div class="tab ${S.dTab===t?'on':''}" onclick="st({dTab:'${t}'})">${tbLb[i]}</div>`).join('')}</div>${rDT(d,r,isST)}</div></div></div>`}
+function rDT(d,r,isST){if(!d)return'';
+if(S.dTab==='itinerary'){const it=d.itin;if(!it)return`<div style="text-align:center;padding:30px;color:#999">Itinerary available when deployed with live AI.</div>`;return`<div>${it.time?`<div style="background:#F0FDF4;border:1px solid rgba(34,197,94,.2);border-radius:9px;padding:10px 14px;font-size:13px;color:#15803D;margin-bottom:16px"><strong>Best Time to Visit:</strong> ${it.time}</div>`:''}<div class="dsh"><h4>3-Day Itinerary for ${r.city}</h4></div>${it.days.map(day=>`<div class="iday"><div style="font-family:'Syne',sans-serif;font-size:13.5px;font-weight:700;color:#111;margin-bottom:10px">Day ${day.day} — ${day.title}</div><div class="slt">Morning</div><div class="slc">${day.m}</div><div class="slt">Afternoon</div><div class="slc">${day.a}</div><div class="slt">Evening</div><div class="slc">${day.e}</div>${day.tip?`<div class="tipb">Tip: ${day.tip}</div>`:''}</div>`).join('')}<div class="dsh" style="margin-top:4px"><h4>Must Eat in ${r.city}</h4>${it.eat.map(m=>`<div class="drow"><span style="color:#aaa">◆</span><span style="font-size:13px;color:#555">${m}</span></div>`).join('')}</div><div class="ibb"><div class="ibb-t"><strong style="color:#fff">Want the full plan?</strong> Book a free call — we'll handle your itinerary &amp; accommodation.</div><button class="ibb-b" onclick="st({showCo:true,coSent:false,coTripType:'st'})">Book Free Call</button></div></div>`}
+if(S.dTab==='overview')return`<div class="dsh"><h4>Why ${r.city} Fits You</h4>${(d.why||[]).map(p=>`<div style="background:#FFFBD6;border:1px solid rgba(245,228,32,.4);border-left:3px solid #D4C000;border-radius:9px;padding:10px 13px;font-size:13px;color:#5A4800;margin-bottom:8px;line-height:1.6">${p}</div>`).join('')}</div><div class="dsh"><h4>Best Things About ${r.city}</h4>${(d.best||[]).map(b=>`<div class="drow"><span style="color:#aaa">◆</span><span style="font-size:13px;color:#555">${b}</span></div>`).join('')}</div>${d.sft?`<div class="dsh"><h4>Safety</h4><div style="display:flex;align-items:center;gap:11px;margin-bottom:7px"><span style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800">${d.sft.sc}/10</span><span class="bdg bg">${d.sft.lb}</span></div><div class="sb2"><div class="sb2f" style="width:${d.sft.sc*10}%;background:linear-gradient(90deg,#22C55E,#16A34A)"></div></div><p style="font-size:13px;color:#555;margin-top:8px;line-height:1.6">${d.sft.nt}</p></div>`:''}`;
+if(S.dTab==='proscons'&&d.pc){const{p,c}=d.pc;return`<div><div class="pcg"><div class="pcp"><div class="pch">✓ Pros</div>${p.slice(0,5).map(x=>`<div class="pci pci-p"><span>${x}</span></div>`).join('')}</div><div class="pcc"><div class="pch">✗ Cons</div>${c.slice(0,5).map(x=>`<div class="pci pci-c"><span>${x}</span></div>`).join('')}</div></div></div>`}
+if(S.dTab==='costs'&&d.cost){
+  const cityAreas=CITYDB[r.country]?.areas?.[r.city]||d.cost.areas||[];
+  return`<div class="dsh"><h4>Cost of Living — ${r.city}</h4>
+  <div class="ch-h">
+    <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#111">${d.cost.m}</div>
+    <div style="font-size:12px;color:#666;margin-top:4px">${d.cost.cmp}</div>
+  </div>
+  ${[['Accommodation',d.cost.rent],['Food & Dining',d.cost.food],['Local Transport',d.cost.tr],['Utilities',d.cost.ut]].map(([k,v])=>`<div class="drow"><span style="font-size:13px;color:#aaa">${k}</span><span style="font-size:13px;font-weight:600;color:#111">${v}</span></div>`).join('')}
+  ${cityAreas.length?`<div style="margin-top:18px"><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#111;margin-bottom:10px">Best Neighbourhoods in ${r.city}</div>${cityAreas.map(a=>{const[name,...rest]=a.split(' — ');return`<div style="background:#F8F4EF;border-radius:10px;padding:10px 14px;margin-bottom:8px;border:1px solid rgba(0,0,0,.06)"><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#111">${name}</div>${rest.length?`<div style="font-size:12px;color:#888;margin-top:3px">${rest.join(' — ')}</div>`:''}</div>`}).join('')}</div>`:''}
+  </div>`;}
+if(S.dTab==='visa'&&d.visa)return`<div class="dsh"><h4>Visa Options for ${r.country}</h4>${d.visa.map(v=>`<div class="vc"><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#111;margin-bottom:8px">${v.name}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px"><span class="vp">${v.dur}</span><span class="vp">${v.cost}</span><span class="vp vp2">${v.proc}</span></div>${v.req.map(x=>`<div class="req">${x}</div>`).join('')}</div>`).join('')}</div>`;
+if(S.dTab==='steps'&&d.steps)return`<div class="dsh"><h4>Your Step-by-Step Plan</h4>${d.steps.map((s,i)=>`<div class="sti"><div class="stn">${i+1}</div><div style="font-size:13px;color:#555;line-height:1.6;padding-top:4px">${s}</div></div>`).join('')}</div>`;
+return'';}
+function rSv(){
+const lS=S.saved.filter(x=>x.tt==='lt'),sS=S.saved.filter(x=>x.tt==='st'),tot=S.saved.length;
+const cmpLT=S.cmpSel.filter(x=>x.tt==='lt'),cmpST=S.cmpSel.filter(x=>x.tt==='st');
+const rqDone=Object.keys(S.rqA).length>=6;
+const rqScore=rqDone?calcRQ():null;
+const rqL=rqDone?rqLabel(rqScore):null;
+const hasLT=lS.length>0;
+function sc(s,tt){
+  const isSel=S.cmpSel.find(x=>x.id===s.id);
+  const hasNotes=S.notes[s.id]&&(S.notes[s.id].text||S.notes[s.id].todos&&S.notes[s.id].todos.some(t=>t.done));
+  const sd=S.shareData[s.id]||{people:[]};
+  const isShared=sd.people.length>0;
+  const noteBg=hasNotes?'rgba(245,228,32,.2)':'rgba(255,255,255,.08)';
+  const noteBd=hasNotes?'rgba(245,228,32,.4)':'rgba(255,255,255,.15)';
+  const noteCol=hasNotes?Y:'rgba(255,255,255,.6)';
+  const shrBg=isShared?'rgba(99,102,241,.2)':'rgba(255,255,255,.08)';
+  const shrBd=isShared?'rgba(99,102,241,.4)':'rgba(255,255,255,.15)';
+  const shrCol=isShared?'#818CF8':'rgba(255,255,255,.6)';
+  const cmpBd=isSel?P:'rgba(255,255,255,.2)';
+  const cmpBg=isSel?P:'transparent';
+  const cmpTick=isSel?'✓':'';
+  const sharedBadge=isShared?' · <span style="color:#818CF8">Shared</span>':'';
+  let h='<div class="si">';
+  h+='<div onclick="openSaved(\''+s.id+'\',event)" style="font-size:26px;cursor:pointer">'+s.flag+'</div>';
+  h+='<div style="flex:1;cursor:pointer;min-width:0" onclick="openSaved(\''+s.id+'\',event)">';
+  h+='<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:14px;color:#fff;text-decoration:underline;text-underline-offset:2px;text-decoration-color:rgba(255,255,255,.25)">'+s.city+', '+s.country+'</div>';
+  h+='<div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px">'+s.score+'/100 · '+s.date+sharedBadge+'</div>';
+  h+='</div>';
+  h+='<div style="display:flex;align-items:center;gap:5px">';
+  h+='<button onclick="st({showNotes:true,notesId:\''+s.id+'\'})" style="background:'+noteBg+';border:1px solid '+noteBd+';border-radius:7px;padding:4px 9px;cursor:pointer;color:'+noteCol+';font-size:11.5px;font-weight:700">📝 Notes</button>';
+  h+='<button onclick="st({showShare:true,shareId:\''+s.id+'\',shareEmail:\'\'})" style="background:'+shrBg+';border:1px solid '+shrBd+';border-radius:7px;padding:4px 9px;cursor:pointer;color:'+shrCol+';font-size:11.5px;font-weight:700">🔗 Share</button>';
+  h+='<div style="width:22px;height:22px;border-radius:6px;border:2px solid '+cmpBd+';background:'+cmpBg+';display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;cursor:pointer" onclick="toggleCmp(\''+s.id+'\',\''+tt+'\')">'+cmpTick+'</div>';
+  h+='</div></div>';
+  return h;
+}
+let ltHtml='';
+if(lS.length>0){
+  const ltLabel=lS.length>=2?'<span style="font-size:11px;color:rgba(255,255,255,.35);margin-left:auto">Tick 2 to compare</span>':'';
+  ltHtml+='<div class="ssh"><span style="background:rgba(229,53,160,.15);color:'+P+';border:1px solid rgba(229,53,160,.3);padding:3px 10px;border-radius:20px;font-size:10px">🏡 Long-Term Moving Abroad</span>'+ltLabel+'</div>';
+  ltHtml+=lS.map(s=>sc(s,'lt')).join('');
+  if(cmpLT.length===2){
+    const cities=S.cmpSel.filter(x=>x.tt==='lt').map(x=>x.city).join(' vs ');
+    ltHtml+='<button onclick="st({showSv:false,showCmp:true,cmpType:\'lt\'})" style="display:block;width:100%;padding:11px;background:linear-gradient(135deg,'+P+',#A01470);color:#fff;border:none;border-radius:10px;font-family:\'Syne\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px">Compare '+cities+' \u2192</button>';
+  }
+  if(hasLT){
+    const rqTxt=rqDone?'Your score: '+rqL.icon+' '+rqScore+'/100 \u2014 '+rqL.lbl:'Want to know if you\'re ready? Take the 6-question assessment.';
+    const rqBtn=rqDone?'Retake \u2192':'Start \u2192';
+    ltHtml+='<div style="background:linear-gradient(135deg,#0a1a0a,#0f0f1a);border:1px solid rgba(34,197,94,.25);border-radius:12px;padding:14px 16px;margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><div style="font-size:12px;font-weight:700;color:#22C55E;margin-bottom:3px">📊 How Ready Are You to Move Abroad?</div><div style="font-size:11.5px;color:rgba(255,255,255,.5)">'+rqTxt+'</div></div><button onclick="st({scr:\'readiness\',rqA:{},rqI:0,showSv:false})" style="background:rgba(34,197,94,.2);border:1px solid rgba(34,197,94,.35);border-radius:8px;padding:7px 13px;font-family:\'Syne\',sans-serif;font-size:11.5px;font-weight:700;color:#22C55E;cursor:pointer;white-space:nowrap">'+rqBtn+'</button></div>';
+  }
+}
+let stHtml='';
+if(sS.length>0){
+  const mt=lS.length>0?'16px':'0';
+  const stLabel=sS.length>=2?'<span style="font-size:11px;color:rgba(255,255,255,.35);margin-left:auto">Tick 2 to compare</span>':'';
+  stHtml+='<div class="ssh" style="margin-top:'+mt+'"><span style="background:rgba(245,228,32,.12);color:'+Y+';border:1px solid rgba(245,228,32,.3);padding:3px 10px;border-radius:20px;font-size:10px">🌴 Short-Term Travel</span>'+stLabel+'</div>';
+  stHtml+=sS.map(s=>sc(s,'st')).join('');
+  if(cmpST.length===2){
+    const cities=S.cmpSel.filter(x=>x.tt==='st').map(x=>x.city).join(' vs ');
+    stHtml+='<button onclick="st({showSv:false,showCmp:true,cmpType:\'st\'})" style="display:block;width:100%;padding:11px;background:linear-gradient(135deg,#D4C000,'+Y+');color:#111;border:none;border-radius:10px;font-family:\'Syne\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px">Compare '+cities+' \u2192</button>';
+  }
+}
+const emptyHtml=tot===0?'<div style="text-align:center;padding:40px 16px"><div style="font-size:40px;margin-bottom:10px">🔖</div><div style="font-size:14px;color:rgba(255,255,255,.4);line-height:1.7">No saved destinations yet.<br>Search and save results to start planning.</div></div>':'';
+let h='<div class="ov" onclick="if(event.target.classList.contains(\'ov\'))st({showSv:false,cmpSel:[]})">';
+h+='<div class="md" style="max-width:540px;background:var(--D2)">';
+h+='<div style="padding:20px 22px 0">';
+h+='<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">';
+h+='<div><h2 style="font-family:\'Syne\',sans-serif;font-size:18px;color:#fff">🔖 Planning Your Next Reality</h2>';
+h+='<p style="font-size:12px;color:rgba(255,255,255,.4);margin-top:3px">Compare locations \u00b7 Take notes \u00b7 Plan and share trips with friends</p></div>';
+h+='<button onclick="st({showSv:false,cmpSel:[]})" style="background:var(--D3);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px;color:rgba(255,255,255,.5)">\u2715</button></div>';
+h+='<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">';
+h+='<div style="background:rgba(245,228,32,.1);border:1px solid rgba(245,228,32,.25);border-radius:20px;padding:5px 11px;font-size:11.5px;font-weight:700;color:'+Y+'">\u2696 Compare</div>';
+h+='<div style="background:rgba(229,53,160,.1);border:1px solid rgba(229,53,160,.25);border-radius:20px;padding:5px 11px;font-size:11.5px;font-weight:700;color:'+P+'">📋 Plan</div>';
+h+='<div style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);border-radius:20px;padding:5px 11px;font-size:11.5px;font-weight:700;color:#818CF8">\ud83d\udd17 Share with Friends</div>';
+h+='</div></div>';
+h+='<div style="padding:0 22px 24px">'+emptyHtml+ltHtml+stHtml+'</div>';
+h+='</div></div>';
+return h;
+}
+
+function rNotesLocked(){
+  return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({showNotes:false})" style="z-index:350"><div class="md" style="max-width:420px"><div style="padding:32px 28px;text-align:center"><div style="font-size:48px;margin-bottom:16px">🔒</div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#111;margin-bottom:10px">Upgrade to Unlock Notes</div><p style="font-size:14px;color:#666;line-height:1.7;margin-bottom:20px">Free plan includes notes for your first saved destination only. Upgrade for all trips.</p><button onclick="st({showPW:true,showNotes:false})" style="display:block;width:100%;padding:13px;background:#E535A0;color:#fff;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Upgrade to Pro</button><button onclick="st({showNotes:false})" style="background:none;border:none;font-size:13px;color:#aaa;cursor:pointer;margin-top:12px;font-family:'Inter',sans-serif">Close</button></div></div></div>`}
+function rNotes(){
+  const id=S.notesId;if(!id)return'';
+  const saved=S.saved.find(x=>x.id===id);if(!saved)return'';
+  // Free plan: only allow notes on the first saved trip
+  if(!S.isPro&&S.saved.length>0&&S.saved[0].id!==id){return rNotesLocked();}
+
+  const isST=saved.tt==='st';const n=getNotes(id);
+  const done=n.todos.filter(t=>t.done).length;
+  const header=isST?`Trip Notes — ${saved.city}`:`${saved.city} Journal`;
+  const sub=isST?`${saved.country} · Trip Planning & Checklist`:`${saved.country} · ${saved.score}/100 · Relocation Planning`;
+  const ph=isST?'Add itinerary ideas, hotel details, things to do...':'Add housing links, visa notes, cost estimates...';
+  const deptDate=n.departDate||'';
+  const tripStart=n.tripStart||'';
+  const tripEnd=n.tripEnd||'';
+  const rows=n.todos.map(t=>`<div class="todo-row ${t.done?'done-row':''}" data-tid="${t.id}"><div class="todo-chk" onclick="toggleTodo('${id}',${t.id})">${t.done?'✓':''}</div><input class="todo-txt" type="text" value="${t.text.replace(/"/g,'&quot;')}" onchange="updateTodoText('${id}',${t.id},this.value)" ${t.done?'style="text-decoration:line-through;color:#aaa"':''}/><div class="todo-ord"><button onclick="moveTodo('${id}',${t.id},-1)">▲</button><button onclick="moveTodo('${id}',${t.id},1)">▼</button></div><button class="todo-del" onclick="deleteTodo('${id}',${t.id})">✕</button></div>`).join('');
+  return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({showNotes:false})" style="z-index:350"><div class="md" style="max-width:500px"><div style="padding:20px 22px 0;display:flex;align-items:flex-start;justify-content:space-between"><div><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#111">${isST?'🌴 ':' 📝 '}${header}</div><div style="font-size:12.5px;color:#999;margin-top:3px">${sub}</div></div><button onclick="st({showNotes:false})" style="background:#F2EDE5;border:1.5px solid rgba(0,0,0,.1);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px;color:#666">✕</button></div>
+  <div style="padding:16px 22px 24px">
+  <div style="margin-bottom:16px">
+              </div>
+        <div style="margin-bottom:18px"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;margin-bottom:8px">${isST?'Trip Notes':'Your Notes'}</div><textarea id="note-text" style="width:100%;height:80px;padding:12px;background:#F8F4EF;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;font-family:'Inter',sans-serif;font-size:13px;color:#111;resize:vertical;outline:none;line-height:1.6" placeholder="${ph}">${n.text||''}</textarea><button onclick="saveNote('${id}')" style="display:inline-flex;align-items:center;padding:7px 16px;background:${P};color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;margin-top:8px">Save Notes</button>${n.savedBy?`<div style="font-size:11px;color:#aaa;margin-top:8px">Last saved by <strong>${n.savedBy}</strong> · ${n.savedAt}</div>`:''}</div>
+  <!-- Date Section -->
+  <div style="margin-bottom:18px">
+    ${isST?`<div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;margin-bottom:8px">Trip Dates</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><div style="font-size:10px;color:#aaa;font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Departure</div>
+      <input type="date" id="dep-date" value="${n.depDate||''}" onchange="updNoteDate('${id}','depDate',this.value)" class="inp" style="padding:9px 11px;font-size:13px;width:100%"/></div>
+      <div><div style="font-size:10px;color:#aaa;font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Return</div>
+      <input type="date" id="ret-date" value="${n.retDate||''}" onchange="updNoteDate('${id}','retDate',this.value)" class="inp" style="padding:9px 11px;font-size:13px;width:100%"/></div>
+    </div>
+    ${n.depDate&&n.retDate?`<div style="margin-top:8px;padding:8px 12px;background:#F0FDF4;border-radius:8px;font-size:12.5px;color:#16A34A;font-weight:600">✈️ ${new Date(n.depDate+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})} → ${new Date(n.retDate+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>`:''}`:`<div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;margin-bottom:8px">Planned Moving Date</div>
+    <input type="date" id="dep-date" value="${n.depDate||''}" onchange="updNoteDate('${id}','depDate',this.value)" class="inp" style="padding:10px 12px;font-size:13px;width:100%"/>
+    ${n.depDate?`<div style="margin-top:8px;padding:8px 12px;background:#FFFBD6;border-radius:8px;font-size:12.5px;color:#7A5C00;font-weight:600">🗓️ Leaving ${new Date(n.depDate+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</div>`:''}`}
+  </div>
+  <div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888">${isST?'Trip Checklist':'Planning Checklist'}</div></div><span id="todo-prog" style="font-size:11px;color:#22C55E;font-weight:700">${done}/${n.todos.length} done</span></div>
+    <div style="font-size:11px;color:#bbb;margin-bottom:8px">Click text to edit · ▲▼ reorder · ✕ remove</div>
+    ${rows}
+    <div style="display:flex;gap:8px;margin-top:10px"><input id="ntodo-inp" class="inp" type="text" placeholder="Add a task..." style="flex:1;padding:9px 12px;font-size:13px" onkeydown="if(event.key==='Enter')addTodo('${id}')"/><button onclick="addTodo('${id}')" style="padding:9px 14px;background:${Y};color:#111;border:2px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer">+ Add</button></div>
+  </div>
+  <div style="margin-top:14px;padding:10px 13px;background:${isST?'rgba(34,197,94,.06)':'rgba(245,228,32,.06)'};border:1px solid ${isST?'rgba(34,197,94,.2)':'rgba(245,228,32,.2)'};border-radius:10px;display:flex;align-items:center;gap:12px"><div style="font-size:22px">${saved.flag}</div><div><div style="font-size:12px;font-weight:700;color:${isST?'#16A34A':'#7A5C00'}">${isST?'Trip Progress':'Planning Progress'}</div><div style="background:#E5E7EB;border-radius:8px;height:5px;overflow:hidden;width:160px;margin:4px 0"><div style="height:100%;width:${Math.round((done/Math.max(1,n.todos.length))*100)}%;background:${isST?'linear-gradient(90deg,#22C55E,#16A34A)':'linear-gradient(90deg,#D4C000,#F5E420)'};transition:width .4s"></div></div><div style="font-size:11px;color:#888">${done} of ${n.todos.length} tasks completed</div></div></div>
+  </div></div></div>`}
+function rShare(){
+  const id=S.shareId;if(!id)return'';
+  const saved=S.saved.find(x=>x.id===id);if(!saved)return'';
+  const isST=saved.tt==='st';
+  const link=getShareLink(id);
+  const sd=S.shareData[id]||{people:[]};
+  const n=S.notes[id]||defaultNotes(saved.tt);
+  const done=n.todos?.filter(t=>t.done).length||0;
+  const tot2=n.todos?.length||0;
+  const pct=tot2>0?Math.round((done/tot2)*100):0;
+
+  const peopleRows=sd.people.map(p=>{
+    const perm=p.perm==='edit'?'<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(34,197,94,.12);color:#16A34A;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700">\u270f Can edit</span>':'<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(99,102,241,.12);color:#6366F1;border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700">\ud83d\udc41 View only</span>';
+    let h='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#F8F4EF;border-radius:10px;margin-bottom:6px;border:1px solid rgba(0,0,0,.07)">';
+    h+='<div style="display:flex;align-items:center;gap:10px">';
+    h+='<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#E535A0,#6366F1);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff">'+p.email[0].toUpperCase()+'</div>';
+    h+='<div><div style="font-size:13px;font-weight:600;color:#111">'+p.email+'</div><div style="font-size:11px;color:#aaa;margin-top:1px">'+perm+'</div></div>';
+    h+='</div>';
+    h+='<button onclick="removeSharePerson(\''+id+'\',\''+p.email+'\')" style="background:#FEE2E2;border:1px solid rgba(220,38,38,.2);border-radius:7px;padding:5px 10px;font-size:11.5px;font-weight:700;color:#DC2626;cursor:pointer">Remove</button>';
+    h+='</div>';
+    return h;
+  }).join('');
+
+  const accessSection=sd.people.length>0
+    ?'<div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;margin-bottom:10px">Who Has Access</div>'+peopleRows
+    :'<div style="text-align:center;padding:14px 0;font-size:13px;color:#bbb">No one invited yet</div>';
+
+  return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({showShare:false})" style="z-index:360">
+  <div class="md" style="max-width:480px">
+    <div style="padding:20px 22px 0;display:flex;align-items:flex-start;justify-content:space-between">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#111">\ud83d\udd17 Share ${saved.flag} ${saved.city}</div>
+        <div style="font-size:12.5px;color:#999;margin-top:3px">Control who can see or edit this ${isST?'trip':'destination'}</div>
+      </div>
+      <button onclick="st({showShare:false})" style="background:#F2EDE5;border:1.5px solid rgba(0,0,0,.1);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px;color:#666">\u2715</button>
+    </div>
+    <div style="padding:16px 22px 24px">
+      <div style="margin-bottom:18px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;margin-bottom:8px">Share Link</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="flex:1;padding:10px 13px;background:#F2EDE5;border-radius:10px;font-size:12.5px;color:#555;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${link}</div>
+          <button onclick="copyShareLink('${link}')" style="padding:10px 14px;background:#E535A0;color:#fff;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer">Copy</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:18px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;margin-bottom:6px">Message for Recipients</div>
+        <textarea id="share-note" style="width:100%;height:65px;padding:10px 13px;background:#F2EDE5;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;font-family:'Inter',sans-serif;font-size:13px;color:#111;resize:none;outline:none;line-height:1.6;margin-bottom:14px" placeholder="Add a note for the people you're sharing with..." oninput="updShareNote('${id}',this.value)">${sd.note||''}</textarea>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;margin-bottom:10px">Share This Trip</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">
+          <button onclick="shareViaMethod('${id}','copy')" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;background:#F2EDE5;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:#333">🔗 Copy Link</button>
+          <button onclick="shareViaMethod('${id}','native')" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;background:#F2EDE5;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:#333">📤 Share via...</button>
+          <button onclick="shareViaMethod('${id}','whatsapp')" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;background:#F2EDE5;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:#333">💬 WhatsApp</button>
+          <button onclick="shareViaMethod('${id}','email')" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;background:#F2EDE5;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:#333">✉️ Email</button>
+        </div>
+        <div style="height:1px;background:rgba(0,0,0,.07);margin-bottom:16px"></div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;margin-bottom:6px">Grant Access</div>
+        <div style="font-size:12px;color:#aaa;margin-bottom:12px;line-height:1.5">Invite someone and choose their permission level — required before adding.</div>
+        <div style="background:#F8F4EF;border:1.5px solid rgba(0,0,0,.08);border-radius:12px;padding:14px;margin-bottom:0">
+          <div style="margin-bottom:10px">
+            <div style="font-size:10.5px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">Email or Name</div>
+            <input id="sh-email" class="inp" type="text" placeholder="friend@email.com" style="width:100%;padding:10px 12px;font-size:13px"/>
+          </div>
+          <div style="margin-bottom:12px">
+            <div style="font-size:10.5px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Permission Level <span style="color:#DC2626">*required</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <label style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;background:#fff;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;cursor:pointer" id="pcard-view-${id}">
+                <div style="display:flex;align-items:center;gap:7px">
+                  <input type="radio" name="sh-perm-${id}" value="view" onchange="document.getElementById('pcard-view-${id}').style.borderColor='#6366F1';document.getElementById('pcard-view-${id}').style.background='rgba(99,102,241,.06)';document.getElementById('pcard-edit-${id}').style.borderColor='rgba(0,0,0,.1)';document.getElementById('pcard-edit-${id}').style.background='#fff'" style="accent-color:#6366F1"/>
+                  <span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#111">👁 View Only</span>
+                </div>
+                <div style="font-size:11.5px;color:#888;padding-left:20px">Can see — can't edit</div>
+              </label>
+              <label style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;background:#fff;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;cursor:pointer" id="pcard-edit-${id}">
+                <div style="display:flex;align-items:center;gap:7px">
+                  <input type="radio" name="sh-perm-${id}" value="edit" onchange="document.getElementById('pcard-edit-${id}').style.borderColor='#E535A0';document.getElementById('pcard-edit-${id}').style.background='rgba(229,53,160,.05)';document.getElementById('pcard-view-${id}').style.borderColor='rgba(0,0,0,.1)';document.getElementById('pcard-view-${id}').style.background='#fff'" style="accent-color:#E535A0"/>
+                  <span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#111">✏️ Can Edit</span>
+                </div>
+                <div style="font-size:11.5px;color:#888;padding-left:20px">Update notes & checklist</div>
+              </label>
+            </div>
+          </div>
+          <button onclick="addSharePerson('${id}')" style="display:block;width:100%;padding:11px;background:#E535A0;color:#fff;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Add Person →</button>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid rgba(0,0,0,.07);padding-top:16px">
+        ${accessSection}
+      </div>
+
+      <p style="font-size:11.5px;color:#bbb;text-align:center;line-height:1.6;margin-top:14px">Anyone with the link can view. Only invited editors can update notes &amp; checklist.</p>
+    </div>
+  </div>
+</div>`;
+}
+
+function rCmp(){const items=S.cmpSel.filter(x=>x.tt===S.cmpType);if(items.length!==2)return'';const[a,b]=items;const da=getCmpD(a.country),db=getCmpD(b.country);const pca=gPC(a.country),pcb=gPC(b.country);
+const rows=[['Match Score',`${a.score}/100`,`${b.score}/100`,true],['Monthly Cost',da.cost,db.cost,false],['Safety',da.safety,db.safety,true],['English',da.english,db.english,false],['Climate',da.climate,db.climate,false],['Visa',da.visa,db.visa,false],['Language',da.lang,db.lang,false]];
+const winner=(va,vb)=>{const na=parseFloat(va),nb=parseFloat(vb);if(!isNaN(na)&&!isNaN(nb))return na>nb?'a':na<nb?'b':'tie';return'tie'};
+return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({showCmp:false,showSv:true})"><div class="md" style="max-width:680px"><div style="padding:20px 22px 0;display:flex;align-items:center;justify-content:space-between"><div><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#111">Side-by-Side Comparison</div><div style="font-size:12.5px;color:#999;margin-top:3px">${a.city} vs ${b.city}</div></div><button onclick="st({showCmp:false,showSv:true})" style="background:#F2EDE5;border:1.5px solid rgba(0,0,0,.1);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px;color:#666">✕</button></div>
+<div style="padding:16px 22px 24px">
+<div style="display:flex;gap:12px;margin-bottom:16px"><div style="flex:1;background:var(--D3);border-radius:12px;padding:14px;text-align:center"><div style="font-size:24px;margin-bottom:6px">${a.flag}</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#fff">${a.city}</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">${a.country}</div></div><div style="width:2px;background:rgba(0,0,0,.07);flex-shrink:0"></div><div style="flex:1;background:var(--D3);border-radius:12px;padding:14px;text-align:center"><div style="font-size:24px;margin-bottom:6px">${b.flag}</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#fff">${b.city}</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">${b.country}</div></div></div>
+${rows.map(([lbl,va,vb,higher])=>{const w=winner(va,vb);return`<div style="display:flex;gap:8px;align-items:stretch;margin-bottom:8px"><div style="flex:1;padding:10px 12px;background:#F8F4EF;border-radius:10px;border:1.5px solid ${w==='a'&&higher?'rgba(34,197,94,.35)':'rgba(0,0,0,.08)'}"><div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#aaa">${lbl}</div><div style="font-size:13px;font-weight:600;color:${w==='a'&&higher?'#16A34A':'#111'}">${va}</div></div><div style="display:flex;align-items:center;justify-content:center;width:32px;flex-shrink:0"><div style="font-size:10px;font-weight:700;color:#ccc">vs</div></div><div style="flex:1;padding:10px 12px;background:#F8F4EF;border-radius:10px;border:1.5px solid ${w==='b'&&higher?'rgba(34,197,94,.35)':'rgba(0,0,0,.08)'}"><div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#aaa">${lbl}</div><div style="font-size:13px;font-weight:600;color:${w==='b'&&higher?'#16A34A':'#111'}">${vb}</div></div></div>`}).join('')}
+<div style="margin-top:16px;margin-bottom:12px"><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#111;margin-bottom:12px">Pros &amp; Cons</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+  <div><div style="font-size:10.5px;font-weight:800;color:${P};letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">${a.city}</div><div class="cmp-pp"><div class="cmp-ph">✓ Pros</div>${pca.p.slice(0,3).map(x=>`<div class="cmp-pi cmp-pi-p"><span>${x}</span></div>`).join('')}</div><div class="cmp-cc"><div class="cmp-ch">✗ Cons</div>${pca.c.slice(0,3).map(x=>`<div class="cmp-pi cmp-pi-c"><span>${x}</span></div>`).join('')}</div></div>
+  <div><div style="font-size:10.5px;font-weight:800;color:${P};letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">${b.city}</div><div class="cmp-pp"><div class="cmp-ph">✓ Pros</div>${pcb.p.slice(0,3).map(x=>`<div class="cmp-pi cmp-pi-p"><span>${x}</span></div>`).join('')}</div><div class="cmp-cc"><div class="cmp-ch">✗ Cons</div>${pcb.c.slice(0,3).map(x=>`<div class="cmp-pi cmp-pi-c"><span>${x}</span></div>`).join('')}</div></div>
+</div></div>
+<div style="background:linear-gradient(135deg,#0a1628,#111827);border:1px solid rgba(99,102,241,.3);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.5">Still deciding between <strong style="color:#fff">${a.city}</strong> and <strong style="color:#fff">${b.city}</strong>?</div><button class="book-btn-sm" onclick="st({showCmp:false,showCo:true,coSent:false,coTripType:S.cmpType})">Get Help</button></div>
+</div></div></div>`}
+function rTopup(){return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({showTopup:false})"><div class="topup-md"><div class="topup-hero"><div style="font-size:44px;margin-bottom:10px">⚡</div><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:6px">Need More Searches?</div><p style="font-size:13.5px;color:rgba(255,255,255,.6);line-height:1.6;max-width:280px;margin:0 auto">Get 3 more searches for just <strong style="color:${Y}">$5</strong>.</p></div><div style="padding:20px 22px"><div style="background:#F8F4EF;border:1.5px solid rgba(0,0,0,.08);border-radius:12px;padding:16px;margin-bottom:16px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#111">Today's Top-Up</div><div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:${P}">$5</div></div><div style="display:flex;flex-direction:column;gap:7px"><div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#555"><span style="color:#22C55E;font-weight:700">✓</span> 3 extra searches immediately</div><div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#555"><span style="color:#22C55E;font-weight:700">✓</span> One-time charge — not a subscription</div><div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#555"><span style="color:#22C55E;font-weight:700">✓</span> Expires at midnight tonight</div></div></div><button onclick="buyTopup()" style="display:block;width:100%;padding:14px 20px;background:${Y};color:#111;border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:14px">Get 3 More Searches — $5</button><div style="text-align:center;margin-top:8px"><span style="cursor:pointer;font-size:12.5px;color:#aaa;font-weight:600" onclick="st({showTopup:false})">I'll wait until tomorrow</span></div></div></div></div>`}
+function buyTopup(){const nc=S.topupCount+1;st({topupCount:nc,proCnt:0,showTopup:false});toast('⚡ 3 more searches added! You now have '+Math.max(0,PRO_LIMIT+(nc*TOPUP_LIMIT))+' searches today')}
+function rPW(){return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({showPW:false})"><div class="md" style="max-width:500px"><div style="text-align:center;padding:28px 24px 0"><div style="width:64px;height:64px;border-radius:50%;background:${Y};border:2.5px solid #111;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px;box-shadow:4px 4px 0 ${P}">✈️</div><div style="font-family:'Syne',sans-serif;font-size:21px;font-weight:800;color:#111;margin-bottom:6px">Unlock More Searches</div><p style="color:#666;font-size:13.5px;max-width:300px;margin:0 auto;line-height:1.6">Upgrade to Pro and search as many times as you want every single day.</p></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px 22px"><div class="pw-pl ${S.pwPl==='month'?'f':''}" onclick="st({pwPl:'month'})"><div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#111;margin:6px 0 2px">$25</div><div style="font-size:12px;color:#aaa">Per Month</div><ul class="pwf"><li>Multiple searches every day</li><li>Full Destination Details</li><li>Real Visa Breakdowns</li><li>Destination Journal</li><li>Save &amp; Compare Results</li></ul>${bPo('Choose Monthly','upgPro()')}</div><div class="pw-pl ${S.pwPl==='year'?'f':''}" onclick="st({pwPl:'year'})" style="position:relative"><div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:${P};color:#fff;font-size:9.5px;font-weight:700;padding:3px 11px;border-radius:8px;text-transform:uppercase;white-space:nowrap">Best Value</div><div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#111;margin:6px 0 2px">$250</div><div style="font-size:12px;color:#aaa">Per Year</div><div style="font-size:12px;color:#22C55E;font-weight:600;margin-top:4px">Save $50 vs Monthly</div><ul class="pwf"><li>Multiple searches every day</li><li>Full Destination Details</li><li>Destination Journal &amp; Compare</li><li>Share Trips with Friends</li><li>Priority Consultant Access</li></ul>${bP('Choose Annual','upgPro()')}</div></div><div style="text-align:center;padding:0 22px 20px"><p style="font-size:12px;color:#aaa">Cancel Anytime · Secure Checkout</p><div style="margin-top:9px"><span style="cursor:pointer;font-size:13px;font-weight:600;color:${P}" onclick="st({showPW:false})">Keep Free Plan</span></div></div></div></div>`}
+function upgPro(){st({isPro:true,proCnt:0,topupCount:0,showPW:false});toast('Upgraded to Pro!')}
+function rCo(){const times=['Morning (9–11am)','Midday (11am–1pm)','Afternoon (1–4pm)','Evening (4–7pm)'];const tt=S.coTripType||'lt';const body=S.coSent?`<div style="text-align:center;padding:24px 16px"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:#111;margin-bottom:8px">You're Booked!</div><p style="color:#666;font-size:13.5px;line-height:1.7;max-width:280px;margin:0 auto">A travel consultant will reach out within 24 hours.</p>${bPo('← Close',"st({showCo:false})")}</div>`:`<div><div style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(229,53,160,.05));border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:14px;margin-bottom:16px"><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#111;margin-bottom:5px">Free 30-Minute Planning Call</div><div style="font-size:13px;color:#555;line-height:1.6">Our consultants review your full profile — no pressure, no upsell.</div></div><div class="fgrp"><label>Trip Type</label><div class="tt-tog"><div class="tt-opt ${tt==='lt'?'on':''}" onclick="st({coTripType:'lt'})">Long-Term Moving Abroad</div><div class="tt-opt ${tt==='st'?'on':''}" onclick="st({coTripType:'st'})">Short-Term Travel</div></div></div><div class="fgrp"><label>Full Name</label><input class="inp" id="cn" type="text" value="${(S.user?.firstName||'')+' '+(S.user?.lastName||'')}"/></div><div class="fgrp"><label>Email</label><input class="inp" id="ce" type="email" value="${S.user?.email||''}"/></div><div class="fgrp"><label>Phone</label><input class="inp" id="cp" type="tel" value="${S.user?.phone||''}"/></div><div class="fgrp"><label>Preferred Call Time</label><div style="display:flex;flex-wrap:wrap;gap:7px;margin:8px 0">${times.map((t,i)=>`<div class="tc ${S.bkTm===i?'s':''}" onclick="st({bkTm:${i}})">${t}</div>`).join('')}</div></div><div class="fgrp"><label>Your biggest question</label><input class="inp" id="cq" type="text" placeholder="${tt==='lt'?'e.g. Is Portugal right for me?':'e.g. Best trip for a couple visiting Japan?'}"/></div>${bP('Book My Free Consultation',"st({coSent:true})")}<p style="text-align:center;font-size:12px;color:#aaa;margin-top:10px">Completely free · No commitment</p></div>`;return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({showCo:false})"><div class="md" style="max-width:500px"><div style="padding:20px 22px 0;display:flex;align-items:flex-start;justify-content:space-between"><div><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#111">Free Planning Consultation</div><div style="font-size:12.5px;color:#999;margin-top:3px">Speak with a travel expert — completely free</div></div><button onclick="st({showCo:false})" style="background:#F2EDE5;border:1.5px solid rgba(0,0,0,.1);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px;color:#666">✕</button></div><div style="padding:16px 22px 24px">${body}</div></div></div>`}
+function rAc(){const u=S.user||{},tab=S.acTab||'info';const tabs=[{id:'info',lb:'Personal Info'},{id:'password',lb:'Password'},{id:'profile',lb:'Quiz Profile'}];return`<div style="position:fixed;inset:0;z-index:350;background:rgba(0,0,0,.45)" onclick="if(event.target===event.currentTarget)st({showAc:false,acMsg:'',acPwMsg:''})"><div class="ap"><div style="padding:18px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:12px"><div style="width:48px;height:48px;border-radius:50%;background:${Y};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#111;font-family:'Syne',sans-serif;border:2px solid ${P};box-shadow:3px 3px 0 ${P}">${gi((u.firstName||'U')+' '+(u.lastName||''))}</div><div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff">${u.firstName||''} ${u.lastName||''}</div><div style="font-size:11.5px;color:rgba(255,255,255,.3)">${S.isPro?`Pro Member (${searchesLeft()} left today)`:'Free Plan'}</div></div></div><button onclick="st({showAc:false,acMsg:'',acPwMsg:''})" style="background:var(--D3);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px;color:rgba(255,255,255,.5)">✕</button></div>
+<div style="display:flex;border-bottom:1px solid rgba(255,255,255,.08)">${tabs.map(t=>`<div onclick="st({acTab:'${t.id}',acMsg:'',acPwMsg:''})" style="flex:1;padding:11px 6px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;${tab===t.id?`color:${Y};border-bottom:2px solid ${Y};`:'color:rgba(255,255,255,.35);border-bottom:2px solid transparent;'}">${t.lb}</div>`).join('')}</div>
+${tab==='info'?`<div class="asec"><h4>Personal Info</h4>${S.acMsg?`<div style="padding:8px 12px;border-radius:8px;font-size:12.5px;margin-bottom:12px;${S.acMsg.startsWith('✓')?'background:rgba(34,197,94,.12);color:#86EFAC;':'background:rgba(239,68,68,.15);color:#FCA5A5;'}">${S.acMsg}</div>`:''}<div class="fgdk" style="margin-bottom:9px"><label>First Name</label><input class="inp-dk" id="afn" type="text" value="${u.firstName||''}"/></div><div class="fgdk" style="margin-bottom:9px"><label>Last Name</label><input class="inp-dk" id="aln" type="text" value="${u.lastName||''}"/></div><div class="fgdk" style="margin-bottom:9px"><label>Email</label><input class="inp-dk" id="ae" type="email" value="${u.email||''}"/></div><div class="fgdk" style="margin-bottom:9px"><label>Phone</label><input class="inp-dk" id="ap" type="tel" value="${u.phone||''}"/></div><div class="fgdk" style="margin-bottom:9px"><label>Country</label><input class="inp-dk" id="aco" type="text" value="${u.country||''}"/></div><div class="fgdk" style="margin-bottom:12px"><label>City</label><input class="inp-dk" id="acy" type="text" value="${u.city||''}"/></div><button onclick="svAc()" style="display:block;width:100%;padding:10px 18px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Save Changes</button></div>`:''}
+${tab==='password'?`<div class="asec"><h4>Change Password</h4>${S.acPwMsg?`<div style="padding:8px 12px;border-radius:8px;font-size:12.5px;margin-bottom:12px;${S.acPwMsg.startsWith('✓')?'background:rgba(34,197,94,.12);color:#86EFAC;':'background:rgba(239,68,68,.15);color:#FCA5A5;'}">${S.acPwMsg}</div>`:''}<div class="fgdk" style="margin-bottom:9px"><label>Current Password</label><input class="inp-dk" id="pwc" type="password" placeholder="Current password"/></div><div class="fgdk" style="margin-bottom:4px"><label>New Password</label><input class="inp-dk" id="pw1" type="password" placeholder="Min 6 characters" oninput="upAcS()"/></div><div id="acpwstr" style="margin-bottom:9px"></div><div class="fgdk" style="margin-bottom:12px"><label>Confirm New Password</label><input class="inp-dk" id="pw2" type="password" placeholder="Confirm password"/></div><button onclick="chPw()" style="display:block;width:100%;padding:10px 18px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Update Password</button></div>`:''}
+${tab==='profile'?`<div class="asec"><h4>Quiz Profile</h4><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div style="flex:1;background:var(--D3);border-radius:8px;overflow:hidden;height:6px"><div style="height:100%;background:linear-gradient(90deg,${Y},${P});width:${Math.round(Object.keys(S.ans).length/30*100)}%"></div></div><span style="font-size:12px;color:rgba(255,255,255,.5)">${Object.keys(S.ans).length}/30</span></div><p style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.6;margin-bottom:16px">Retake anytime to update and get fresh results.</p><button onclick="st({scr:'quiz_intro',ans:{},qi:0,showAc:false})" style="display:block;width:100%;padding:10px 18px;background:var(--D3);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff;cursor:pointer">Retake Quiz</button></div>`:''}
+${!S.isPro?`<div class="asec"><button onclick="st({showPW:true,showAc:false})" style="display:block;width:100%;padding:10px 18px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Upgrade — Multiple Searches/Day</button></div>`:''}
+<div style="padding:14px 18px">${bPo('Sign Out',"st({scr:'login',user:null,showAc:false,freeCnt:0,proCnt:0,topupCount:0,isPro:false,lc:0})")}</div>
+</div></div>`}
+window.upAcS=function(){const el=document.getElementById('acpwstr');if(!el)return;const v=document.getElementById('pw1')?.value||'';const{sc,lb,co}=pwS(v);if(sc>0){const sg=Array.from({length:4},(_,i)=>`<div class="pws-s ${i<sc?(sc<=1?'wk':sc<=2?'fr':'gd'):''}"></div>`).join('');el.innerHTML=`<div class="pws">${sg}</div><div style="font-size:10px;font-weight:600;color:${co};margin-top:4px">${lb}</div>`}else el.innerHTML=''};
+function svAc(){const fn=document.getElementById('afn')?.value.trim(),ln=document.getElementById('aln')?.value.trim(),e=document.getElementById('ae')?.value.trim();if(!fn||!ln){st({acMsg:'Name is required.'});return}if(!e||!/\S+@\S+\.\S+/.test(e)){st({acMsg:'Please enter a valid email.'});return}st({user:{...S.user,firstName:fn,lastName:ln,email:e},acMsg:'✓ Updated!'})}
+function chPw(){const cur=document.getElementById('pwc')?.value,p1=document.getElementById('pw1')?.value,p2=document.getElementById('pw2')?.value;if(!cur){st({acPwMsg:'Enter your current password.'});return}if(!p1||p1.length<6){st({acPwMsg:'Min 6 characters.'});return}if(p1!==p2){st({acPwMsg:'Passwords do not match.'});return}st({acPwMsg:'✓ Password updated!'})}
+function render(){
+  const app=document.getElementById('app');let h='';
+  switch(S.scr){
+    case 'login':h=rLogin();break;case 'reg':h=rReg();break;
+    case 'quiz_intro':h=rQI();break;case 'questionnaire':h=rQ();break;
+    case 'qd':h=rQD();break;case 'chapter':h=rCh();break;
+    case 'quiz_review':h=rRev();break;case 'dash':h=rDash();break;
+    case 'fu':h=rFU();break;case 'loading':h=rLoad();break;
+    case 'results':h=rRes();break;
+    case 'qd_done':h=rQDDone();break;case 'readiness':h=rRQ();break;
+    case 'rq_results':h=rRQRes();break;
+    default:h=rLogin();
+  }
+  h=rBnr()+h;
+  if(S.showFP)h+=rFP();
+  if(S.selR)h+=rDet();
+  if(S.showPW)h+=rPW();
+  if(S.showTopup)h+=rTopup();
+  if(S.showShare)h+=rShare();
+  if(S.showNotes)h+=rNotes();
+  if(S.showSv)h+=rSv();
+  if(S.showCmp)h+=rCmp();
+  if(S.showAc)h+=rAc();
+  if(S.showCo)h+=rCo();
+  app.innerHTML=h;
+  if(S.scr==='results'&&S.res){requestAnimationFrame(()=>{S.res.forEach((r,i)=>{const el=document.getElementById(`sf-${i}`);if(el)setTimeout(()=>el.style.width=r.score+'%',70+i*150)})})}
+}
+render();
+</script></body></html>
