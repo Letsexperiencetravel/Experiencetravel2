@@ -8,20 +8,28 @@ module.exports = async (req, res) => {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   if (!process.env.ANTHROPIC_API_KEY) {
-    return res.status(500).json({ error: "API key not set" });
+    return res.status(500).json({ error: "API key not configured" });
   }
 
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const { messages, max_tokens } = req.body;
+
     const response = await client.messages.create({
-      model: "claude-opus-4-5",
-      max_tokens: max_tokens || 1500,
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: max_tokens || 800,
       messages,
     });
-    return res.status(200).json(response);
+
+    const text = response.content[0].text;
+    console.log("Claude response (first 300):", text.slice(0, 300));
+
+    return res.status(200).json({
+      content: [{ type: "text", text }],
+    });
+
   } catch (err) {
-    console.error("Error:", err.message);
+    console.error("Proxy error:", err.message);
     return res.status(500).json({ error: err.message });
   }
 };
