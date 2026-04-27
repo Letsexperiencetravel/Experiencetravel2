@@ -2,6 +2,8 @@
   "name": "experience-travel",
   "version": "1.0.0",
   "dependencies": {
-    "@anthropic-ai/sdk": "0.24.3"
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "stripe": "^14.0.0"
   }
 }
