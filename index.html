@@ -1279,11 +1279,16 @@ function svAc(){
   st({acMsg:'✓ Saved!'});
   // Save to Supabase
   if(userId){
-    supa.from('profiles').update({
-      first_name:fn,last_name:ln,phone:ph,country:co,city:cy
-    }).eq('id',userId).then(({error})=>{
-      if(error){console.error('Profile save error:',error.message);}
-      else{console.log('Profile saved to Supabase ✅');}
+    supa.from('profiles').upsert({
+      id:userId,first_name:fn,last_name:ln,phone:ph,country:co,city:cy
+    },{onConflict:'id'}).then(({error})=>{
+      if(error){
+        console.error('Profile save error:',error.message);
+        st({acMsg:'Error saving: '+error.message});
+      }else{
+        console.log('Profile saved to Supabase ✅');
+        st({acMsg:'✓ Saved!'});
+      }
     });
   }else{
     console.warn('No userId - profile saved locally only');
