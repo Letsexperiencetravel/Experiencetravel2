@@ -539,6 +539,14 @@ function checkSession(){
   if(window.location.search.includes('upgraded=true')){
     history.replaceState({},'','/');
   }
+  if(window.location.search.includes('upgrade=cancelled')){
+    history.replaceState({},'','/');
+    setTimeout(()=>toast('Payment cancelled — you have not been charged.'),1000);
+  }
+  if(window.location.search.includes('payment=failed')){
+    history.replaceState({},'','/');
+    setTimeout(()=>toast('Payment failed — please try a different card.'),1000);
+  }
   supa.auth.getSession().then(({data})=>{
     const session=data.session;
     if(session&&session.user){
