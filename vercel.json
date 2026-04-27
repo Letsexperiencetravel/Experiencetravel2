@@ -1,14 +1,6 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "api/proxy.js", "use": "@vercel/node" },
-    { "src": "api/stripe-checkout.js", "use": "@vercel/node" },
-    { "src": "api/stripe-webhook.js", "use": "@vercel/node" }
-  ],
   "routes": [
-    { "src": "/api/proxy", "dest": "/api/proxy.js" },
-    { "src": "/api/stripe-checkout", "dest": "/api/stripe-checkout.js" },
-    { "src": "/api/stripe-webhook", "dest": "/api/stripe-webhook.js" },
+    { "src": "/api/(.*)", "dest": "/api/$1.js" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
