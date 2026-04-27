@@ -1266,20 +1266,27 @@ function svAc(){
   const fn=document.getElementById('afn')?.value.trim();
   const ln=document.getElementById('aln')?.value.trim();
   const e=document.getElementById('ae')?.value.trim();
-  const ph=document.getElementById('ap')?.value.trim();
-  const co=document.getElementById('aco')?.value.trim();
-  const cy=document.getElementById('acy')?.value.trim();
+  const ph=document.getElementById('ap')?.value.trim()||'';
+  const co=document.getElementById('aco')?.value.trim()||'';
+  const cy=document.getElementById('acy')?.value.trim()||'';
   if(!fn||!ln){st({acMsg:'Name is required.'});return;}
-  if(!e||!/\S+@\S+\.\S+/.test(e)){st({acMsg:'Please enter a valid email.'});return;}
+  if(!e||!e.includes('@')){st({acMsg:'Please enter a valid email.'});return;}
+  // Capture userId before any state update
+  const userId=S.user?.id;
   const updated={...S.user,firstName:fn,lastName:ln,email:e,phone:ph,country:co,city:cy};
-  st({user:updated,acMsg:'✓ Saved!'});
+  S.user=updated;
   saveState();
-  if(S.user?.id){
+  st({acMsg:'✓ Saved!'});
+  // Save to Supabase
+  if(userId){
     supa.from('profiles').update({
-      first_name:fn,last_name:ln,email:e,phone:ph,country:co,city:cy
-    }).eq('id',S.user.id).then(({error})=>{
-      if(error)console.error('Profile save error:',error.message);
+      first_name:fn,last_name:ln,phone:ph,country:co,city:cy
+    }).eq('id',userId).then(({error})=>{
+      if(error){console.error('Profile save error:',error.message);}
+      else{console.log('Profile saved to Supabase ✅');}
     });
+  }else{
+    console.warn('No userId - profile saved locally only');
   }
 }
 function chPw(){const cur=document.getElementById('pwc')?.value,p1=document.getElementById('pw1')?.value,p2=document.getElementById('pw2')?.value;if(!cur){st({acPwMsg:'Enter your current password.'});return}if(!p1||p1.length<6){st({acPwMsg:'Min 6 characters.'});return}if(p1!==p2){st({acPwMsg:'Passwords do not match.'});return}st({acPwMsg:'✓ Password updated!'})}
