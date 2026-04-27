@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<!DOCTYPE html><html lang="en"><head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
 .dsh{overflow:visible;word-wrap:break-word;overflow-wrap:break-word;}
@@ -158,7 +159,54 @@ html,body{min-height:100%;font-family:'Inter',sans-serif;background:#fff}
 .cmp-pi-p::before{content:'✓';color:#16A34A;font-weight:800;flex-shrink:0;margin-top:1px}
 .cmp-pi-c::before{content:'✗';color:#DC2626;font-weight:800;flex-shrink:0;margin-top:1px}
 @media(max-width:540px){.dg,.rg{grid-template-columns:1fr}.lc,.dc{padding:24px 18px}.r2{grid-template-columns:1fr}.pcg{grid-template-columns:1fr}.cn-inner{flex-direction:column}}
-</style></head><body><div id="app"></div><script>function getNotes(id){
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head><body><div id="app"></div><script>
+const SUPA_URL='https://dttjiokwquspfffjjutv.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0dGppb2t3cXVzcGZmZmpqdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNDQ3OTAsImV4cCI6MjA5MjgyMDc5MH0.91qTmSnBGfUKeNSxpxcAzS9VtLJxPKTXc4uj-5NyPk8';
+
+// Auth helpers
+async function supaSignUp(email,password,name){
+  const {data,error}=await supa.auth.signUp({email,password,options:{data:{name}}});
+  if(error)return{error:error.message};
+  // Create profile row
+  await supa.from('profiles').upsert({id:data.user.id,email});
+  return{user:data.user};
+}
+async function supaSignIn(email,password){
+  const {data,error}=await supa.auth.signInWithPassword({email,password});
+  if(error)return{error:error.message};
+  // Load profile
+  const {data:profile}=await supa.from('profiles').select('*').eq('id',data.user.id).single();
+  return{user:data.user,profile};
+}
+async function supaSignOut(){
+  await supa.auth.signOut();
+}
+async function supaResetPassword(email){
+  const {error}=await supa.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin});
+  return error?{error:error.message}:{ok:true};
+}
+async function supaGetSession(){
+  const {data}=await supa.auth.getSession();
+  return data.session;
+}
+async function supaSaveDestination(userId,item){
+  await supa.from('saved_destinations').upsert({
+    user_id:userId,city_id:item.id,city:item.city,country:item.country,
+    flag:item.flag,score:item.score,score_label:item.scoreLabel,trip_type:item.tt
+  },{onConflict:'user_id,city_id'});
+}
+async function supaDeleteDestination(userId,cityId){
+  await supa.from('saved_destinations').delete().eq('user_id',userId).eq('city_id',cityId);
+}
+async function supaLoadDestinations(userId){
+  const {data}=await supa.from('saved_destinations').select('*').eq('user_id',userId);
+  return data||[];
+}
+async function supaUpdateProfile(userId,updates){
+  await supa.from('profiles').update(updates).eq('id',userId);
+}
+function getNotes(id){
   try{
     const s=S.saved.find(x=>x.id===id);
     if(!S.notes[id])S.notes[id]=defaultNotes(s?.tt||'lt');
@@ -176,6 +224,8 @@ html,body{min-height:100%;font-family:'Inter',sans-serif;background:#fff}
   const img=P[city];
   return`<div style="height:150px;position:relative;overflow:hidden;background:${d.grad}">${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover;display:block" loading="lazy" onerror="this.style.display='none'"/>`:''}><div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.05),rgba(0,0,0,.55))"></div><div style="position:absolute;top:10px;left:12px;font-size:28px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))">${flag}</div>${showCity?`<div style="position:absolute;bottom:10px;left:12px;font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.8)">${city}</div>`:'' }</div>`
 }
+const supa=supabase.createClient(SUPA_URL,SUPA_KEY);
+
 const FREE_LIMIT=1,PRO_LIMIT=3,TOPUP_LIMIT=3;
 const Y='#F5E420',P='#E535A0',DK='#111',W='#fff',BH=46;
 const bY=(l,o)=>`<button onclick="${o}" style="display:block;width:100%;padding:13px 20px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px">${l}</button>`;
@@ -309,6 +359,50 @@ function openShareDirect(id){
   if(!h){hideModalDirect();return;}
   showModalDirect(h);
 }
+
+const STORAGE_KEY='et_state_v1';
+function saveState(){
+  try{
+    const toSave={
+      user:S.user,
+      saved:S.saved,
+      notes:S.notes,
+      shareData:S.shareData,
+      sIds:[...S.sIds],
+      isPro:S.isPro,
+      freeCnt:S.freeCnt,
+      proCnt:S.proCnt,
+      topupCount:S.topupCount,
+      ans:S.ans,
+      rqA:S.rqA,
+      pwPl:S.pwPl,
+      cmpSel:S.cmpSel,
+    };
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(toSave));
+  }catch(e){console.warn('Save state error:',e);}
+}
+function loadState(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw)return;
+    const saved=JSON.parse(raw);
+    if(saved.user)S.user=saved.user;
+    if(saved.saved)S.saved=saved.saved;
+    if(saved.notes)S.notes=saved.notes;
+    if(saved.shareData)S.shareData=saved.shareData;
+    if(saved.sIds)S.sIds=new Set(saved.sIds);
+    if(saved.isPro!==undefined)S.isPro=saved.isPro;
+    if(saved.freeCnt!==undefined)S.freeCnt=saved.freeCnt;
+    if(saved.proCnt!==undefined)S.proCnt=saved.proCnt;
+    if(saved.topupCount!==undefined)S.topupCount=saved.topupCount;
+    if(saved.ans)S.ans=saved.ans;
+    if(saved.rqA)S.rqA=saved.rqA;
+    if(saved.pwPl)S.pwPl=saved.pwPl;
+    if(saved.cmpSel)S.cmpSel=saved.cmpSel;
+    // If user was logged in, go to dashboard
+    if(S.user)S.scr='dash';
+  }catch(e){console.warn('Load state error:',e);}
+}
 function st(u){
   // Always clear direct modal overlay on any state change
   const _mo=document.getElementById('modal-overlay');
@@ -317,6 +411,7 @@ function st(u){
   if(u.sIds!==undefined)S.sIds=u.sIds;
   Object.assign(S,u);
   render();
+  saveState();
 }
 function gi(n){if(!n)return'?';return n.split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2)}
 function nt(){return S.bdDis?0:BH}function pp(){return S.bdDis?62:62+BH}
@@ -336,7 +431,7 @@ function nF(){
   st({fI:S.fI+1});
 }
 function nQ(){const s=S.ans[S.qi];if(s===undefined||s===null||(Array.isArray(s)&&s.length===0))return;if(S.editMode){st({scr:'quiz_review',editMode:false});return}if(S.qi===11){st({scr:'chapter',chNum:2,chTitle:'How You Live',chIcon:'🏠',chColor:P,chDesc:'Questions about your lifestyle, living preferences, health and what home really means to you.',qi:12});return}if(S.qi===21){st({scr:'chapter',chNum:3,chTitle:'How You Travel',chIcon:'✈️',chColor:'#22C55E',chDesc:'Questions about your travel style, pace and what you look for in a destination.',qi:22});return}if(S.qi===QS.length-1){st({scr:'qd'});return}st({qi:S.qi+1})}
-window.toggleCmp=function(id,tt){const already=S.cmpSel.find(x=>x.id===id);if(already){S.cmpSel=S.cmpSel.filter(x=>x.id!==id)}else if(S.cmpSel.filter(x=>x.tt===tt).length>=2){toast('Select only 2 of the same type to compare')}else{const item=S.saved.find(x=>x.id===id);if(item)S.cmpSel=[...S.cmpSel,item]}render()};
+window.toggleCmp=function(id,tt){const already=S.cmpSel.find(x=>x.id===id);if(already){S.cmpSel=S.cmpSel.filter(x=>x.id!==id)}else if(S.cmpSel.filter(x=>x.tt===tt).length>=2){toast('Select only 2 of the same type to compare')}else{const item=S.saved.find(x=>x.id===id);if(item)S.cmpSel=[...S.cmpSel,item]}render();saveState();};
 window.toggleTodo=function(id,tid){
   const n=getNotes(id);
   n.todos=n.todos.map(t=>t.id===tid?{...t,done:!t.done}:t);
@@ -366,7 +461,8 @@ window.deleteTodo=function(id,tid){
 window.moveTodo=function(id,tid,dir){const n=getNotes(id);const idx=n.todos.findIndex(t=>t.id===tid);const ni=idx+dir;if(ni<0||ni>=n.todos.length)return;const arr=[...n.todos];[arr[idx],arr[ni]]=[arr[ni],arr[idx]];n.todos=arr;S.notes[id]=n;render()}
 window.updateTodoText=function(id,tid,val){const n=getNotes(id);n.todos=n.todos.map(t=>t.id===tid?{...t,text:val}:t);S.notes[id]=n}
 window.addTodo=function(id){const inp=document.getElementById('ntodo-inp');if(!inp||!inp.value.trim())return;const n=getNotes(id);n.todos=[...n.todos,{id:Date.now(),text:inp.value.trim(),done:false}];S.notes[id]=n;inp.value='';render()}
-window.updNoteDate=function(id,key,val){const n=getNotes(id);n[key]=val;S.notes[id]=n;};
+window.updNoteDate=function(id,key,val){const n=getNotes(id);n[key]=val;S.notes[id]=n;
+  saveState();};
 window.updNoteDate=function(id,field,val){const n=getNotes(id);n[field]=val;S.notes[id]=n;render()};
 window.saveNote=function(id){const ta=document.getElementById('note-text');if(ta){const n=getNotes(id);n.text=ta.value;n.savedBy=S.user?((S.user.firstName||'')+(S.user.lastName?' '+S.user.lastName:'')):'You';n.savedAt=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});S.notes[id]=n}toast('Notes saved!')}
 window.shareViaMethod=function(id,method){const saved=S.saved.find(x=>x.id===id);if(!saved)return;const link='https://'+getShareLink(id);const note=S.shareData[id]?.note||'';const msg='Check out '+saved.city+', '+saved.country+' on Experience Travel!'+(note?'\n'+note:'')+'\n'+link;if(method==='copy'){navigator.clipboard?.writeText(link).catch(()=>{});toast('Link copied!')}else if(method==='native'){if(navigator.share){navigator.share({title:'Experience Travel — '+saved.city,text:msg,url:link}).catch(()=>{})}else{navigator.clipboard?.writeText(link).catch(()=>{});toast('Link copied!')}}else if(method==='whatsapp'){window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}else if(method==='email'){window.open('mailto:?subject='+encodeURIComponent(saved.city+' on Experience Travel')+'&body='+encodeURIComponent(msg),'_blank')}};
@@ -413,13 +509,83 @@ function rLogin(){
     ${bP('Create an Account',"st({scr:'reg',err:null,reg:{}})")}
     <p style="text-align:center;margin-top:14px"><span onclick="st({showFP:true,fpSent:false})" style="cursor:pointer;font-size:13px;font-weight:600;color:${P}">Forgot Password?</span></p>
   </div></div></div>`}
-function doLogin(){const e=document.getElementById('le')?.value.trim(),p=document.getElementById('lp')?.value;if(!e||!p){st({err:'Please fill in all fields.'});return}st({scr:'dash',user:{firstName:'Alex',lastName:'Rivera',email:e,phone:'+1 555-0123',country:'United States',city:'New York'},err:null,lc:S.lc+1})}
-function rFP(){const sent=S.fpSent;return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({showFP:false})"><div class="md" style="max-width:420px"><div style="padding:28px 26px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#111">${sent?'Check Your Email':'Reset Your Password'}</div><button onclick="st({showFP:false})" style="background:#F2EDE5;border:1.5px solid rgba(0,0,0,.1);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px;color:#666">✕</button></div>${sent?`<div style="text-align:center;padding:16px 0"><div style="font-size:48px;margin-bottom:12px">📧</div><p style="font-size:14px;color:#555;line-height:1.7;margin-bottom:6px">Reset link sent to <strong>${S.fpEmail}</strong>.</p><p style="font-size:13px;color:#aaa">Check your inbox and spam folder.</p><div style="margin-top:20px">${bP('← Back to Sign In',"st({showFP:false})")}</div></div>`:`<div><div style="background:#F8F4EF;border-radius:10px;padding:12px;font-size:13px;color:#666;margin-bottom:16px">Enter your account email and we'll send a reset link.</div><div class="fgrp"><label>Email Address</label><input class="inp" id="fpe" type="email" placeholder="you@email.com"/></div>${bP('Send Reset Link →',"doFP()")}<p style="text-align:center;margin-top:14px;font-size:13px;color:#aaa">Remembered it? <span onclick="st({showFP:false})" style="cursor:pointer;font-weight:600;color:${P}">Sign In</span></p></div>`}</div></div></div>`}
-function doFP(){const e=document.getElementById('fpe')?.value.trim();if(!e||!/\S+@\S+\.\S+/.test(e)){toast('Enter a valid email address');return}st({fpSent:true,fpEmail:e})}
+function doLogin(){
+  const e=document.getElementById('le')?.value.trim();
+  const p=document.getElementById('lp')?.value;
+  if(!e||!p){toast('Enter your email and password');return;}
+  supa.auth.signInWithPassword({email:e,password:p}).then(({data,error})=>{
+    if(error){st({err:error.message});return;}
+    const u=data.user;
+    S.user={id:u.id,email:u.email,name:u.user_metadata?.first_name||u.email.split('@')[0],firstName:u.user_metadata?.first_name||'',lastName:u.user_metadata?.last_name||''};
+    S.scr='dash';S.err=null;
+    supa.from('profiles').select('*').eq('id',u.id).single().then(({data:p})=>{
+      if(p){S.isPro=p.is_pro||false;S.freeCnt=p.free_cnt||0;S.proCnt=p.pro_cnt||0;}
+      supaLoadDestinations(u.id).then(rows=>{
+        if(rows.length>0){
+          S.saved=rows.map(r=>({id:r.city_id,city:r.city,country:r.country,flag:r.flag,score:r.score,scoreLabel:r.score_label,tt:r.trip_type,date:new Date(r.created_at).toLocaleDateString()}));
+          S.sIds=new Set(S.saved.map(x=>x.id));
+        }
+        render();saveState();
+      });
+    });
+  });
+}
+function checkSession(){
+  if(window.location.search.includes('upgraded=true')){
+    history.replaceState({},'','/');
+  }
+  supa.auth.getSession().then(({data})=>{
+    const session=data.session;
+    if(session&&session.user){
+      const u=session.user;
+      S.user={id:u.id,email:u.email,name:u.user_metadata?.first_name||u.email.split('@')[0],firstName:u.user_metadata?.first_name||'',lastName:u.user_metadata?.last_name||''};
+      S.scr='dash';
+      supa.from('profiles').select('*').eq('id',u.id).single().then(({data:p})=>{
+        if(p){S.isPro=p.is_pro||false;S.freeCnt=p.free_cnt||0;S.proCnt=p.pro_cnt||0;}
+        supaLoadDestinations(u.id).then(rows=>{
+          if(rows.length>0){
+            S.saved=rows.map(r=>({id:r.city_id,city:r.city,country:r.country,flag:r.flag,score:r.score,scoreLabel:r.score_label,tt:r.trip_type,date:new Date(r.created_at).toLocaleDateString()}));
+            S.sIds=new Set(S.saved.map(x=>x.id));
+          }
+          if(window.location.search.includes('upgraded=true')&&S.user?.id){
+            supa.from('profiles').select('is_pro').eq('id',S.user.id).single().then(({data:pr})=>{
+              if(pr?.is_pro){S.isPro=true;toast('🎉 Welcome to Pro!');}
+              render();saveState();
+            });
+          }else{render();saveState();}
+        });
+      });
+    }else{render();}
+  }).catch(()=>render());
+}
+function doFP(){
+  const e=document.getElementById('fpe')?.value.trim();
+  if(!e||!/\S+@\S+\.\S+/.test(e)){toast('Enter a valid email address');return}
+  supa.auth.resetPasswordForEmail(e,{redirectTo:'https://experiencetravel2.vercel.app'}).then(({error})=>{
+    if(error){toast(error.message);return}
+    st({fpSent:true,fpEmail:e});
+  });
+}
 function rReg(){const d=S.reg,step=d._step||1,b=S.bdDis?0:BH,fe=d._fe||{};return`<div class="pg pg-w" style="padding-top:${b+20}px"><div style="width:100%;max-width:440px"><div style="text-align:center;margin-bottom:20px">${logo()}<div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:#111;margin-top:10px">Experience <em style="color:${P};font-style:normal">Travel</em></div></div><div class="lc"><div class="dots"><div class="dot ${step>=1?'on':''}"></div><div class="dot ${step>=2?'on':''}"></div></div><p style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#111;margin-bottom:4px">Create Account</p><p style="color:#888;font-size:13.5px;margin-bottom:18px">Step ${step} of 2 — ${step===1?'Your Details':'Set Your Password'}</p>${step===1?`<div class="r2"><div class="fgrp"><label>First Name</label><input class="inp" id="rfn" type="text" placeholder="Jane" value="${d.fn||''}"/>${fe.fn?`<div class="ferr">⚠ ${fe.fn}</div>`:''}</div><div class="fgrp"><label>Last Name</label><input class="inp" id="rln" type="text" placeholder="Smith" value="${d.ln||''}"/>${fe.ln?`<div class="ferr">⚠ ${fe.ln}</div>`:''}</div></div><div class="fgrp"><label>Email</label><input class="inp" id="rem" type="email" placeholder="jane@email.com" value="${d.em||''}"/>${fe.em?`<div class="ferr">⚠ ${fe.em}</div>`:''}</div><div class="fgrp"><label>Phone</label><input class="inp" id="rph" type="tel" placeholder="+1 (555) 000-0000" value="${d.ph||''}"/>${fe.ph?`<div class="ferr">⚠ ${fe.ph}</div>`:''}</div><div class="fgrp"><label>Country of Origin</label><input class="inp" id="rco" type="text" placeholder="e.g. United States" value="${d.co||''}"/>${fe.co?`<div class="ferr">⚠ ${fe.co}</div>`:''}</div><div class="fgrp"><label>City</label><input class="inp" id="rcy" type="text" placeholder="e.g. New York" value="${d.cy||''}"/>${fe.cy?`<div class="ferr">⚠ ${fe.cy}</div>`:''}</div>${bY('Continue →','rs1()')}`:`<div class="fgrp"><label>New Password</label><input class="inp" id="rp1" type="password" placeholder="Min 6 characters" oninput="upS()"/>${fe.p1?`<div class="ferr">⚠ ${fe.p1}</div>`:''}<div id="pwstr"></div></div><div class="fgrp"><label>Confirm Password</label><input class="inp" id="rp2" type="password" placeholder="Confirm password"/>${fe.p2?`<div class="ferr">⚠ ${fe.p2}</div>`:''}</div>${bY('Continue →','rs2()')}${bPo('← Back',"st({reg:{...S.reg,_step:1,_fe:{}}})")}`}<p style="text-align:center;margin-top:14px;font-size:13px;color:#888">Have an account? <span style="cursor:pointer;font-weight:600;color:${P}" onclick="st({scr:'login',err:null})">Sign In</span></p></div></div></div>`}
 window.upS=function(){const el=document.getElementById('pwstr');if(!el)return;const v=document.getElementById('rp1')?.value||'';const{sc,lb,co}=pwS(v);if(sc>0){const sg=Array.from({length:4},(_,i)=>`<div class="pws-s ${i<sc?(sc<=1?'wk':sc<=2?'fr':'gd'):''}"></div>`).join('');el.innerHTML=`<div class="pws">${sg}</div><div style="font-size:10px;font-weight:600;color:${co};margin-top:4px">${lb}</div>`}else el.innerHTML=''};
 function rs1(){const fn=document.getElementById('rfn')?.value.trim(),ln=document.getElementById('rln')?.value.trim(),em=document.getElementById('rem')?.value.trim(),ph=document.getElementById('rph')?.value.trim(),co=document.getElementById('rco')?.value.trim(),cy=document.getElementById('rcy')?.value.trim();const fe={};if(!fn)fe.fn='Required';if(!ln)fe.ln='Required';if(!em)fe.em='Required';else if(!/\S+@\S+\.\S+/.test(em))fe.em='Invalid email';if(!ph)fe.ph='Required';if(!co)fe.co='Required';if(!cy)fe.cy='Required';if(Object.keys(fe).length){st({reg:{...S.reg,fn,ln,em,ph,co,cy,_fe:fe}});return}st({reg:{...S.reg,fn,ln,em,ph,co,cy,_step:2,_fe:{}}})}
-function rs2(){const p1=document.getElementById('rp1')?.value,p2=document.getElementById('rp2')?.value;const fe={};if(!p1||p1.length<6)fe.p1='Min 6 characters';if(p1&&p1.length>=6&&p2!==p1)fe.p2='Passwords do not match';if(fe.p1||fe.p2){st({reg:{...S.reg,_fe:fe}});return}const d=S.reg;st({scr:'quiz_intro',user:{firstName:d.fn,lastName:d.ln,email:d.em,phone:d.ph,country:d.co,city:d.cy},ans:{},qi:0,err:null,lc:1})}
+function rs2(){
+  const p1=document.getElementById('rp1')?.value,p2=document.getElementById('rp2')?.value;
+  const fe={};
+  if(!p1||p1.length<6)fe.p1='Min 6 characters';
+  if(p1&&p1.length>=6&&p2!==p1)fe.p2='Passwords do not match';
+  if(fe.p1||fe.p2){st({reg:{...S.reg,_fe:fe}});return}
+  const d=S.reg;
+  st({reg:{...S.reg,_fe:{p1:'Creating account...'}},err:null});
+  supa.auth.signUp({email:d.em,password:p1,options:{data:{first_name:d.fn,last_name:d.ln}}}).then(({data,error})=>{
+    if(error){st({reg:{...S.reg,_fe:{p1:error.message}}});return}
+    const u=data.user;
+    // Create profile row
+    supa.from('profiles').upsert({id:u.id,email:d.em,first_name:d.fn,last_name:d.ln,phone:d.ph,country:d.co,city:d.cy,is_pro:false,free_cnt:0,pro_cnt:0}).then(()=>{
+      st({scr:'quiz_intro',user:{id:u.id,firstName:d.fn,lastName:d.ln,email:d.em,phone:d.ph,country:d.co,city:d.cy},ans:{},qi:0,err:null,lc:1});
+    });
+  });
+}
 function rQI(){return`<div class="qi-screen"><div style="position:relative;z-index:1;width:100%;max-width:480px;text-align:center"><div style="font-size:48px;margin-bottom:16px;animation:popIn .5s ease both">🌍</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:${Y};opacity:.8;margin-bottom:12px">Before We Begin</div><div style="font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:16px">Time to Get to<br>Know <em style="color:${Y};font-style:normal">You</em></div><p style="font-size:14px;color:rgba(255,255,255,.65);line-height:1.75;margin-bottom:28px">We're about to take you through a quick quiz covering who you are, how you live, and how you travel. The more honest you are, the more accurate your matches will be.</p><div style="display:flex;flex-direction:column;gap:10px;margin-bottom:32px"><div class="qi-lc" style="animation-delay:.1s"><div style="width:38px;height:38px;border-radius:10px;background:rgba(245,228,32,.15);border:1px solid rgba(245,228,32,.25);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🧠</div><div style="text-align:left"><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff">Chapter 1 — Who You Are</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Your identity, values and personality</div></div></div><div class="qi-lc" style="animation-delay:.2s"><div style="width:38px;height:38px;border-radius:10px;background:rgba(229,53,160,.12);border:1px solid rgba(229,53,160,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏠</div><div style="text-align:left"><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff">Chapter 2 — How You Live</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Your lifestyle, health and what home means</div></div></div><div class="qi-lc" style="animation-delay:.3s"><div style="width:38px;height:38px;border-radius:10px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">✈️</div><div style="text-align:left"><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff">Chapter 3 — How You Travel</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Your travel style, pace and priorities</div></div></div></div><div style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:16px">Takes about 5 minutes · Results personalised to you</div><div style="display:flex;flex-direction:column;align-items:center;gap:12px"><button onclick="st({scr:'questionnaire',qi:0})" style="display:inline-flex;align-items:center;gap:10px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:12px;padding:16px 32px;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;cursor:pointer">Start My Quiz →</button>${S.lc>1?`<button onclick="st({scr:'dash'})" style="background:none;border:none;color:rgba(255,255,255,.45);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;text-decoration:underline;padding:4px">← Back to Dashboard</button>`:''}</div></div></div>`}
 function rCh(){const{chNum,chTitle,chIcon,chColor,chDesc,qi}=S;const steps=[{n:1,l:'Who You Are',done:chNum>1},{n:2,l:'How You Live',done:chNum>2,active:chNum===2},{n:3,l:'How You Travel',done:chNum>3,active:chNum===3}];const bg=chNum===2?'linear-gradient(135deg,#0a0a1a,#1a0a1a)':'linear-gradient(135deg,#0a1a0a,#0a0a1a)';return`<div class="ch-screen" style="background:${bg}"><div style="position:relative;z-index:1;text-align:center;max-width:460px"><div style="display:flex;justify-content:center;gap:6px;margin-bottom:32px">${steps.map(s=>`<div style="display:flex;align-items:center;gap:6px"><div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;${s.done?`background:${Y};color:#111`:`background:${s.active?chColor:'rgba(255,255,255,.12)'};color:${s.active?'#fff':'rgba(255,255,255,.4)'}`}">${s.n}</div><div style="font-size:11px;font-weight:600;color:${s.done?Y:s.active?'#fff':'rgba(255,255,255,.3)'}">${s.l}</div></div>`).join(`<div style="width:24px;height:1px;background:rgba(255,255,255,.15);margin:0 4px;align-self:center"></div>`)}</div><div style="font-size:52px;margin-bottom:12px;animation:popIn .4s ease">${chIcon}</div><div style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:#fff;margin-bottom:12px;line-height:1.2">${chTitle}</div><p style="font-size:15px;color:rgba(255,255,255,.6);line-height:1.7;margin-bottom:32px">${chDesc}</p><button onclick="st({scr:'questionnaire',qi:${qi}})" style="display:inline-flex;align-items:center;gap:10px;background:${chColor};color:${chNum===2?W:'#111'};border:none;border-radius:12px;padding:16px 32px;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;cursor:pointer">Continue to ${chTitle} →</button></div></div>`}
 function rRev(){const layers=[{num:1,title:'Who You Are',icon:'🧠',color:Y,range:[0,11]},{num:2,title:'How You Live',icon:'🏠',color:P,range:[12,21]},{num:3,title:'How You Travel',icon:'✈️',color:'#22C55E',range:[22,29]}];const ua=QS.length-Object.keys(S.ans).length;return`<div class="pg pg-c" style="justify-content:flex-start;padding-top:20px;padding-bottom:40px"><div style="width:100%;max-width:600px;padding-top:20px"><div style="text-align:center;margin-bottom:28px"><div style="font-size:36px;margin-bottom:10px">📋</div><div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#111;margin-bottom:8px">Review Your Answers</div><p style="font-size:14px;color:#888;line-height:1.6">Check everything — tap <strong>Edit</strong> to change any answer.</p>${ua>0?`<div style="background:#FFF5F5;border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:10px 14px;font-size:13px;color:#DC2626;margin-top:12px">⚠ ${ua} unanswered</div>`:''}</div>${layers.map(layer=>{const qs=QS.slice(layer.range[0],layer.range[1]+1);return`<div class="rv-layer"><div class="rv-lhdr"><div class="rv-ln" style="background:${layer.color};color:${layer.num===2?W:'#111'}">${layer.num}</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#111">${layer.icon} ${layer.title}</div><div style="font-size:11px;color:#aaa;margin-left:auto">${qs.filter((_,i)=>S.ans[layer.range[0]+i]!==undefined).length}/${qs.length}</div></div>${qs.map((q,i)=>{const qi=layer.range[0]+i,a=S.ans[qi];let at='Not answered',hA=false;if(a!==undefined&&a!==null){hA=true;if(Array.isArray(a))at=a.map(x=>q.o[x]).join(', ');else if(typeof a==='number')at=q.o[a];else at=String(a)}return`<div class="rv-q"><div class="rv-qt"><div class="rv-ql">${q.q.length>60?q.q.slice(0,60)+'…':q.q}</div><div class="rv-qa" style="color:${hA?'#111':'#bbb'}">${hA?at:'—'}</div></div><button class="rv-ed" onclick="st({scr:'questionnaire',qi:${qi},editMode:true})">Edit</button></div>`}).join('')}</div>`}).join('')}<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px">${bSm('← Back',"st({scr:'questionnaire',qi:29})",'#fff',P,P)}<button onclick="goR()" style="display:inline-flex;align-items:center;gap:8px;padding:13px 28px;background:${P};color:#fff;border:2.5px solid #C8208A;border-radius:10px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Everything Looks Good — Find My Matches →</button></div></div></div>`}
@@ -765,6 +931,16 @@ function sC(e,city,country,idx){
   // Update nav pill
   const pill=document.querySelector('.ppl,.spl');
   if(pill)pill.outerHTML=navPill();
+  saveState();
+  // Sync to Supabase if logged in
+  if(S.user?.id){
+    if(ns.has(k)){
+      const r=S.saved.find(x=>x.id===k);
+      if(r)supaSaveDestination(S.user.id,r);
+    }else{
+      supaDeleteDestination(S.user.id,k);
+    }
+  }
 }
 function oD(idx){const r=S.res[idx],isST=S.tt==='st';const itin=isST?IT[r.city]:null;const pc=gPC(r.country);const det={why:[`${r.city}'s environment aligns with your critical answers around safety and identity`,`Your work situation gives you access to ${r.country}'s preferred visa pathways`,`Your personality profile and travel pace are a strong fit for ${r.city}`],cost:{m:isST?"$80–$200/day":r.country==='Portugal'?"$1,800–$2,800":"$1,000–$2,200",rent:isST?"Included":r.country==='Portugal'?"$800–$1,400/mo":"$400–$900/mo",food:isST?"$20–$60/day":"$200–$500/mo",tr:isST?"$5–$20/day":"$30–$80/mo",ut:isST?"N/A":"$40–$100/mo",cmp:r.country==='Portugal'?'45–55% cheaper than US':'40–65% cheaper than US',areas:(CITYDB[r.country]?.areas?.[r.city]||['City centre — walkable and lively','Expat neighbourhoods — best services','Suburbs — quieter and more affordable'])},sft:{sc:r.score>=90?8:r.score>=80?7:6,lb:r.score>=90?"Very Safe":r.score>=80?"Generally Safe":"Research Recommended",nt:`${r.country} is considered a good destination for international travelers.`},best:getBest(r.city,isST),itin,pc,visa:(CITYDB[r.country]?.visas||CITYDB[r.country+' (Country)']?.visas||[{name:r.country+' Long-Stay Visa',dur:'1–2 years renewable',cost:'$50–$150 USD',proc:'4–10 weeks',req:['Valid passport (6+ months)','Proof of income or savings','Criminal background check','Health insurance','Accommodation proof']},{name:r.country+' Retirement/Passive Income Visa',dur:'1–2 years renewable',cost:'$50–$200 USD',proc:'4–10 weeks',req:['Proof of passive income $1,000+/month','Bank statements','Health insurance','Clean criminal record']},{name:'Tourist Visa Extension',dur:'30–90 days',cost:'$20–$50 USD',proc:'1–2 weeks in-country',req:['Valid tourist visa','Proof of funds','Application at immigration office']}]),steps:[`Research the specific visa for ${r.country} at your consulate`,`Gather and apostille your documents — allow 2–3 months`,`Arrange health insurance valid in ${r.country}`,`Book your consulate appointment early`,`Join expat Facebook groups for ${r.city} for on-the-ground advice`,`Take a 2-week scouting trip before fully committing`]};st({selR:r,det,dTab:'overview',tt:S.tt})}
 function rDet(){const r=S.selR,d=S.det,isST=S.tt==='st';const tabs=isST?['overview','itinerary']:['overview','proscons','costs','visa','steps'];const tbLb=isST?['Overview','📅 Itinerary']:['Overview','Pros & Cons','Cost of Living','Visa Options','Getting Started'];return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({selR:null,det:null,showSv:S.fromSv||false,fromSv:false})"><div class="md"><div style="position:relative;height:160px;overflow:hidden">${destImg(r.city,r.flag,false)}<button onclick="st({selR:null,det:null,showSv:S.fromSv||false,fromSv:false})" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.5);border:1.5px solid rgba(255,255,255,.3);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px;color:#fff">✕</button><div style="position:absolute;bottom:0;left:0;right:0;padding:12px 18px;background:linear-gradient(to top,rgba(0,0,0,.8),transparent)"><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.8)">${r.city}, ${r.country} ${r.flag}</div><div style="font-size:12px;color:#F5E420;font-weight:700;margin-top:2px">${r.scoreLabel} · ${r.score}/100</div></div></div><div style="padding:0"><div class="tabs">${tabs.map((t,i)=>`<div class="tab ${S.dTab===t?'on':''}" onclick="st({dTab:'${t}'})">${tbLb[i]}</div>`).join('')}</div><div style="padding:16px 22px 20px">${rDT(d,r,isST)}</div></div></div>`}
@@ -1051,7 +1227,7 @@ ${tab==='info'?`<div class="asec"><h4>Personal Info</h4>${S.acMsg?`<div style="p
 ${tab==='password'?`<div class="asec"><h4>Change Password</h4>${S.acPwMsg?`<div style="padding:8px 12px;border-radius:8px;font-size:12.5px;margin-bottom:12px;${S.acPwMsg.startsWith('✓')?'background:rgba(34,197,94,.12);color:#86EFAC;':'background:rgba(239,68,68,.15);color:#FCA5A5;'}">${S.acPwMsg}</div>`:''}<div class="fgdk" style="margin-bottom:9px"><label>Current Password</label><input class="inp-dk" id="pwc" type="password" placeholder="Current password"/></div><div class="fgdk" style="margin-bottom:4px"><label>New Password</label><input class="inp-dk" id="pw1" type="password" placeholder="Min 6 characters" oninput="upAcS()"/></div><div id="acpwstr" style="margin-bottom:9px"></div><div class="fgdk" style="margin-bottom:12px"><label>Confirm New Password</label><input class="inp-dk" id="pw2" type="password" placeholder="Confirm password"/></div><button onclick="chPw()" style="display:block;width:100%;padding:10px 18px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Update Password</button></div>`:''}
 ${tab==='profile'?`<div class="asec"><h4>Quiz Profile</h4><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div style="flex:1;background:var(--D3);border-radius:8px;overflow:hidden;height:6px"><div style="height:100%;background:linear-gradient(90deg,${Y},${P});width:${Math.round(Object.keys(S.ans).length/30*100)}%"></div></div><span style="font-size:12px;color:rgba(255,255,255,.5)">${Object.keys(S.ans).length}/30</span></div><p style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.6;margin-bottom:16px">Retake anytime to update and get fresh results.</p><button onclick="st({scr:'quiz_intro',ans:{},qi:0,showAc:false})" style="display:block;width:100%;padding:10px 18px;background:var(--D3);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff;cursor:pointer">Retake Quiz</button></div>`:''}
 ${!S.isPro?`<div class="asec"><button onclick="st({showPW:true,showAc:false})" style="display:block;width:100%;padding:10px 18px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Upgrade — Multiple Searches/Day</button></div>`:''}
-<div style="padding:14px 18px">${bPo('Sign Out',"st({scr:'login',user:null,showAc:false,freeCnt:0,proCnt:0,topupCount:0,isPro:false,lc:0})")}</div>
+<div style="padding:14px 18px">${bPo('Sign Out',"supa.auth.signOut();st({scr:'login',user:null,showAc:false,freeCnt:0,proCnt:0,topupCount:0,isPro:false,lc:0})")}</div>
 </div></div>`}
 window.upAcS=function(){const el=document.getElementById('acpwstr');if(!el)return;const v=document.getElementById('pw1')?.value||'';const{sc,lb,co}=pwS(v);if(sc>0){const sg=Array.from({length:4},(_,i)=>`<div class="pws-s ${i<sc?(sc<=1?'wk':sc<=2?'fr':'gd'):''}"></div>`).join('');el.innerHTML=`<div class="pws">${sg}</div><div style="font-size:10px;font-weight:600;color:${co};margin-top:4px">${lb}</div>`}else el.innerHTML=''};
 function svAc(){const fn=document.getElementById('afn')?.value.trim(),ln=document.getElementById('aln')?.value.trim(),e=document.getElementById('ae')?.value.trim();if(!fn||!ln){st({acMsg:'Name is required.'});return}if(!e||!/\S+@\S+\.\S+/.test(e)){st({acMsg:'Please enter a valid email.'});return}st({user:{...S.user,firstName:fn,lastName:ln,email:e},acMsg:'✓ Updated!'})}
@@ -1083,5 +1259,6 @@ function render(){
   app.innerHTML=h;
   if(S.scr==='results'&&S.res){requestAnimationFrame(()=>{S.res.forEach((r,i)=>{const el=document.getElementById(`sf-${i}`);if(el)setTimeout(()=>el.style.width=r.score+'%',70+i*150)})})}
 }
-render();
+loadState();
+checkSession();
 </script></body></html>
