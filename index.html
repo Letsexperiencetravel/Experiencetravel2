@@ -519,7 +519,12 @@ function doLogin(){
     S.user={id:u.id,email:u.email,name:u.user_metadata?.first_name||u.email.split('@')[0],firstName:u.user_metadata?.first_name||'',lastName:u.user_metadata?.last_name||''};
     S.scr='dash';S.err=null;
     supa.from('profiles').select('*').eq('id',u.id).single().then(({data:p})=>{
-      if(p){S.isPro=p.is_pro||false;S.freeCnt=p.free_cnt||0;S.proCnt=p.pro_cnt||0;}
+      if(p){
+        S.isPro=p.is_pro||false;S.freeCnt=p.free_cnt||0;S.proCnt=p.pro_cnt||0;
+        S.user={...S.user,phone:p.phone||'',country:p.country||'',city:p.city||''};
+        if(p.first_name)S.user.firstName=p.first_name;
+        if(p.last_name)S.user.lastName=p.last_name;
+      }
       supaLoadDestinations(u.id).then(rows=>{
         if(rows.length>0){
           S.saved=rows.map(r=>({id:r.city_id,city:r.city,country:r.country,flag:r.flag,score:r.score,scoreLabel:r.score_label,tt:r.trip_type,date:new Date(r.created_at).toLocaleDateString()}));
@@ -538,18 +543,33 @@ function checkSession(){
     const session=data.session;
     if(session&&session.user){
       const u=session.user;
-      S.user={id:u.id,email:u.email,name:u.user_metadata?.first_name||u.email.split('@')[0],firstName:u.user_metadata?.first_name||'',lastName:u.user_metadata?.last_name||''};
+      S.user={
+        id:u.id,email:u.email,
+        firstName:u.user_metadata?.first_name||'',
+        lastName:u.user_metadata?.last_name||'',
+        name:u.user_metadata?.first_name||u.email.split('@')[0]
+      };
       S.scr='dash';
+      // Load profile (isPro, phone, country, city etc)
       supa.from('profiles').select('*').eq('id',u.id).single().then(({data:p})=>{
-        if(p){S.isPro=p.is_pro||false;S.freeCnt=p.free_cnt||0;S.proCnt=p.pro_cnt||0;}
-        supaLoadDestinations(u.id).then(rows=>{
-          if(rows.length>0){
+        if(p){
+          S.isPro=p.is_pro||false;
+          S.freeCnt=p.free_cnt||0;
+          S.proCnt=p.pro_cnt||0;
+          S.user={...S.user,phone:p.phone||'',country:p.country||'',city:p.city||''};
+          if(p.first_name)S.user.firstName=p.first_name;
+          if(p.last_name)S.user.lastName=p.last_name;
+        }
+        // Load saved destinations
+        supa.from('saved_destinations').select('*').eq('user_id',u.id).then(({data:rows})=>{
+          if(rows&&rows.length>0){
             S.saved=rows.map(r=>({id:r.city_id,city:r.city,country:r.country,flag:r.flag,score:r.score,scoreLabel:r.score_label,tt:r.trip_type,date:new Date(r.created_at).toLocaleDateString()}));
             S.sIds=new Set(S.saved.map(x=>x.id));
           }
+          // Handle Stripe success redirect
           if(window.location.search.includes('upgraded=true')&&S.user?.id){
             supa.from('profiles').select('is_pro').eq('id',S.user.id).single().then(({data:pr})=>{
-              if(pr?.is_pro){S.isPro=true;toast('🎉 Welcome to Pro!');}
+              if(pr?.is_pro){S.isPro=true;toast('🎉 Welcome to Pro! Unlimited searches unlocked.');}
               render();saveState();
             });
           }else{render();saveState();}
@@ -1219,7 +1239,19 @@ ${rows.map(([lbl,va,vb,higher])=>{const w=winner(va,vb);return`<div style="displ
 function rTopup(){return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({showTopup:false})"><div class="topup-md"><div class="topup-hero"><div style="font-size:44px;margin-bottom:10px">⚡</div><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:6px">Need More Searches?</div><p style="font-size:13.5px;color:rgba(255,255,255,.6);line-height:1.6;max-width:280px;margin:0 auto">Get 3 more searches for just <strong style="color:${Y}">$5</strong>.</p></div><div style="padding:20px 22px"><div style="background:#F8F4EF;border:1.5px solid rgba(0,0,0,.08);border-radius:12px;padding:16px;margin-bottom:16px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#111">Today's Top-Up</div><div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:${P}">$5</div></div><div style="display:flex;flex-direction:column;gap:7px"><div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#555"><span style="color:#22C55E;font-weight:700">✓</span> 3 extra searches immediately</div><div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#555"><span style="color:#22C55E;font-weight:700">✓</span> One-time charge — not a subscription</div><div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#555"><span style="color:#22C55E;font-weight:700">✓</span> Expires at midnight tonight</div></div></div><button onclick="buyTopup()" style="display:block;width:100%;padding:14px 20px;background:${Y};color:#111;border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:14px">Get 3 More Searches — $5</button><div style="text-align:center;margin-top:8px"><span style="cursor:pointer;font-size:12.5px;color:#aaa;font-weight:600" onclick="st({showTopup:false})">I'll wait until tomorrow</span></div></div></div></div>`}
 function buyTopup(){const nc=S.topupCount+1;st({topupCount:nc,proCnt:0,showTopup:false});toast('⚡ 3 more searches added! You now have '+Math.max(0,PRO_LIMIT+(nc*TOPUP_LIMIT))+' searches today')}
 function rPW(){return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({showPW:false})" style="z-index:500"><div class="md" style="max-width:500px"><div style="text-align:center;padding:28px 24px 0"><div style="width:64px;height:64px;border-radius:50%;background:${Y};border:2.5px solid #111;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px;box-shadow:4px 4px 0 ${P}">✈️</div><div style="font-family:'Syne',sans-serif;font-size:21px;font-weight:800;color:#111;margin-bottom:6px">Unlock More Searches</div><p style="color:#666;font-size:13.5px;max-width:300px;margin:0 auto;line-height:1.6">Upgrade to Pro and search as many times as you want every single day.</p></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px 22px"><div class="pw-pl ${S.pwPl==='month'?'f':''}" onclick="st({pwPl:'month'})"><div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#111;margin:6px 0 2px">$25</div><div style="font-size:12px;color:#aaa">Per Month</div><ul class="pwf"><li>Multiple searches every day</li><li>Full Destination Details</li><li>Real Visa Breakdowns</li><li>Destination Journal</li><li>Save &amp; Compare Results</li></ul>${bPo('Choose Monthly','upgPro()')}</div><div class="pw-pl ${S.pwPl==='year'?'f':''}" onclick="st({pwPl:'year'})" style="position:relative"><div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:${P};color:#fff;font-size:9.5px;font-weight:700;padding:3px 11px;border-radius:8px;text-transform:uppercase;white-space:nowrap">Best Value</div><div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#111;margin:6px 0 2px">$250</div><div style="font-size:12px;color:#aaa">Per Year</div><div style="font-size:12px;color:#22C55E;font-weight:600;margin-top:4px">Save $50 vs Monthly</div><ul class="pwf"><li>Multiple searches every day</li><li>Full Destination Details</li><li>Destination Journal &amp; Compare</li><li>Share Trips with Friends</li><li>Priority Consultant Access</li></ul>${bP('Choose Annual','upgPro()')}</div></div><div style="text-align:center;padding:0 22px 20px"><p style="font-size:12px;color:#aaa">Cancel Anytime · Secure Checkout</p><div style="margin-top:9px"><span style="cursor:pointer;font-size:13px;font-weight:600;color:${P}" onclick="st({showPW:false})">Keep Free Plan</span></div></div></div></div>`}
-function upgPro(){st({isPro:true,proCnt:0,topupCount:0,showPW:false});toast('Upgraded to Pro!')}
+function upgPro(){
+  if(!S.user?.id){toast('Please sign in first');st({showPW:false,scr:'login'});return;}
+  const plan=S.pwPl==='year'?'annual':'monthly';
+  toast('Redirecting to secure checkout...');
+  fetch('/api/stripe-checkout',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({plan,userId:S.user.id,email:S.user.email})
+  }).then(r=>r.json()).then(data=>{
+    if(data.url){window.location.href=data.url;}
+    else{toast('Error: '+(data.error||'Could not create checkout'));}
+  }).catch(()=>toast('Connection error - please try again'));
+}
 function rCo(){const times=['Morning (9–11am)','Midday (11am–1pm)','Afternoon (1–4pm)','Evening (4–7pm)'];const tt=S.coTripType||'lt';const body=S.coSent?`<div style="text-align:center;padding:24px 16px"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:#111;margin-bottom:8px">You're Booked!</div><p style="color:#666;font-size:13.5px;line-height:1.7;max-width:280px;margin:0 auto">A travel consultant will reach out within 24 hours.</p>${bPo('← Close',"st({showCo:false})")}</div>`:`<div><div style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(229,53,160,.05));border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:14px;margin-bottom:16px"><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#111;margin-bottom:5px">Free 30-Minute Planning Call</div><div style="font-size:13px;color:#555;line-height:1.6">Our consultants review your full profile — no pressure, no upsell.</div></div><div class="fgrp"><label>Trip Type</label><div class="tt-tog"><div class="tt-opt ${tt==='lt'?'on':''}" onclick="st({coTripType:'lt'})">Long-Term Moving Abroad</div><div class="tt-opt ${tt==='st'?'on':''}" onclick="st({coTripType:'st'})">Short-Term Travel</div></div></div><div class="fgrp"><label>Full Name</label><input class="inp" id="cn" type="text" value="${(S.user?.firstName||'')+' '+(S.user?.lastName||'')}"/></div><div class="fgrp"><label>Email</label><input class="inp" id="ce" type="email" value="${S.user?.email||''}"/></div><div class="fgrp"><label>Phone</label><input class="inp" id="cp" type="tel" value="${S.user?.phone||''}"/></div><div class="fgrp"><label>Preferred Call Time</label><div style="display:flex;flex-wrap:wrap;gap:7px;margin:8px 0">${times.map((t,i)=>`<div class="tc ${S.bkTm===i?'s':''}" onclick="st({bkTm:${i}})">${t}</div>`).join('')}</div></div><div class="fgrp"><label>Your biggest question</label><input class="inp" id="cq" type="text" placeholder="${tt==='lt'?'e.g. Is Portugal right for me?':'e.g. Best trip for a couple visiting Japan?'}"/></div>${bP('Book My Free Consultation',"st({coSent:true})")}<p style="text-align:center;font-size:12px;color:#aaa;margin-top:10px">Completely free · No commitment</p></div>`;return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({showCo:false})"><div class="md" style="max-width:500px"><div style="padding:20px 22px 0;display:flex;align-items:flex-start;justify-content:space-between"><div><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#111">Free Planning Consultation</div><div style="font-size:12.5px;color:#999;margin-top:3px">Speak with a travel expert — completely free</div></div><button onclick="st({showCo:false})" style="background:#F2EDE5;border:1.5px solid rgba(0,0,0,.1);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px;color:#666">✕</button></div><div style="padding:16px 22px 24px">${body}</div></div></div>`}
 function rAc(){const u=S.user||{},tab=S.acTab||'info';const tabs=[{id:'info',lb:'Personal Info'},{id:'password',lb:'Password'},{id:'profile',lb:'Quiz Profile'}];return`<div style="position:fixed;inset:0;z-index:350;background:rgba(0,0,0,.45)" onclick="if(event.target===event.currentTarget)st({showAc:false,acMsg:'',acPwMsg:''})"><div class="ap"><div style="padding:18px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:12px"><div style="width:48px;height:48px;border-radius:50%;background:${Y};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#111;font-family:'Syne',sans-serif;border:2px solid ${P};box-shadow:3px 3px 0 ${P}">${gi((u.firstName||'U')+' '+(u.lastName||''))}</div><div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff">${u.firstName||''} ${u.lastName||''}</div><div style="font-size:11.5px;color:rgba(255,255,255,.3)">${S.isPro?`Pro Member (${searchesLeft()} left today)`:'Free Plan'}</div></div></div><button onclick="st({showAc:false,acMsg:'',acPwMsg:''})" style="background:var(--D3);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px;color:rgba(255,255,255,.5)">✕</button></div>
 <div style="display:flex;border-bottom:1px solid rgba(255,255,255,.08)">${tabs.map(t=>`<div onclick="st({acTab:'${t.id}',acMsg:'',acPwMsg:''})" style="flex:1;padding:11px 6px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;${tab===t.id?`color:${Y};border-bottom:2px solid ${Y};`:'color:rgba(255,255,255,.35);border-bottom:2px solid transparent;'}">${t.lb}</div>`).join('')}</div>
@@ -1230,7 +1262,26 @@ ${!S.isPro?`<div class="asec"><button onclick="st({showPW:true,showAc:false})" s
 <div style="padding:14px 18px">${bPo('Sign Out',"supa.auth.signOut();st({scr:'login',user:null,showAc:false,freeCnt:0,proCnt:0,topupCount:0,isPro:false,lc:0})")}</div>
 </div></div>`}
 window.upAcS=function(){const el=document.getElementById('acpwstr');if(!el)return;const v=document.getElementById('pw1')?.value||'';const{sc,lb,co}=pwS(v);if(sc>0){const sg=Array.from({length:4},(_,i)=>`<div class="pws-s ${i<sc?(sc<=1?'wk':sc<=2?'fr':'gd'):''}"></div>`).join('');el.innerHTML=`<div class="pws">${sg}</div><div style="font-size:10px;font-weight:600;color:${co};margin-top:4px">${lb}</div>`}else el.innerHTML=''};
-function svAc(){const fn=document.getElementById('afn')?.value.trim(),ln=document.getElementById('aln')?.value.trim(),e=document.getElementById('ae')?.value.trim();if(!fn||!ln){st({acMsg:'Name is required.'});return}if(!e||!/\S+@\S+\.\S+/.test(e)){st({acMsg:'Please enter a valid email.'});return}st({user:{...S.user,firstName:fn,lastName:ln,email:e},acMsg:'✓ Updated!'})}
+function svAc(){
+  const fn=document.getElementById('afn')?.value.trim();
+  const ln=document.getElementById('aln')?.value.trim();
+  const e=document.getElementById('ae')?.value.trim();
+  const ph=document.getElementById('ap')?.value.trim();
+  const co=document.getElementById('aco')?.value.trim();
+  const cy=document.getElementById('acy')?.value.trim();
+  if(!fn||!ln){st({acMsg:'Name is required.'});return;}
+  if(!e||!/\S+@\S+\.\S+/.test(e)){st({acMsg:'Please enter a valid email.'});return;}
+  const updated={...S.user,firstName:fn,lastName:ln,email:e,phone:ph,country:co,city:cy};
+  st({user:updated,acMsg:'✓ Saved!'});
+  saveState();
+  if(S.user?.id){
+    supa.from('profiles').update({
+      first_name:fn,last_name:ln,email:e,phone:ph,country:co,city:cy
+    }).eq('id',S.user.id).then(({error})=>{
+      if(error)console.error('Profile save error:',error.message);
+    });
+  }
+}
 function chPw(){const cur=document.getElementById('pwc')?.value,p1=document.getElementById('pw1')?.value,p2=document.getElementById('pw2')?.value;if(!cur){st({acPwMsg:'Enter your current password.'});return}if(!p1||p1.length<6){st({acPwMsg:'Min 6 characters.'});return}if(p1!==p2){st({acPwMsg:'Passwords do not match.'});return}st({acPwMsg:'✓ Password updated!'})}
 function render(){
   const app=document.getElementById('app');let h='';
