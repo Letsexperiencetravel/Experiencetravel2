@@ -29,7 +29,7 @@ module.exports = async (req, res) => {
       customer_email: email,
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { userId },
-      success_url: "https://experiencetravel2.vercel.app?upgraded=true",
+      success_url: "https://experiencetravel2.vercel.app?upgraded=true&session_id={CHECKOUT_SESSION_ID}",
       cancel_url:  "https://experiencetravel2.vercel.app?upgrade=cancelled",
     });
 
