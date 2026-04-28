@@ -576,10 +576,21 @@ function checkSession(){
           }
           // Handle Stripe success redirect
           if(window.location.search.includes('upgraded=true')&&S.user?.id){
-            supa.from('profiles').select('is_pro').eq('id',S.user.id).single().then(({data:pr})=>{
-              if(pr?.is_pro){S.isPro=true;toast('🎉 Welcome to Pro! Unlimited searches unlocked.');}
+            const urlParams=new URLSearchParams(window.location.search);
+            const sessionId=urlParams.get('session_id')||'';
+            fetch('/api/verify-payment',{
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({userId:S.user.id,sessionId})
+            }).then(r=>r.json()).then(result=>{
+              if(result.isPro){
+                S.isPro=true;
+                toast('🎉 Welcome to Pro! Unlimited searches unlocked.');
+              }else{
+                toast('Payment processing... refresh in a moment.');
+              }
               render();saveState();
-            });
+            }).catch(()=>{render();saveState();});
           }else{render();saveState();}
         });
       });
