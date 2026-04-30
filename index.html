@@ -1008,17 +1008,30 @@ function sC(e,city,country,idx){
   }
 }
 function oD(idx){const r=S.res[idx],isST=S.tt==='st';const itin=null;const pc=gPC(r.country);
-  const _prof2=S.userProfile||{};
-  const _moveR2=(_prof2.fuLines||[]).find(l=>l.includes('Why are you moving'));
-  const _tripT2=(_prof2.fuLines||[]).find(l=>l.includes('kind of trip'));
-  const _stay2=(_prof2.fuLines||[]).find(l=>l.includes('How long'));
-  const _purp2=_moveR2?_moveR2.split(': ')[1]:_tripT2?_tripT2.split(': ')[1]:'';
-  const _stayVal2=_stay2?_stay2.split(': ')[1]:'';
+  // Personalisation from quiz answers
+  const qp=S.userProfile||{};
+  const qfLines=qp.fuLines||[];
+  const qqLines=qp.quizLines||[];
+  const qMoveR=qfLines.find(l=>l.includes('Why are you moving'));
+  const qTripT=qfLines.find(l=>l.includes('kind of trip'));
+  const qStay=qfLines.find(l=>l.includes('How long'));
+  const qBudget=qqLines.find(l=>l.toLowerCase().includes('budget')||l.toLowerCase().includes('afford'));
+  const qSocial=qqLines.find(l=>l.includes('social')||l.includes('community'));
+  const qPurp=qMoveR?qMoveR.split(': ')[1]:qTripT?qTripT.split(': ')[1]:'';
+  const qStayVal=qStay?qStay.split(': ')[1]:'';
+  // Personalised why reasons
+  const why1=qMoveR?`${r.city} is a strong fit for your goal — ${qMoveR.split(': ')[1]||qMoveR}`:
+    qTripT?`${r.city} excels at what you're looking for — ${qTripT.split(': ')[1]||qTripT}`:
+    `${r.city}'s lifestyle aligns with your personality and how you spend your time`;
+  const why2=r.highlights&&r.highlights[0]?r.highlights[0]:`${r.country} offers the right environment for your specific situation`;
+  const why3=r.highlights&&r.highlights[1]?r.highlights[1]:qBudget?`The cost of living fits your budget — ${qBudget.split(': ')[1]||qBudget}`:`Your interests and pace of life are a strong match for ${r.city}`;
+  const why4=r.highlights&&r.highlights[2]?r.highlights[2]:qSocial?`${qSocial.split(': ')[1]||qSocial} — ${r.city} delivers on this`:`${r.city} has a welcoming environment for people with your profile`;
+  // Personalised pros/cons
   const personalPC={
     p:[
       r.highlights&&r.highlights[0]?r.highlights[0]:pc.p[0]||'Lower cost of living',
       r.highlights&&r.highlights[1]?r.highlights[1]:pc.p[1]||'Strong expat community',
-      _purp2?`Excellent fit for ${_purp2}${_stayVal2?' ('+_stayVal+')':''}`:pc.p[2]||'High quality of life',
+      qPurp?`Excellent fit for ${qPurp}${qStayVal?' ('+qStayVal+')':''}`:pc.p[2]||'High quality of life',
       r.highlights&&r.highlights[2]?r.highlights[2]:pc.p[3]||'Welcoming to foreigners',
       r.highlights&&r.highlights[3]?r.highlights[3]:pc.p[4]||'Great climate and lifestyle'
     ].filter(Boolean).slice(0,5),
@@ -1029,46 +1042,7 @@ function oD(idx){const r=S.res[idx],isST=S.tt==='st';const itin=null;const pc=gP
       isST?'Short visit limits full experience':'Visa requirements need careful planning'
     ].filter(Boolean).slice(0,4)
   };
-  // Build personalised pros/cons based on quiz answers
-  const _profile=S.userProfile||{};
-  const _moveR=(_profile2.fuLines||[]).find(l=>l.includes('Why are you moving'));
-  const _tripT=(_profile2.fuLines||[]).find(l=>l.includes('kind of trip'));
-  const _stay=(_profile2.fuLines||[]).find(l=>l.includes('How long'));
-  const _budget=(_profile.quizLines||[]).find(l=>l.toLowerCase().includes('budget')||l.toLowerCase().includes('afford'));
-  const _social=(_profile.quizLines||[]).find(l=>l.includes('expat')||l.includes('community'));
-  const _purp=_moveR?_moveR.split(': ')[1]:_tripT?_tripT.split(': ')[1]:'';
-  const _stayVal=_stay?_stay.split(': ')[1]:'';
-  // Build personalised pros
-  const _pros=[
-    r.highlights&&r.highlights[0]?r.highlights[0]:pc.p[0],
-    r.highlights&&r.highlights[1]?r.highlights[1]:pc.p[1],
-    _purp?`Strong fit for your goal — ${_purp}${_stayVal2?' ('+_stayVal2+')':''}`:pc.p[2],
-    _budget?`Budget aligns — ${_budget.split(': ')[1]||_budget}`:pc.p[3]||'Welcoming environment for expats',
-    r.highlights&&r.highlights[2]?r.highlights[2]:pc.p[4]||'High quality of life',
-  ].filter(Boolean).slice(0,5);
-  const _cons=[
-    pc.c[0]||'Language barrier possible',
-    pc.c[1]||'Bureaucracy and paperwork',
-    pc.c[2]||'Adjustment period takes time',
-    isST?'Short visit limits depth of experience':'Visa requirements need research',
-  ].filter(Boolean).slice(0,4);
-  // Build personalised why reasons from actual quiz answers
-  const profile2=S.userProfile||{quizLines:[],fuLines:[],isST};
-  const moveReason=profile2.fuLines.find(l=>l.includes('Why are you moving'))||'';
-  const tripType=profile2.fuLines.find(l=>l.includes('kind of trip'))||'';
-  const personality=profile2.quizLines.find(l=>l.includes('free day'))||'';
-  const budget=profile.quizLines.find(l=>l.toLowerCase().includes('budget')||l.toLowerCase().includes('spend'))||'';
-  const workStyle=profile.quizLines.find(l=>l.includes('work'))||'';
-  const social=profile.quizLines.find(l=>l.includes('social')||l.includes('community'))||'';
-  
-  const why1=moveReason?`${r.city} is a strong fit for your goal — ${moveReason.split(': ')[1]||moveReason}`:
-    tripType?`${r.city} excels at what you're looking for — ${tripType.split(': ')[1]||tripType}`:
-    `${r.city}'s lifestyle aligns with your personality and how you spend your time`;
-  const why2=r.highlights&&r.highlights[0]?r.highlights[0]:`${r.country} offers the right environment for your specific situation`;
-  const why3=r.highlights&&r.highlights[1]?r.highlights[1]:budget?`The cost of living fits your budget — ${budget.split(': ')[1]||budget}`:`Your interests and pace of life are a strong match for ${r.city}`;
-  const why4=r.highlights&&r.highlights[2]?r.highlights[2]:social?`${social.split(': ')[1]||social} — ${r.city} delivers on this`:`${r.city} has a welcoming environment for people with your profile`;
-
-  const det={why:[why1,why2,why3,why4],cost:{m:isST?"$80–$200/day":r.country==='Portugal'?"$1,800–$2,800":"$1,000–$2,200",rent:isST?"Included":r.country==='Portugal'?"$800–$1,400/mo":"$400–$900/mo",food:isST?"$20–$60/day":"$200–$500/mo",tr:isST?"$5–$20/day":"$30–$80/mo",ut:isST?"N/A":"$40–$100/mo",cmp:r.country==='Portugal'?'45–55% cheaper than US':'40–65% cheaper than US',areas:(CITYDB[r.country]?.areas?.[r.city]||['City centre — walkable and lively','Expat neighbourhoods — best services','Suburbs — quieter and more affordable'])},sft:{sc:r.score>=90?8:r.score>=80?7:6,lb:r.score>=90?"Very Safe":r.score>=80?"Generally Safe":"Research Recommended",nt:`${r.country} is considered a good destination for international travelers.`},best:(r.highlights&&r.highlights.length>0?r.highlights:getBest(r.city,isST)),itin,pc,visa:(CITYDB[r.country]?.visas||CITYDB[r.country+' (Country)']?.visas||[{name:r.country+' Long-Stay Visa',dur:'1–2 years renewable',cost:'$50–$150 USD',proc:'4–10 weeks',req:['Valid passport (6+ months)','Proof of income or savings','Criminal background check','Health insurance','Accommodation proof']},{name:r.country+' Retirement/Passive Income Visa',dur:'1–2 years renewable',cost:'$50–$200 USD',proc:'4–10 weeks',req:['Proof of passive income $1,000+/month','Bank statements','Health insurance','Clean criminal record']},{name:'Tourist Visa Extension',dur:'30–90 days',cost:'$20–$50 USD',proc:'1–2 weeks in-country',req:['Valid tourist visa','Proof of funds','Application at immigration office']}]),steps:[`Research the specific visa for ${r.country} at your consulate`,`Gather and apostille your documents — allow 2–3 months`,`Arrange health insurance valid in ${r.country}`,`Book your consulate appointment early`,`Join expat Facebook groups for ${r.city} for on-the-ground advice`,`Take a 2-week scouting trip before fully committing`]};st({selR:r,det,dTab:'overview',tt:S.tt})}
+  const det={why:[why1,why2,why3,why4],cost:{m:isST?"$80–$200/day":r.country==='Portugal'?"$1,800–$2,800":"$1,000–$2,200",rent:isST?"Included":r.country==='Portugal'?"$800–$1,400/mo":"$400–$900/mo",food:isST?"$20–$60/day":"$200–$500/mo",tr:isST?"$5–$20/day":"$30–$80/mo",ut:isST?"N/A":"$40–$100/mo",cmp:r.country==='Portugal'?'45–55% cheaper than US':'40–65% cheaper than US',areas:(CITYDB[r.country]?.areas?.[r.city]||['City centre — walkable and lively','Expat neighbourhoods — best services','Suburbs — quieter and more affordable'])},sft:{sc:r.score>=90?8:r.score>=80?7:6,lb:r.score>=90?"Very Safe":r.score>=80?"Generally Safe":"Research Recommended",nt:`${r.country} is considered a good destination for international travelers.`},best:(r.highlights&&r.highlights.length>0?r.highlights:getBest(r.city,isST)),itin,pc,visa:(CITYDB[r.country]?.visas||CITYDB[r.country+' (Country)']?.visas||[{name:r.country+' Long-Stay Visa',dur:'1–2 years renewable',cost:'$50–$150 USD',proc:'4–10 weeks',req:['Valid passport (6+ months)','Proof of income or savings','Criminal background check','Health insurance','Accommodation proof']},{name:r.country+' Retirement/Passive Income Visa',dur:'1–2 years renewable',cost:'$50–$200 USD',proc:'4–10 weeks',req:['Proof of passive income $1,000+/month','Bank statements','Health insurance','Clean criminal record']},{name:'Tourist Visa Extension',dur:'30–90 days',cost:'$20–$50 USD',proc:'1–2 weeks in-country',req:['Valid tourist visa','Proof of funds','Application at immigration office']}]),steps:[`Research the specific visa for ${r.country} at your consulate`,`Gather and apostille your documents — allow 2–3 months`,`Arrange health insurance valid in ${r.country}`,`Book your consulate appointment early`,`Join expat Facebook groups for ${r.city} for on-the-ground advice`,`Take a 2-week scouting trip before fully committing`],pc:personalPC};st({selR:r,det,dTab:'overview',tt:S.tt})}
 function rDet(){const r=S.selR,d=S.det,isST=S.tt==='st';const tabs=isST?['overview','itinerary']:['overview','proscons','costs','visa','steps'];const tbLb=isST?['Overview','📅 Itinerary']:['Overview','Pros & Cons','Cost of Living','Visa Options','Getting Started'];return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({selR:null,det:null,showSv:S.fromSv||false,fromSv:false})"><div class="md"><div style="position:relative;height:160px;overflow:hidden">${destImg(r.city,r.flag,false)}<button onclick="st({selR:null,det:null,showSv:S.fromSv||false,fromSv:false})" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.5);border:1.5px solid rgba(255,255,255,.3);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px;color:#fff">✕</button><div style="position:absolute;bottom:0;left:0;right:0;padding:12px 18px;background:linear-gradient(to top,rgba(0,0,0,.8),transparent)"><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.8)">${r.city}, ${r.country} ${r.flag}</div><div style="font-size:12px;color:#F5E420;font-weight:700;margin-top:2px">${r.scoreLabel} · ${r.score}/100</div></div></div><div style="padding:0"><div class="tabs">${tabs.map((t,i)=>`<div class="tab ${S.dTab===t?'on':''}" onclick="st({dTab:'${t}'})">${tbLb[i]}</div>`).join('')}</div><div style="padding:16px 22px 20px">${rDT(d,r,isST)}</div></div></div>`}
 function rDT(d,r,isST){if(!d)return'';
 if(S.dTab==='itinerary'){const it=d.itin;if(!it){
