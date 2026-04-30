@@ -533,6 +533,7 @@ function doLogin(){
         S.user={...S.user,phone:p.phone||'',country:p.country||'',city:p.city||''};
         if(p.first_name)S.user.firstName=p.first_name;
         if(p.last_name)S.user.lastName=p.last_name;
+        if(p.birthday)S.user.bday=p.birthday;
       }
       supaLoadDestinations(u.id).then(rows=>{
         if(rows.length>0){
@@ -1006,11 +1007,56 @@ function sC(e,city,country,idx){
     }
   }
 }
-function oD(idx){const r=S.res[idx],isST=S.tt==='st';const itin=null;const pc=gPC(r.country);// Build personalised why reasons from actual quiz answers
-  const profile=S.userProfile||{quizLines:[],fuLines:[],isST};
-  const moveReason=profile.fuLines.find(l=>l.includes('Why are you moving'))||'';
-  const tripType=profile.fuLines.find(l=>l.includes('kind of trip'))||'';
-  const personality=profile.quizLines.find(l=>l.includes('free day'))||'';
+function oD(idx){const r=S.res[idx],isST=S.tt==='st';const itin=null;const pc=gPC(r.country);
+  const _prof2=S.userProfile||{};
+  const _moveR2=(_prof2.fuLines||[]).find(l=>l.includes('Why are you moving'));
+  const _tripT2=(_prof2.fuLines||[]).find(l=>l.includes('kind of trip'));
+  const _stay2=(_prof2.fuLines||[]).find(l=>l.includes('How long'));
+  const _purp2=_moveR2?_moveR2.split(': ')[1]:_tripT2?_tripT2.split(': ')[1]:'';
+  const _stayVal2=_stay2?_stay2.split(': ')[1]:'';
+  const personalPC={
+    p:[
+      r.highlights&&r.highlights[0]?r.highlights[0]:pc.p[0]||'Lower cost of living',
+      r.highlights&&r.highlights[1]?r.highlights[1]:pc.p[1]||'Strong expat community',
+      _purp2?`Excellent fit for ${_purp2}${_stayVal2?' ('+_stayVal+')':''}`:pc.p[2]||'High quality of life',
+      r.highlights&&r.highlights[2]?r.highlights[2]:pc.p[3]||'Welcoming to foreigners',
+      r.highlights&&r.highlights[3]?r.highlights[3]:pc.p[4]||'Great climate and lifestyle'
+    ].filter(Boolean).slice(0,5),
+    c:[
+      pc.c[0]||'Language barrier possible',
+      pc.c[1]||'Bureaucracy and paperwork',
+      pc.c[2]||'Adjustment period takes time',
+      isST?'Short visit limits full experience':'Visa requirements need careful planning'
+    ].filter(Boolean).slice(0,4)
+  };
+  // Build personalised pros/cons based on quiz answers
+  const _profile=S.userProfile||{};
+  const _moveR=(_profile2.fuLines||[]).find(l=>l.includes('Why are you moving'));
+  const _tripT=(_profile2.fuLines||[]).find(l=>l.includes('kind of trip'));
+  const _stay=(_profile2.fuLines||[]).find(l=>l.includes('How long'));
+  const _budget=(_profile.quizLines||[]).find(l=>l.toLowerCase().includes('budget')||l.toLowerCase().includes('afford'));
+  const _social=(_profile.quizLines||[]).find(l=>l.includes('expat')||l.includes('community'));
+  const _purp=_moveR?_moveR.split(': ')[1]:_tripT?_tripT.split(': ')[1]:'';
+  const _stayVal=_stay?_stay.split(': ')[1]:'';
+  // Build personalised pros
+  const _pros=[
+    r.highlights&&r.highlights[0]?r.highlights[0]:pc.p[0],
+    r.highlights&&r.highlights[1]?r.highlights[1]:pc.p[1],
+    _purp?`Strong fit for your goal — ${_purp}${_stayVal2?' ('+_stayVal2+')':''}`:pc.p[2],
+    _budget?`Budget aligns — ${_budget.split(': ')[1]||_budget}`:pc.p[3]||'Welcoming environment for expats',
+    r.highlights&&r.highlights[2]?r.highlights[2]:pc.p[4]||'High quality of life',
+  ].filter(Boolean).slice(0,5);
+  const _cons=[
+    pc.c[0]||'Language barrier possible',
+    pc.c[1]||'Bureaucracy and paperwork',
+    pc.c[2]||'Adjustment period takes time',
+    isST?'Short visit limits depth of experience':'Visa requirements need research',
+  ].filter(Boolean).slice(0,4);
+  // Build personalised why reasons from actual quiz answers
+  const profile2=S.userProfile||{quizLines:[],fuLines:[],isST};
+  const moveReason=profile2.fuLines.find(l=>l.includes('Why are you moving'))||'';
+  const tripType=profile2.fuLines.find(l=>l.includes('kind of trip'))||'';
+  const personality=profile2.quizLines.find(l=>l.includes('free day'))||'';
   const budget=profile.quizLines.find(l=>l.toLowerCase().includes('budget')||l.toLowerCase().includes('spend'))||'';
   const workStyle=profile.quizLines.find(l=>l.includes('work'))||'';
   const social=profile.quizLines.find(l=>l.includes('social')||l.includes('community'))||'';
@@ -1045,9 +1091,9 @@ if(S.dTab==='itinerary'){const it=d.itin;if(!it){
 }return`<div>${it.time?`<div style="background:#F0FDF4;border:1px solid rgba(34,197,94,.2);border-radius:9px;padding:10px 14px;font-size:13px;color:#15803D;margin-bottom:16px"><strong>Best Time to Visit:</strong> ${it.time}</div>`:''}<div class="dsh"><h4>3-Day Itinerary for ${r.city}</h4></div>${it.days.map(day=>`<div class="iday"><div style="font-family:'Syne',sans-serif;font-size:13.5px;font-weight:700;color:#111;margin-bottom:10px">Day ${day.day} — ${day.title}</div><div class="slt">Morning</div><div class="slc">${day.m}</div><div class="slt">Afternoon</div><div class="slc">${day.a}</div><div class="slt">Evening</div><div class="slc">${day.e}</div>${day.tip?`<div class="tipb">Tip: ${day.tip}</div>`:''}</div>`).join('')}<div class="dsh" style="margin-top:4px"><h4>Must Eat in ${r.city}</h4>${it.eat.map(m=>`<div class="drow"><span style="color:#aaa">◆</span><span style="font-size:13px;color:#555">${m}</span></div>`).join('')}</div><div class="ibb"><div class="ibb-t"><strong style="color:#fff">Want the full plan?</strong> Book a free call — we'll handle your itinerary &amp; accommodation.</div><button class="ibb-b" onclick="st({showCo:true,coSent:false,coTripType:'st'})">Book Free Call</button></div></div>`}
 if(S.dTab==='overview'){
     const profile=S.userProfile||{};
-    const moveR=(profile.fuLines||[]).find(l=>l.includes('Why are you moving'));
-    const tripT=(profile.fuLines||[]).find(l=>l.includes('kind of trip'));
-    const stayL=(profile.fuLines||[]).find(l=>l.includes('How long'));
+    const moveR=(profile2.fuLines||[]).find(l=>l.includes('Why are you moving'));
+    const tripT=(profile2.fuLines||[]).find(l=>l.includes('kind of trip'));
+    const stayL=(profile2.fuLines||[]).find(l=>l.includes('How long'));
     const purposeStr=moveR?moveR.split(': ')[1]:tripT?tripT.split(': ')[1]:'';
     const stayStr=stayL?stayL.split(': ')[1]:'';
     const overviewBanner=purposeStr?`<div style="background:linear-gradient(135deg,#1a1a1a,#2a2a2a);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px"><div><div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#F5E420;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">${isST?'Your Trip':'Your Move'}</div><div style="font-size:13px;color:rgba(255,255,255,.9)">${purposeStr}${stayStr?' · '+stayStr:''}</div></div></div>`:'';
@@ -1102,7 +1148,7 @@ function sc(s,tt){
   h+='<div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px">'+s.score+'/100 · '+s.date+sharedBadge+'</div>';
   h+='</div>';
   h+='<div style="display:flex;align-items:center;gap:5px">';
-  h+='<button onclick="event.stopPropagation();openNotesDirect(\''+s.id+'\')" style="background:'+noteBg+';border:1px solid '+noteBd+';border-radius:7px;padding:4px 9px;cursor:pointer;color:'+noteCol+';font-size:11.5px;font-weight:700">📝 Notes</button>';
+  h+='<button onclick="event.stopPropagation();openNotesDirect(\''+s.id+'\')" style="background:'+noteBg+';border:1px solid '+noteBd+';border-radius:7px;padding:4px 9px;cursor:pointer;color:'+noteCol+';font-size:11.5px;font-weight:700">📋 Plan</button>';
   h+='<button onclick="event.stopPropagation();openShareDirect(\''+s.id+'\')" style="background:'+shrBg+';border:1px solid '+shrBd+';border-radius:7px;padding:4px 9px;cursor:pointer;color:'+shrCol+';font-size:11.5px;font-weight:700">🔗 Share</button>';
   h+='<div style="width:22px;height:22px;border-radius:6px;border:2px solid '+cmpBd+';background:'+cmpBg+';display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;cursor:pointer" onclick="event.stopPropagation();toggleCmp(\''+s.id+'\',\''+tt+'\')">'+cmpTick+'</div>';
   h+='</div></div>';
@@ -1224,15 +1270,6 @@ function rShare(){
 
   return`<div class="ov" onclick="if(event.target.classList.contains('ov'))hideModalDirect()" style="z-index:360">
   <div class="md" style="max-width:480px">
-    <div style="position:relative;height:120px;overflow:hidden;background:#111;border-radius:20px 20px 0 0">
-      ${P[saved.city]?`<img src="${P[saved.city]}" style="width:100%;height:100%;object-fit:cover;opacity:.85" onerror="this.style.display='none'"/>`:''}
-      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1),rgba(0,0,0,.6))"></div>
-      <div style="position:absolute;bottom:12px;left:16px;right:80px">
-        <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff">${saved.flag} ${saved.city}, ${saved.country}</div>
-        <div style="font-size:12px;color:rgba(255,255,255,.8);margin-top:2px">${saved.scoreLabel} · ${saved.score}/100 · ${isST?'Short-Term Travel':'Long-Term Relocation'}</div>
-      </div>
-      <button onclick="hideModalDirect()" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px">✕</button>
-    </div>
     <div style="position:relative;height:130px;overflow:hidden;background:#111;border-radius:20px 20px 0 0;flex-shrink:0">
       ${P[saved.city]?`<img src="${P[saved.city]}" style="width:100%;height:100%;object-fit:cover;opacity:.85" loading="lazy" onerror="this.style.display='none'"/>`:''}
       <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.05),rgba(0,0,0,.65))"></div>
@@ -1354,20 +1391,21 @@ function svAc(){
   const ln=document.getElementById('aln')?.value.trim();
   const e=document.getElementById('ae')?.value.trim();
   const ph=document.getElementById('ap')?.value.trim()||'';
+  const bday=document.getElementById('abday')?.value||'';
   const co=document.getElementById('aco')?.value.trim()||'';
   const cy=document.getElementById('acy')?.value.trim()||'';
   if(!fn||!ln){st({acMsg:'Name is required.'});return;}
   if(!e||!e.includes('@')){st({acMsg:'Please enter a valid email.'});return;}
   // Capture userId before any state update
   const userId=S.user?.id;
-  const updated={...S.user,firstName:fn,lastName:ln,email:e,phone:ph,country:co,city:cy};
+  const updated={...S.user,firstName:fn,lastName:ln,email:e,phone:ph,country:co,city:cy,bday:bday};
   S.user=updated;
   saveState();
   st({acMsg:'✓ Saved!'});
   // Save to Supabase
   if(userId){
     supa.from('profiles').upsert({
-      id:userId,first_name:fn,last_name:ln,phone:ph,country:co,city:cy
+      id:userId,first_name:fn,last_name:ln,phone:ph,country:co,city:cy,birthday:bday
     },{onConflict:'id'}).then(({error})=>{
       if(error){
         console.error('Profile save error:',error.message);
