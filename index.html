@@ -204,14 +204,15 @@ async function supaSaveDestination(userId,item){
   try{
     const notes=S.notes[item.id]||null;
     const share=S.shareData[item.id]||null;
-    await supa.from('saved_destinations').upsert({
+    const {error}=await supa.from('saved_destinations').upsert({
       user_id:userId,city_id:item.id,city:item.city,
       country:item.country,flag:item.flag,score:item.score,
       score_label:item.scoreLabel,trip_type:item.tt,
-      notes_data:notes?JSON.stringify(notes):null,
-      share_data:share?JSON.stringify(share):null
+      notes_data:notes||null,
+      share_data:share||null
     },{onConflict:'user_id,city_id'});
-  }catch(e){console.warn('Save dest error:',e);}
+    if(error)console.error('supaSaveDestination error:',error.message,error.details);
+  }catch(e){console.error('Save dest exception:',e);}
 }
 async function supaDeleteDestination(userId,cityId){
   try{
@@ -608,8 +609,10 @@ function loadUserFromSupabase(u, wasUpgraded, sessionId){
         }));
         S.sIds=new Set(S.saved.map(x=>x.id));
         rows.forEach(r=>{
-          if(r.notes_data){try{S.notes[r.city_id]=JSON.parse(r.notes_data);}catch(e){}}
-          if(r.share_data){try{S.shareData[r.city_id]=JSON.parse(r.share_data);}catch(e){}}
+          if(r.notes_data&&typeof r.notes_data==='object')S.notes[r.city_id]=r.notes_data;
+          else if(r.notes_data&&typeof r.notes_data==='string'){try{S.notes[r.city_id]=JSON.parse(r.notes_data);}catch(e){}}
+          if(r.share_data&&typeof r.share_data==='object')S.shareData[r.city_id]=r.share_data;
+          else if(r.share_data&&typeof r.share_data==='string'){try{S.shareData[r.city_id]=JSON.parse(r.share_data);}catch(e){}}
         });
       }
 
@@ -1020,7 +1023,11 @@ function openSaved(id,e){
 function syncDestinationToSupabase(cityId){
   if(!S.user?.id)return;
   const item=S.saved.find(x=>x.id===cityId);
-  if(item)supaSaveDestination(S.user.id,item);
+  if(item){
+    supaSaveDestination(S.user.id,item)
+      .then(()=>console.log('Synced:',cityId))
+      .catch(e=>console.error('Sync failed:',e));
+  }
 }
 function sC(e,city,country,idx){
   e.stopPropagation();
