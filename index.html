@@ -204,14 +204,23 @@ async function supaSaveDestination(userId,item){
   try{
     const notes=S.notes[item.id]||null;
     const share=S.shareData[item.id]||null;
-    const {error}=await supa.from('saved_destinations').upsert({
+    const payload={
       user_id:userId,city_id:item.id,city:item.city,
       country:item.country,flag:item.flag,score:item.score,
       score_label:item.scoreLabel,trip_type:item.tt,
-      notes_data:notes||null,
-      share_data:share||null
-    },{onConflict:'user_id,city_id'});
-    if(error)console.error('supaSaveDestination error:',error.message,error.details);
+      notes_data:notes||null,share_data:share||null
+    };
+    // Try update first, then insert if not exists
+    const {data:existing}=await supa.from('saved_destinations')
+      .select('id').eq('user_id',userId).eq('city_id',item.id).single();
+    if(existing){
+      const {error}=await supa.from('saved_destinations').update(payload)
+        .eq('user_id',userId).eq('city_id',item.id);
+      if(error)console.error('Update dest error:',error.message);
+    }else{
+      const {error}=await supa.from('saved_destinations').insert(payload);
+      if(error)console.error('Insert dest error:',error.message);
+    }
   }catch(e){console.error('Save dest exception:',e);}
 }
 async function supaDeleteDestination(userId,cityId){
@@ -481,34 +490,45 @@ window.toggleTodo=function(id,tid){
   const n=getNotes(id);
   n.todos=n.todos.map(t=>t.id===tid?{...t,done:!t.done}:t);
   S.notes[id]=n;
-  const row=document.querySelector('[data-tid="'+tid+'"]');
-  if(row){const cb=row.querySelector('input[type="checkbox"]');if(cb)cb.checked=!cb.checked;}
   saveState();
   saveQuizProgress();
-  if(S.user?.id)syncDestinationToSupabase(id);
-};
+  syncDestinationToSupabase(id);
+  openNotesDirect(id);
+};;
 window.deleteTodo=function(id,tid){
   const n=getNotes(id);n.todos=n.todos.filter(t=>t.id!==tid);S.notes[id]=n;
-  const row=document.querySelector('[data-tid="'+tid+'"]');
-  if(row){row.remove();const done=n.todos.filter(x=>x.done).length;const prog=document.getElementById('todo-prog');if(prog)prog.textContent=done+'/'+n.todos.length+' done';}else{render()}
+  saveState();saveQuizProgress();syncDestinationToSupabase(id);
+  openNotesDirect(id);
 }
-window.moveTodo=function(id,tid,dir){const n=getNotes(id);const idx=n.todos.findIndex(t=>t.id===tid);const ni=idx+dir;if(ni<0||ni>=n.todos.length)return;const arr=[...n.todos];[arr[idx],arr[ni]]=[arr[ni],arr[idx]];n.todos=arr;S.notes[id]=n;render()}
-window.updateTodoText=function(id,tid,val){const n=getNotes(id);n.todos=n.todos.map(t=>t.id===tid?{...t,text:val}:t);S.notes[id]=n}
+window.moveTodo=function(id,tid,dir){const n=getNotes(id);const idx=n.todos.findIndex(t=>t.id===tid);const ni=idx+dir;if(ni<0||ni>=n.todos.length)return;const arr=[...n.todos];[arr[idx],arr[ni]]=[arr[ni],arr[idx]];n.todos=arr;S.notes[id]=n;render(;
+  saveState();saveQuizProgress();syncDestinationToSupabase(id);
+  openNotesDirect(id);
+}
+window.updateTodoText=function(id,tid,val){
+  const n=getNotes(id);
+  n.todos=(n.todos||[]).map(t=>t.id===tid?{...t,text:val}:t);
+  S.notes[id]=n;
+  saveState();
+  saveQuizProgress();
+};
 window.addTodo=function(id){
   const inp=document.getElementById('ntodo-inp');
   if(!inp||!inp.value.trim())return;
   const n=getNotes(id);
-  n.todos=[...n.todos,{id:Date.now(),text:inp.value.trim(),done:false}];
-  S.notes[id]=n;inp.value='';
-  openNotesDirect(id);
+  n.todos=[...(n.todos||[]),{id:Date.now(),text:inp.value.trim(),done:false}];
+  S.notes[id]=n;
   saveState();
   saveQuizProgress();
-  if(S.user?.id)syncDestinationToSupabase(id);
-};;
+  syncDestinationToSupabase(id);
+  openNotesDirect(id);
+};;;
 window.updNoteDate=function(id,key,val){const n=getNotes(id);n[key]=val;S.notes[id]=n;
   saveState();};
 window.updNoteDate=function(id,field,val){const n=getNotes(id);n[field]=val;S.notes[id]=n;render()};
-window.saveNote=function(id){const ta=document.getElementById('note-text');if(ta){const n=getNotes(id);n.text=ta.value;n.savedBy=S.user?((S.user.firstName||'')+(S.user.lastName?' '+S.user.lastName:'')):'You';n.savedAt=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});S.notes[id]=n}toast('Notes saved!')}
+window.saveNote=function(id){const ta=document.getElementById('note-text');if(ta){const n=getNotes(id);n.text=ta.value;n.savedBy=S.user?((S.user.firstName||'')+(S.user.lastName?' '+S.user.lastName:'')):'You';n.savedAt=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});S.notes[id]=n}toast('Notes saved!';
+  saveState();saveQuizProgress();syncDestinationToSupabase(id);
+  toast('Notes saved ✓');openNotesDirect(id);
+}
 window.shareViaMethod=function(id,method){const saved=S.saved.find(x=>x.id===id);if(!saved)return;const link='https://'+getShareLink(id);const note=S.shareData[id]?.note||'';const msg='Check out '+saved.city+', '+saved.country+' on Experience Travel!'+(note?'\n'+note:'')+'\n'+link;if(method==='copy'){navigator.clipboard?.writeText(link).catch(()=>{});toast('Link copied!')}else if(method==='native'){if(navigator.share){navigator.share({title:'Experience Travel — '+saved.city,text:msg,url:link}).catch(()=>{})}else{navigator.clipboard?.writeText(link).catch(()=>{});toast('Link copied!')}}else if(method==='whatsapp'){window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}else if(method==='email'){window.open('mailto:?subject='+encodeURIComponent(saved.city+' on Experience Travel')+'&body='+encodeURIComponent(msg),'_blank')}};
 
 window.addSharePerson=function(id){
