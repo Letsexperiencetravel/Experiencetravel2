@@ -214,7 +214,9 @@ async function supaSaveDestination(userId,item){
   }catch(e){console.warn('Save dest error:',e);}
 }
 async function supaDeleteDestination(userId,cityId){
-  await supa.from('saved_destinations').delete().eq('user_id',userId).eq('city_id',cityId);
+  try{
+    await supa.from('saved_destinations').delete().eq('user_id',userId).eq('city_id',cityId);
+  }catch(e){console.warn('Delete dest error:',e);}
 }
 async function supaLoadDestinations(userId){
   const {data}=await supa.from('saved_destinations').select('*').eq('user_id',userId);
@@ -584,6 +586,10 @@ function loadUserFromSupabase(u, wasUpgraded, sessionId){
         phone:p.phone||'',country:p.country||'',
         city:p.city||'',bday:p.birthday||''
       };
+      // Backfill email if missing in profile
+      if(!p.email&&u.email){
+        supa.from('profiles').update({email:u.email}).eq('id',u.id).then(()=>{}).catch(()=>{});
+      }
       if(p.first_name)S.user.firstName=p.first_name;
       if(p.last_name)S.user.lastName=p.last_name;
       // Restore quiz answers
@@ -677,7 +683,7 @@ supa.auth.signUp({email:d.em,password:p1,options:{data:{first_name:d.fn,last_nam
     if(error){st({reg:{...S.reg,_fe:{p1:error.message}}});return}
     const u=data.user;
     // Create profile row
-    supa.from('profiles').upsert({id:u.id,email:d.em,first_name:d.fn,last_name:d.ln,phone:d.ph,country:d.co,city:d.cy,is_pro:false,free_cnt:0,pro_cnt:0}).then(()=>{
+    supa.from('profiles').upsert({id:u.id,email:d.em,first_name:d.fn,last_name:d.ln,phone:d.ph||'',country:d.co||'',city:d.cy||'',is_pro:false,free_cnt:0,pro_cnt:0},{onConflict:'id'}).then(({error:pe})=>{if(pe)console.error('Profile create error:',pe.message);
       st({scr:'quiz_intro',user:{id:u.id,firstName:d.fn,lastName:d.ln,email:d.em,phone:d.ph,country:d.co,city:d.cy},ans:{},qi:0,err:null,lc:1});
     });
   });
@@ -1039,9 +1045,9 @@ function sC(e,city,country,idx){
   if(S.user?.id){
     if(ns.has(k)){
       const r=S.saved.find(x=>x.id===k);
-      if(r)supaSaveDestination(S.user.id,r);
+      if(r)supaSaveDestination(S.user.id,r).then(()=>console.log('Saved:',k)).catch(err=>console.error('Save dest failed:',err));
     }else{
-      supaDeleteDestination(S.user.id,k);
+      supaDeleteDestination(S.user.id,k).then(()=>console.log('Deleted:',k)).catch(err=>console.error('Delete dest failed:',err));
     }
   }
 }
