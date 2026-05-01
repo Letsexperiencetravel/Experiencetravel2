@@ -454,7 +454,7 @@ function saveQuizProgress(){
       quiz_answers:S.ans,
       followup_answers:S.fA||{},
       trip_type:S.tt||null
-    }).eq('id',S.user.id).catch(()=>{});
+    }).eq('id',S.user.id).then(()=>{}).catch(()=>{});
   }
 }
 function nQ(){const s=S.ans[S.qi];if(s===undefined||s===null||(Array.isArray(s)&&s.length===0))return;if(S.editMode){st({scr:'quiz_review',editMode:false});return}if(S.qi===11){st({scr:'chapter',chNum:2,chTitle:'How You Live',chIcon:'🏠',chColor:P,chDesc:'Questions about your lifestyle, living preferences, health and what home really means to you.',qi:12});return}if(S.qi===21){st({scr:'chapter',chNum:3,chTitle:'How You Travel',chIcon:'✈️',chColor:'#22C55E',chDesc:'Questions about your travel style, pace and what you look for in a destination.',qi:22});return}if(S.qi===QS.length-1){st({scr:'qd'});return}st({qi:S.qi+1})}
@@ -794,11 +794,11 @@ function doSearch(){saveQuizProgress();
   if(!S.isPro){
     if(S.freeCnt>=FREE_LIMIT){st({showPW:true});return;}
     st({scr:'loading',freeCnt:S.freeCnt+1});
-  if(S.user?.id)supa.from('profiles').update({free_cnt:S.freeCnt+1}).eq('id',S.user.id).catch(()=>{});
+  if(S.user?.id)supa.from('profiles').update({free_cnt:S.freeCnt+1}).eq('id',S.user.id).then(()=>{}).catch(()=>{});
   }else{
     if(S.proCnt>=PRO_LIMIT+(S.topupCount*TOPUP_LIMIT)){st({showTopup:true});return;}
     st({scr:'loading',proCnt:S.proCnt+1});
-  if(S.user?.id)supa.from('profiles').update({pro_cnt:S.proCnt+1}).eq('id',S.user.id).catch(()=>{});
+  if(S.user?.id)supa.from('profiles').update({pro_cnt:S.proCnt+1}).eq('id',S.user.id).then(()=>{}).catch(()=>{});
   }
 
   const isST=S.tt==='st';
