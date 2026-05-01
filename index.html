@@ -760,95 +760,76 @@ function rDash(){
 }
 
 function rFU(){const qs=S.tt==='lt'?LTQ:STQ,q=qs[S.fI],tot=qs.length,pct=Math.round((S.fI/tot)*100);const isL=S.fI===tot-1,isC=q.t==='companion',isM=q.t==='m';const sel=S.fA[S.fI]!==undefined?S.fA[S.fI]:null;const isText=q.t==='text';const hA=isText?true:isC?csOk():isM?(Array.isArray(sel)&&sel.length>0):(sel!==null);let opt='';if(isC){opt=`<div style="margin-top:12px"><div id="c-solo" class="crow ${CS.solo?'s':''}"><div class="cleft" onclick="tgC('solo')"><div class="cchk">${CS.solo?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.solo?P:'#555'}">🧳 Moving Solo — Just Me</span></div></div><div id="c-partner" class="crow ${CS.partner?'s':''}"><div class="cleft" onclick="tgC('partner')"><div class="cchk">${CS.partner?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.partner?P:'#555'}">💑 Partner / Spouse</span></div></div><div id="c-kids" class="crow ${CS.kids>0?'s':''}"><div class="cleft" onclick="tgC('kids-toggle')" style="flex:1"><div class="cchk">${CS.kids>0?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.kids>0?P:'#555'}">👶 Children</span></div><div class="counter"><button class="cbtn" onclick="event.stopPropagation();adjC('kids',-1)">−</button><span class="cval" id="cv-kids">${CS.kids}</span><button class="cbtn" onclick="event.stopPropagation();adjC('kids',1)">+</button></div></div><div id="c-pets" class="crow ${CS.pets>0?'s':''}"><div class="cleft" onclick="tgC('pets-toggle')" style="flex:1"><div class="cchk">${CS.pets>0?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.pets>0?P:'#555'}">🐾 Pets</span></div><div class="counter"><button class="cbtn" onclick="event.stopPropagation();adjC('pets',-1)">−</button><span class="cval" id="cv-pets">${CS.pets}</span><button class="cbtn" onclick="event.stopPropagation();adjC('pets',1)">+</button></div></div></div>`}else if(isM){const sa=Array.isArray(sel)?sel:[];opt=`<div style="margin-top:10px"><div class="chips">${q.o.map((o,i)=>`<div class="chip fc ${sa.includes(i)?'s':''}" onclick="tFC(${i})">${o}</div>`).join('')}</div></div>`}else if(isText){const tv=typeof sel==='string'?sel:'';opt=`<div style="margin-top:14px"><input class="inp-dk" type="text" id="txt-ans" placeholder="e.g. Portugal, Japan, Mexico... (optional)" value="${tv}" oninput="sFT(this.value)" style="font-size:15px;padding:14px 16px;width:100%;"/><div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:10px">Leave blank to get recommendations across all countries</div></div>`}else{opt=`<div class="opts-d" style="margin-top:10px">${q.o.map((o,i)=>`<div class="opt-d ${sel===i?'s':''}" onclick="sFL(${i})"><div class="qdot"><div class="qdin"></div></div>${o}</div>`).join('')}</div>`}return`<div style="min-height:100vh;background:#fff">${rNav()}<div style="padding-top:${pp()}px;padding-bottom:30px;display:flex;justify-content:center;padding-left:16px;padding-right:16px"><div class="dc" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span class="bdg bp">${S.tt==='lt'?'Moving Abroad':'Short-Term Travel'}</span><span style="font-size:11.5px;color:rgba(255,255,255,.35);font-weight:600">${S.fI+1} / ${tot}</span></div><div class="prog prog-d"><div class="prog-b" style="width:${pct}%"></div></div><p style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#fff;line-height:1.45;margin-bottom:2px">${q.q}</p><p style="font-size:12px;color:rgba(255,255,255,.4);margin-top:2px">${isM?'Select all that apply':isC?'Select all that apply':'Choose one'}</p>${opt}<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">${S.fI>0?bSm('← Back','pF()',P,W,'#C8208A'):bSm('← Home',"st({scr:'dash'})",P,W,'#C8208A')} ${!isL?`<button id="nb" onclick="nF()" style="display:inline-flex;align-items:center;padding:10px 20px;background:${hA?P:'#333'};color:${hA?W:'#777'};border:2.5px solid ${hA?'#C8208A':'#444'};border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;opacity:1">Next →</button>`:`<button id="sb" onclick="doSearch()" style="display:inline-flex;align-items:center;padding:10px 20px;background:${hA?Y:'#333'};color:${hA?DK:'#777'};border:2.5px solid ${hA?'#D4C000':'#444'};border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;opacity:1">Find My Places →</button>`}</div></div></div></div>`}
+const budget=quizLines.find(l=>l.toLowerCase().includes('income')||l.toLowerCase().includes('work')||l.toLowerCase().includes('financial'))||'';
 function doSearch(){
   if(!S.isPro){
-    if(S.freeCnt>=FREE_LIMIT){st({showPW:true});return}
+    if(S.freeCnt>=FREE_LIMIT){st({showPW:true});return;}
     st({scr:'loading',freeCnt:S.freeCnt+1});
   }else{
-    if(S.proCnt>=PRO_LIMIT+(S.topupCount*TOPUP_LIMIT)){st({showTopup:true});return}
+    if(S.proCnt>=PRO_LIMIT+(S.topupCount*TOPUP_LIMIT)){st({showTopup:true});return;}
     st({scr:'loading',proCnt:S.proCnt+1});
   }
 
   const isST=S.tt==='st';
   const qs=isST?STQ:LTQ;
 
-  // Build detailed onboarding quiz summary
+  // Build quiz summary
   const quizLines=QS.map((q,i)=>{
     const a=S.ans[i];
     if(a===undefined||a===null)return null;
     if(q.t==='s')return q.q+': '+q.o[a];
     if(q.t==='m'&&Array.isArray(a))return q.q+': '+a.map(x=>q.o[x]).join(', ');
-    if(q.t==='db'&&Array.isArray(a))return 'DEAL-BREAKERS (hard rules — must not recommend destinations with these): '+a.map(x=>q.o[x]).join(', ');
+    if(q.t==='db'&&Array.isArray(a))return 'DEAL-BREAKERS (hard rules): '+a.map(x=>q.o[x]).join(', ');
     if(q.t==='text')return q.q+': '+(a||'No preference');
     return null;
   }).filter(Boolean);
 
-  // Build follow-up answers
   const fuLines=qs.map((q,i)=>{
     const a=S.fA[i];
     if(a===undefined||a===null||a==='')return null;
     if(q.t==='text')return q.q+': '+(a||'No preference');
-    if(q.t==='s')return q.q+': '+q.o[a];
+    if(q.t==='s')return q.o[a]?q.q+': '+q.o[a]:null;
     if(q.t==='m'&&Array.isArray(a))return q.q+': '+a.map(x=>q.o[x]).join(', ');
     return null;
   }).filter(Boolean);
 
-  // Store profile for use in detail cards
   S.userProfile={quizLines,fuLines,isST};
 
-  // Extract key signals for prompt emphasis
-  const purpose=isST?fuLines.find(l=>l.includes('kind of trip')):'';
-  const moveReason=!isST?fuLines.find(l=>l.includes('Why are you moving')):'';
-  const stayLength=fuLines.find(l=>l.includes('How long'));
-  const budget=quizLines.find(l=>l.toLowerCase().includes('budget')||l.toLowerCase().includes('afford'));
-  const dealBreakers=quizLines.find(l=>l.includes('DEAL-BREAKER'));
+  // Key signals (no nested template literals)
+  const moveReason=fuLines.find(l=>l.includes('Why are you moving'))||'';
+  const purpose=fuLines.find(l=>l.includes('kind of trip'))||'';
+  const tripBudget=fuLines.find(l=>l.includes('budget')||l.includes('Budget'))||'';
+  const stayLength=fuLines.find(l=>l.includes('How long'))||'';
+  const dealBreakers=quizLines.find(l=>l.includes('DEAL-BREAKER'))||'';
+  const budget=quizLines.find(l=>l.toLowerCase().includes('budget')||l.toLowerCase().includes('afford'))||'';
 
-  const prompt=`You are a world-class ${isST?'travel':'relocation'} expert who gives deeply personalised recommendations. Your recommendations MUST be completely different for different profiles — a retiree and a student should NEVER get the same cities.
+  // Build rules using string concat to avoid nested backtick issues
+  let rules='';
+  if(moveReason) rules+='\n- This person is moving abroad for: '+moveReason.split(': ').slice(1).join(': ')+'. Every recommendation must serve this purpose.';
+  if(purpose) rules+='\n- This person wants: '+purpose.split(': ').slice(1).join(': ')+'. Prioritise destinations that excel at this.';
+  if(stayLength) rules+='\n- Duration: '+stayLength.split(': ').slice(1).join(': ')+'. Factor visa availability.';
+  if(dealBreakers) rules+='\n- '+dealBreakers+'. Exclude ANY destination with these — this is mandatory.';
+  if(budget) rules+='\n- Budget context: '+budget.split(': ').slice(1).join(': ')+'. Only recommend destinations that fit.';
 
-${isST?'TRIP PROFILE':'RELOCATION PROFILE'}:
-${quizLines.join('\n')}
-${fuLines.length?'\nFOLLOW-UP ANSWERS:\n'+fuLines.join('\n'):''}
-
-CRITICAL PERSONALISATION RULES:
-${moveReason?`- This person is moving abroad for: ${moveReason}. Every recommendation must directly serve this purpose.`:''}
-${purpose?`- This person wants: ${purpose}. Prioritise destinations that excel at this.`:''}
-${stayLength?`- Duration: ${stayLength}. Factor visa availability for this duration.`:''}
-${dealBreakers?`- ${dealBreakers}. Exclude ANY destination with these — this is mandatory.`:''}
-${budget?`- Budget context: ${budget}. Only recommend destinations that genuinely fit this budget.`:''}
-- The highlights field must explain specifically WHY this destination fits THIS person's exact answers — not generic facts.
-- If the person said retirement: recommend destinations with healthcare, calm lifestyle, low cost, expat retirement communities.
-- If the person said education: recommend university cities, student culture, affordable living, good transport.
-- If the person said career/remote work: recommend cities with coworking spaces, fast internet, tech scenes.
-- If the person said adventure: recommend destinations with outdoor activities, varied terrain, active scenes.
-- Score differences MUST be meaningful — spread scores across a real range based on actual fit.
-
-Recommend the 4 best ${isST?'short-term travel destinations':'cities to relocate to long-term'} for this specific person.
-
-Return ONLY valid JSON — no markdown, no explanation:
-{
-  "results": [
-    {
-      "city": "City Name",
-      "country": "Country Name",
-      "flag": "🇵🇹",
-      "score": 95,
-      "scoreLabel": "Exceptional Match",
-      "highlights": [
-        "Specific reason tied to their exact quiz answer 1",
-        "Specific reason tied to their exact quiz answer 2",
-        "Specific reason tied to their exact quiz answer 3",
-        "Specific reason tied to their exact quiz answer 4"
-      ]
-    }
-  ]
-}`;
+  const prompt='You are a world-class '+(isST?'travel':'relocation')+' expert who gives deeply personalised recommendations. Your recommendations MUST be completely different for different profiles — a retiree and a student should NEVER get the same cities.\n\n'
+    +(isST?'TRIP PROFILE':'RELOCATION PROFILE')+':'+'\n'+quizLines.join('\n')
+    +(fuLines.length?'\n\nFOLLOW-UP ANSWERS:\n'+fuLines.join('\n'):'')
+    +'\n\nCRITICAL PERSONALISATION RULES:'+rules
+    +'\n- The highlights field must explain specifically WHY this destination fits THIS person — not generic facts.'
+    +'\n- If retirement: recommend calm lifestyle, healthcare, low cost, expat retirement communities.'
+    +'\n- If education: recommend university cities, student culture, affordable living.'
+    +'\n- If career/remote work: recommend coworking, fast internet, tech scenes.'
+    +'\n- If adventure: recommend outdoor activities, varied terrain, active scenes.'
+    +'\n- Score differences MUST be meaningful — spread scores across a real range.'
+    +'\n\nRecommend the 4 best '+(isST?'short-term travel destinations':'cities to relocate to long-term')+' for this specific person.'
+    +'\n\nReturn ONLY valid JSON — no markdown, no explanation:\n{"results":[{"city":"City Name","country":"Country Name","flag":"🇵🇹","score":95,"scoreLabel":"Exceptional Match","highlights":["Specific reason for this person 1","Specific reason 2","Specific reason 3","Specific reason 4"]}]}';
 
   fetch('/api/proxy',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
-      max_tokens:1200,
+      model:'claude-haiku-4-5-20251001',
+      max_tokens:1500,
       messages:[{role:'user',content:prompt}]
     })
   }).then(r=>r.json()).then(data=>{
@@ -857,11 +838,11 @@ Return ONLY valid JSON — no markdown, no explanation:
     if(s>=0&&e>0){
       try{
         const parsed=JSON.parse(txt.slice(s,e));
-        if(parsed.results?.length){
+        if(parsed.results&&parsed.results.length){
           st({scr:'results',res:parsed.results,err:null});
           return;
         }
-      }catch(err){}
+      }catch(err){console.error('Parse err:',err);}
     }
     st({scr:'results',res:[],err:'Could not parse results. Please try again.'});
   }).catch(()=>st({scr:'results',res:[],err:'Connection error. Please try again.'}));
