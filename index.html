@@ -1045,9 +1045,9 @@ if(S.dTab==='itinerary'){const it=d.itin;if(!it){
 }return`<div>${it.time?`<div style="background:#F0FDF4;border:1px solid rgba(34,197,94,.2);border-radius:9px;padding:10px 14px;font-size:13px;color:#15803D;margin-bottom:16px"><strong>Best Time to Visit:</strong> ${it.time}</div>`:''}<div class="dsh"><h4>3-Day Itinerary for ${r.city}</h4></div>${it.days.map(day=>`<div class="iday"><div style="font-family:'Syne',sans-serif;font-size:13.5px;font-weight:700;color:#111;margin-bottom:10px">Day ${day.day} — ${day.title}</div><div class="slt">Morning</div><div class="slc">${day.m}</div><div class="slt">Afternoon</div><div class="slc">${day.a}</div><div class="slt">Evening</div><div class="slc">${day.e}</div>${day.tip?`<div class="tipb">Tip: ${day.tip}</div>`:''}</div>`).join('')}<div class="dsh" style="margin-top:4px"><h4>Must Eat in ${r.city}</h4>${it.eat.map(m=>`<div class="drow"><span style="color:#aaa">◆</span><span style="font-size:13px;color:#555">${m}</span></div>`).join('')}</div><div class="ibb"><div class="ibb-t"><strong style="color:#fff">Want the full plan?</strong> Book a free call — we'll handle your itinerary &amp; accommodation.</div><button class="ibb-b" onclick="st({showCo:true,coSent:false,coTripType:'st'})">Book Free Call</button></div></div>`}
 if(S.dTab==='overview'){
     const profile=S.userProfile||{};
-    const moveR=(profile2.fuLines||[]).find(l=>l.includes('Why are you moving'));
-    const tripT=(profile2.fuLines||[]).find(l=>l.includes('kind of trip'));
-    const stayL=(profile2.fuLines||[]).find(l=>l.includes('How long'));
+    const moveR=(profile.fuLines||[]).find(l=>l.includes('Why are you moving'));
+    const tripT=(profile.fuLines||[]).find(l=>l.includes('kind of trip'));
+    const stayL=(profile.fuLines||[]).find(l=>l.includes('How long'));
     const purposeStr=moveR?moveR.split(': ')[1]:tripT?tripT.split(': ')[1]:'';
     const stayStr=stayL?stayL.split(': ')[1]:'';
     const overviewBanner=purposeStr?`<div style="background:linear-gradient(135deg,#1a1a1a,#2a2a2a);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px"><div><div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#F5E420;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">${isST?'Your Trip':'Your Move'}</div><div style="font-size:13px;color:rgba(255,255,255,.9)">${purposeStr}${stayStr?' · '+stayStr:''}</div></div></div>`:'';
