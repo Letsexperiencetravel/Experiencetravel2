@@ -422,7 +422,6 @@ function loadState(){
   }catch(e){console.warn('Load state error:',e);}
 }
 function st(u){
-  // Always clear direct modal overlay on any state change
   const _mo=document.getElementById('modal-overlay');
   if(_mo){_mo.innerHTML='';_mo.style.display='none';}
   S.showNotes=false;S.showShare=false;
@@ -430,6 +429,8 @@ function st(u){
   Object.assign(S,u);
   render();
   saveState();
+  // Sync to Supabase if rqA or notes changed
+  if(u.rqA!==undefined||u.notes!==undefined)saveQuizProgress();
 }
 function gi(n){if(!n)return'?';return n.split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2)}
 function nt(){return S.bdDis?0:BH}function pp(){return S.bdDis?62:62+BH}
@@ -449,12 +450,21 @@ function nF(){
   st({fI:S.fI+1});
 }
 function saveQuizProgress(){
-  if(S.user?.id&&(Object.keys(S.ans).length>0||Object.keys(S.fA||{}).length>0)){
-    supa.from('profiles').update({
-      quiz_answers:S.ans,
-      followup_answers:S.fA||{},
-      trip_type:S.tt||null
-    }).eq('id',S.user.id).then(()=>{}).catch(()=>{});
+  if(S.user?.id){
+    const updates={};
+    if(Object.keys(S.ans||{}).length>0)updates.quiz_answers=S.ans;
+    if(Object.keys(S.fA||{}).length>0)updates.followup_answers=S.fA;
+    if(S.tt)updates.trip_type=S.tt;
+    if(Object.keys(S.rqA||{}).length>0)updates.rqa_answers=S.rqA;
+    if(Object.keys(S.notes||{}).length>0)updates.notes_data=S.notes;
+    if(Object.keys(updates).length>0){
+      supa.from('profiles').update(updates).eq('id',S.user.id).then(()=>{}).catch(()=>{});
+    }
+  }
+}
+function saveNotesToSupabase(){
+  if(S.user?.id&&Object.keys(S.notes||{}).length>0){
+    supa.from('profiles').update({notes_data:S.notes}).eq('id',S.user.id).then(()=>{}).catch(()=>{});
   }
 }
 function nQ(){const s=S.ans[S.qi];if(s===undefined||s===null||(Array.isArray(s)&&s.length===0))return;if(S.editMode){st({scr:'quiz_review',editMode:false});return}if(S.qi===11){st({scr:'chapter',chNum:2,chTitle:'How You Live',chIcon:'🏠',chColor:P,chDesc:'Questions about your lifestyle, living preferences, health and what home really means to you.',qi:12});return}if(S.qi===21){st({scr:'chapter',chNum:3,chTitle:'How You Travel',chIcon:'✈️',chColor:'#22C55E',chDesc:'Questions about your travel style, pace and what you look for in a destination.',qi:22});return}if(S.qi===QS.length-1){st({scr:'qd'});return}st({qi:S.qi+1})}
@@ -479,6 +489,7 @@ window.toggleTodo=function(id,tid){
     const prog=document.getElementById('todo-prog');
     if(prog)prog.textContent=done+'/'+n.todos.length+' done';
   }else{render()}
+  if(S.user?.id)supa.from('profiles').update({notes_data:S.notes}).eq('id',S.user.id).then(()=>{}).catch(()=>{});
 }
 window.deleteTodo=function(id,tid){
   const n=getNotes(id);n.todos=n.todos.filter(t=>t.id!==tid);S.notes[id]=n;
@@ -487,7 +498,16 @@ window.deleteTodo=function(id,tid){
 }
 window.moveTodo=function(id,tid,dir){const n=getNotes(id);const idx=n.todos.findIndex(t=>t.id===tid);const ni=idx+dir;if(ni<0||ni>=n.todos.length)return;const arr=[...n.todos];[arr[idx],arr[ni]]=[arr[ni],arr[idx]];n.todos=arr;S.notes[id]=n;render()}
 window.updateTodoText=function(id,tid,val){const n=getNotes(id);n.todos=n.todos.map(t=>t.id===tid?{...t,text:val}:t);S.notes[id]=n}
-window.addTodo=function(id){const inp=document.getElementById('ntodo-inp');if(!inp||!inp.value.trim())return;const n=getNotes(id);n.todos=[...n.todos,{id:Date.now(),text:inp.value.trim(),done:false}];S.notes[id]=n;inp.value='';render()}
+window.addTodo=function(id){
+  const inp=document.getElementById('ntodo-inp');
+  if(!inp||!inp.value.trim())return;
+  const n=getNotes(id);
+  const tid=Date.now();
+  n.todos=[...n.todos,{id:tid,text:inp.value.trim(),done:false}];
+  S.notes[id]=n;inp.value='';
+  openNotesDirect(id);saveState();
+  if(S.user?.id)supa.from('profiles').update({notes_data:S.notes}).eq('id',S.user.id).then(()=>{}).catch(()=>{});
+};
 window.updNoteDate=function(id,key,val){const n=getNotes(id);n[key]=val;S.notes[id]=n;
   saveState();};
 window.updNoteDate=function(id,field,val){const n=getNotes(id);n[field]=val;S.notes[id]=n;render()};
@@ -542,93 +562,87 @@ function doLogin(){
   if(!e||!p){toast('Enter your email and password');return;}
   supa.auth.signInWithPassword({email:e,password:p}).then(({data,error})=>{
     if(error){st({err:error.message});return;}
-    const u=data.user;
-    // Clear previous user's data if different account
-    // Always reset all state on login - Supabase is the source of truth
-    S.saved=[];S.sIds=new Set();S.notes={};S.shareData={};S.cmpSel=[];S.aiItineraries={};S.ans={};S.rqA={};S.freeCnt=0;S.proCnt=0;S.isPro=false;S.topupCount=0;
-    S.user={id:u.id,email:u.email,name:u.user_metadata?.first_name||u.email.split('@')[0],firstName:u.user_metadata?.first_name||'',lastName:u.user_metadata?.last_name||''};
-    S.scr='dash';S.err=null;
-    supa.from('profiles').select('*').eq('id',u.id).single().then(({data:p})=>{
-      if(p){
-        S.isPro=p.is_pro||false;S.freeCnt=p.free_cnt||0;S.proCnt=p.pro_cnt||0;
-        S.user={...S.user,phone:p.phone||'',country:p.country||'',city:p.city||''};
-        if(p.first_name)S.user.firstName=p.first_name;
-        if(p.last_name)S.user.lastName=p.last_name;
-        if(p.birthday)S.user.bday=p.birthday;
+    loadUserFromSupabase(data.user,false,'');
+  });
+}
+
+function loadUserFromSupabase(u, wasUpgraded, sessionId){
+  // Reset all user-specific state before loading
+  S.saved=[];S.sIds=new Set();S.notes={};S.shareData={};
+  S.ans={};S.fA={};S.rqA={};S.freeCnt=0;S.proCnt=0;
+  S.isPro=false;S.topupCount=0;S.cmpSel=[];S.aiItineraries={};
+  S.err=null;S.scr='dash';
+  S.user={
+    id:u.id,email:u.email,
+    firstName:u.user_metadata?.first_name||'',
+    lastName:u.user_metadata?.last_name||'',
+    name:u.user_metadata?.first_name||u.email.split('@')[0]
+  };
+
+  // Load profile + quiz answers + all user data from Supabase
+  supa.from('profiles').select('*').eq('id',u.id).single().then(({data:p})=>{
+    if(p){
+      S.isPro=p.is_pro||false;
+      S.freeCnt=p.free_cnt||0;
+      S.proCnt=p.pro_cnt||0;
+      S.topupCount=p.topup_count||0;
+      S.user={...S.user,
+        phone:p.phone||'',country:p.country||'',
+        city:p.city||'',bday:p.birthday||''
+      };
+      if(p.first_name)S.user.firstName=p.first_name;
+      if(p.last_name)S.user.lastName=p.last_name;
+      // Restore quiz answers
+      if(p.quiz_answers&&Object.keys(p.quiz_answers).length>0)S.ans=p.quiz_answers;
+      if(p.followup_answers&&Object.keys(p.followup_answers).length>0)S.fA=p.followup_answers;
+      if(p.trip_type)S.tt=p.trip_type;
+      if(p.rqa_answers&&Object.keys(p.rqa_answers).length>0)S.rqA=p.rqa_answers;
+      if(p.notes_data&&Object.keys(p.notes_data).length>0)S.notes=p.notes_data;
+    }
+
+    // Load saved destinations
+    supa.from('saved_destinations').select('*').eq('user_id',u.id).then(({data:rows})=>{
+      if(rows&&rows.length>0){
+        S.saved=rows.map(r=>({
+          id:r.city_id,city:r.city,country:r.country,flag:r.flag,
+          score:r.score,scoreLabel:r.score_label,tt:r.trip_type,
+          date:new Date(r.created_at).toLocaleDateString()
+        }));
+        S.sIds=new Set(S.saved.map(x=>x.id));
       }
-      supaLoadDestinations(u.id).then(rows=>{
-        if(rows.length>0){
-          S.saved=rows.map(r=>({id:r.city_id,city:r.city,country:r.country,flag:r.flag,score:r.score,scoreLabel:r.score_label,tt:r.trip_type,date:new Date(r.created_at).toLocaleDateString()}));
-          S.sIds=new Set(S.saved.map(x=>x.id));
-        }
-        render();saveState();
-      });
+
+      // Handle Stripe upgrade redirect
+      if(wasUpgraded&&S.user?.id){
+        fetch('/api/verify-payment',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({userId:S.user.id,sessionId})
+        }).then(r=>r.json()).then(result=>{
+          if(result.isPro){S.isPro=true;S.showProWelcome=true;}
+          render();saveState();
+        }).catch(()=>{render();saveState();});
+      }else{render();saveState();}
     });
   });
 }
 function checkSession(){
-  // Capture URL params BEFORE clearing them
   const _search=window.location.search;
   const _wasUpgraded=_search.includes('upgraded=true');
   const _wasCancelled=_search.includes('upgrade=cancelled');
   const _sessionId=new URLSearchParams(_search).get('session_id')||'';
-  // Clear URL params
   if(_wasUpgraded||_wasCancelled)history.replaceState({},'','/');
   if(_wasCancelled)setTimeout(()=>toast('Payment cancelled — you have not been charged.'),800);
+
   supa.auth.getSession().then(({data})=>{
     const session=data.session;
     if(session&&session.user){
-      const u=session.user;
-      S.user={
-        id:u.id,email:u.email,
-        firstName:u.user_metadata?.first_name||'',
-        lastName:u.user_metadata?.last_name||'',
-        name:u.user_metadata?.first_name||u.email.split('@')[0]
-      };
-      S.scr='dash';
-      // Load profile (isPro, phone, country, city etc)
-      supa.from('profiles').select('*').eq('id',u.id).single().then(({data:p})=>{
-        if(p){
-          S.isPro=p.is_pro||false;
-          S.freeCnt=p.free_cnt||0;
-          S.proCnt=p.pro_cnt||0;
-          S.user={...S.user,phone:p.phone||'',country:p.country||'',city:p.city||''};
-          if(p.first_name)S.user.firstName=p.first_name;
-          if(p.last_name)S.user.lastName=p.last_name;
-        }
-        // Load saved destinations
-        supa.from('saved_destinations').select('*').eq('user_id',u.id).then(({data:rows})=>{
-          if(rows&&rows.length>0){
-            S.saved=rows.map(r=>({id:r.city_id,city:r.city,country:r.country,flag:r.flag,score:r.score,scoreLabel:r.score_label,tt:r.trip_type,date:new Date(r.created_at).toLocaleDateString()}));
-            S.sIds=new Set(S.saved.map(x=>x.id));
-          }
-          // Handle Stripe success redirect
-          if(_wasUpgraded&&S.user?.id){
-            const sessionId=_sessionId;
-            fetch('/api/verify-payment',{
-              method:'POST',
-              headers:{'Content-Type':'application/json'},
-              body:JSON.stringify({userId:S.user.id,sessionId})
-            }).then(r=>r.json()).then(result=>{
-              if(result.isPro){
-                S.isPro=true;
-                toast('🎉 Welcome to Pro! Unlimited searches unlocked.');
-              }else{
-                toast('Payment processing... refresh in a moment.');
-              }
-              render();saveState();
-            }).catch(()=>{render();saveState();});
-          }else{render();saveState();}
-        });
-      });
+      loadUserFromSupabase(session.user,_wasUpgraded,_sessionId);
     }else{
-    // No active session - clear all user data so new users start fresh
-    S.user=null;S.saved=[];S.sIds=new Set();S.notes={};S.shareData={};
-    S.ans={};S.rqA={};S.isPro=false;S.freeCnt=0;S.proCnt=0;S.cmpSel=[];
-    S.aiItineraries={};S.userProfile=null;
-    localStorage.removeItem(STORAGE_KEY);
-    render();
-  }
+      S.user=null;S.saved=[];S.sIds=new Set();S.notes={};S.shareData={};
+      S.ans={};S.fA={};S.rqA={};S.isPro=false;S.freeCnt=0;S.proCnt=0;
+      S.cmpSel=[];S.aiItineraries={};S.userProfile=null;S.tt=null;
+      localStorage.removeItem(STORAGE_KEY);
+      render();
+    }
   }).catch(()=>render());
 }
 function doFP(){
