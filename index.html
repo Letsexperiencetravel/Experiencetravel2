@@ -201,10 +201,17 @@ async function supaGetSession(){
   return data.session;
 }
 async function supaSaveDestination(userId,item){
-  await supa.from('saved_destinations').upsert({
-    user_id:userId,city_id:item.id,city:item.city,country:item.country,
-    flag:item.flag,score:item.score,score_label:item.scoreLabel,trip_type:item.tt
-  },{onConflict:'user_id,city_id'});
+  try{
+    const notes=S.notes[item.id]||null;
+    const share=S.shareData[item.id]||null;
+    await supa.from('saved_destinations').upsert({
+      user_id:userId,city_id:item.id,city:item.city,
+      country:item.country,flag:item.flag,score:item.score,
+      score_label:item.scoreLabel,trip_type:item.tt,
+      notes_data:notes?JSON.stringify(notes):null,
+      share_data:share?JSON.stringify(share):null
+    },{onConflict:'user_id,city_id'});
+  }catch(e){console.warn('Save dest error:',e);}
 }
 async function supaDeleteDestination(userId,cityId){
   await supa.from('saved_destinations').delete().eq('user_id',userId).eq('city_id',cityId);
@@ -430,7 +437,8 @@ function st(u){
   render();
   saveState();
   // Sync to Supabase if rqA or notes changed
-  if(u.rqA!==undefined||u.notes!==undefined||u.ans!==undefined||u.fA!==undefined)saveQuizProgress();
+  if(u.rqA!==undefined||u.notes!==undefined||u.ans!==undefined)saveQuizProgress();
+  if(u.shareData!==undefined&&S.shareId)syncDestinationToSupabase(S.shareId);
 }
 function gi(n){if(!n)return'?';return n.split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2)}
 function nt(){return S.bdDis?0:BH}function pp(){return S.bdDis?62:62+BH}
@@ -470,24 +478,12 @@ window.toggleTodo=function(id,tid){
   const n=getNotes(id);
   n.todos=n.todos.map(t=>t.id===tid?{...t,done:!t.done}:t);
   S.notes[id]=n;
-  // Update just the todo row without full re-render
   const row=document.querySelector('[data-tid="'+tid+'"]');
-  if(row){
-    const t=n.todos.find(x=>x.id===tid);
-    if(t){
-      row.classList.toggle('done-row',t.done);
-      const chk=row.querySelector('.todo-chk');
-      if(chk){chk.textContent=t.done?'✓':'';chk.style.background=t.done?'var(--G)':'';chk.style.borderColor=t.done?'var(--G)':'#ccc';}
-      const txt=row.querySelector('.todo-txt');
-      if(txt){txt.style.textDecoration=t.done?'line-through':'';txt.style.color=t.done?'#aaa':'#333';}
-    }
-    // Update progress count
-    const done=n.todos.filter(x=>x.done).length;
-    const prog=document.getElementById('todo-prog');
-    if(prog)prog.textContent=done+'/'+n.todos.length+' done';
-  }else{render()}
-  if(S.user?.id)supa.from('profiles').update({notes_data:S.notes}).eq('id',S.user.id).then(()=>{}).catch(()=>{});
-}
+  if(row){const cb=row.querySelector('input[type="checkbox"]');if(cb)cb.checked=!cb.checked;}
+  saveState();
+  saveQuizProgress();
+  if(S.user?.id)syncDestinationToSupabase(id);
+};
 window.deleteTodo=function(id,tid){
   const n=getNotes(id);n.todos=n.todos.filter(t=>t.id!==tid);S.notes[id]=n;
   const row=document.querySelector('[data-tid="'+tid+'"]');
@@ -499,12 +495,13 @@ window.addTodo=function(id){
   const inp=document.getElementById('ntodo-inp');
   if(!inp||!inp.value.trim())return;
   const n=getNotes(id);
-  const tid=Date.now();
-  n.todos=[...n.todos,{id:tid,text:inp.value.trim(),done:false}];
+  n.todos=[...n.todos,{id:Date.now(),text:inp.value.trim(),done:false}];
   S.notes[id]=n;inp.value='';
-  openNotesDirect(id);saveState();
-  if(S.user?.id)supa.from('profiles').update({notes_data:S.notes}).eq('id',S.user.id).then(()=>{}).catch(()=>{});
-};
+  openNotesDirect(id);
+  saveState();
+  saveQuizProgress();
+  if(S.user?.id)syncDestinationToSupabase(id);
+};;
 window.updNoteDate=function(id,key,val){const n=getNotes(id);n[key]=val;S.notes[id]=n;
   saveState();};
 window.updNoteDate=function(id,field,val){const n=getNotes(id);n[field]=val;S.notes[id]=n;render()};
@@ -604,6 +601,10 @@ function loadUserFromSupabase(u, wasUpgraded, sessionId){
           date:new Date(r.created_at).toLocaleDateString()
         }));
         S.sIds=new Set(S.saved.map(x=>x.id));
+        rows.forEach(r=>{
+          if(r.notes_data){try{S.notes[r.city_id]=JSON.parse(r.notes_data);}catch(e){}}
+          if(r.share_data){try{S.shareData[r.city_id]=JSON.parse(r.share_data);}catch(e){}}
+        });
       }
 
       // Handle Stripe upgrade redirect
@@ -1009,6 +1010,11 @@ function openSaved(id,e){
       `Your profile is a strong match for life in ${s.city}`],cost:{m:isST?"$80–$200/day":"$1,000–$2,800/mo",rent:isST?"Included":"$400–$1,400/mo",food:isST?"$20–$60/day":"$200–$500/mo",tr:isST?"$5–$20/day":"$30–$80/mo",ut:isST?"N/A":"$40–$100/mo",cmp:"40–65% cheaper than US"},sft:{sc:s.score>=90?8:s.score>=80?7:6,lb:s.score>=90?"Very Safe":s.score>=80?"Generally Safe":"Research Recommended",nt:`${s.country} is considered a good destination for international travelers.`},best:itin?[`Day 1: ${itin.days[0].m}`,`Day 2: ${itin.days[1].m}`,`Must eat: ${itin.eat[0]}`]:[`Historic neighbourhoods of ${s.city}`,`World-renowned food scene`,`Strong expat community`],itin,pc,visa:[{name:`${s.country} Long-Stay Visa`,dur:"1–2 years renewable",cost:"$50–$150 USD",proc:"4–10 weeks",req:["Valid passport with 6+ months","Proof of income or remote employment","Criminal background check","Health insurance","Proof of accommodation"]}],steps:[`Research the specific visa for ${s.country}`,`Gather and apostille your documents`,`Arrange health insurance valid in ${s.country}`,`Book your consulate appointment early`,`Join expat groups for ${s.city}`,`Consider a 2-week scouting trip first`]};
   S.tt=s.tt;
   st({selR:{city:s.city,country:s.country,flag:s.flag,score:s.score,scoreLabel:s.scoreLabel||'Match',highlights:s.highlights||[]},det,dTab:isST?'overview':'overview',showSv:false});
+}
+function syncDestinationToSupabase(cityId){
+  if(!S.user?.id)return;
+  const item=S.saved.find(x=>x.id===cityId);
+  if(item)supaSaveDestination(S.user.id,item);
 }
 function sC(e,city,country,idx){
   e.stopPropagation();
