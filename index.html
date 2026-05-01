@@ -373,6 +373,7 @@ const STORAGE_KEY='et_state_v1';
 function saveState(){
   try{
     const toSave={
+      _uid:S.user?.id,
       user:S.user,
       saved:S.saved,
       notes:S.notes,
@@ -409,6 +410,10 @@ function loadState(){
     if(saved.pwPl)S.pwPl=saved.pwPl;
     if(saved.cmpSel)S.cmpSel=saved.cmpSel;
     // If user was logged in, go to dashboard
+    // Only restore saved data if it belongs to the same user
+    if(saved._uid && S.user?.id && saved._uid !== S.user?.id){
+      S.saved=[];S.sIds=new Set();S.notes={};S.shareData={};
+    }
     if(S.user)S.scr='dash';
   }catch(e){console.warn('Load state error:',e);}
 }
@@ -525,6 +530,10 @@ function doLogin(){
   supa.auth.signInWithPassword({email:e,password:p}).then(({data,error})=>{
     if(error){st({err:error.message});return;}
     const u=data.user;
+    // Clear previous user's data if different account
+    if(S.user?.id && S.user.id !== u.id){
+      S.saved=[];S.sIds=new Set();S.notes={};S.shareData={};S.cmpSel=[];S.aiItineraries={};
+    }
     S.user={id:u.id,email:u.email,name:u.user_metadata?.first_name||u.email.split('@')[0],firstName:u.user_metadata?.first_name||'',lastName:u.user_metadata?.last_name||''};
     S.scr='dash';S.err=null;
     supa.from('profiles').select('*').eq('id',u.id).single().then(({data:p})=>{
