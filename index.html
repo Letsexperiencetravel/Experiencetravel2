@@ -211,15 +211,18 @@ async function supaSaveDestination(userId,item){
       notes_data:notes||null,share_data:share||null
     };
     // Try update first, then insert if not exists
-    const {data:existing}=await supa.from('saved_destinations')
-      .select('id').eq('user_id',userId).eq('city_id',item.id).single();
+    const {data:existing,error:selErr}=await supa.from('saved_destinations')
+      .select('id').eq('user_id',userId).eq('city_id',item.id).maybeSingle();
+    if(selErr){console.error('Check exist error:',selErr.message);}
     if(existing){
       const {error}=await supa.from('saved_destinations').update(payload)
         .eq('user_id',userId).eq('city_id',item.id);
       if(error)console.error('Update dest error:',error.message);
+      else console.log('✅ Destination updated:',item.city);
     }else{
       const {error}=await supa.from('saved_destinations').insert(payload);
       if(error)console.error('Insert dest error:',error.message);
+      else console.log('✅ Destination inserted:',item.city);
     }
   }catch(e){console.error('Save dest exception:',e);}
 }
@@ -521,14 +524,25 @@ window.addTodo=function(id){
   saveQuizProgress();
   syncDestinationToSupabase(id);
   openNotesDirect(id);
-};;;
+};;;;
 window.updNoteDate=function(id,key,val){const n=getNotes(id);n[key]=val;S.notes[id]=n;
   saveState();};
 window.updNoteDate=function(id,field,val){const n=getNotes(id);n[field]=val;S.notes[id]=n;render()};
-window.saveNote=function(id){const ta=document.getElementById('note-text');if(ta){const n=getNotes(id);n.text=ta.value;n.savedBy=S.user?((S.user.firstName||'')+(S.user.lastName?' '+S.user.lastName:'')):'You';n.savedAt=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});S.notes[id]=n}toast('Notes saved!';
-  saveState();saveQuizProgress();syncDestinationToSupabase(id);
-  toast('Notes saved ✓');openNotesDirect(id);
-}
+window.saveNote=function(id){
+  const ta=document.getElementById('note-text');
+  if(ta){
+    const n=getNotes(id);
+    n.text=ta.value;
+    n.savedBy=S.user?((S.user.firstName||'')+(S.user.lastName?' '+S.user.lastName:'')):'You';
+    n.savedAt=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    S.notes[id]=n;
+    saveState();
+    saveQuizProgress();
+    syncDestinationToSupabase(id);
+  }
+  toast('Notes saved!');
+  openNotesDirect(id);
+};
 window.shareViaMethod=function(id,method){const saved=S.saved.find(x=>x.id===id);if(!saved)return;const link='https://'+getShareLink(id);const note=S.shareData[id]?.note||'';const msg='Check out '+saved.city+', '+saved.country+' on Experience Travel!'+(note?'\n'+note:'')+'\n'+link;if(method==='copy'){navigator.clipboard?.writeText(link).catch(()=>{});toast('Link copied!')}else if(method==='native'){if(navigator.share){navigator.share({title:'Experience Travel — '+saved.city,text:msg,url:link}).catch(()=>{})}else{navigator.clipboard?.writeText(link).catch(()=>{});toast('Link copied!')}}else if(method==='whatsapp'){window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}else if(method==='email'){window.open('mailto:?subject='+encodeURIComponent(saved.city+' on Experience Travel')+'&body='+encodeURIComponent(msg),'_blank')}};
 
 window.addSharePerson=function(id){
@@ -678,7 +692,7 @@ function doFP(){
     st({fpSent:true,fpEmail:e});
   });
 }
-function rReg(){const d=S.reg,step=d._step||1,b=S.bdDis?0:BH,fe=d._fe||{};return`<div class="pg pg-w" style="padding-top:${b+20}px"><div style="width:100%;max-width:440px"><div style="text-align:center;margin-bottom:20px">${logo()}<div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:#111;margin-top:10px">Experience <em style="color:${P};font-style:normal">Travel</em></div></div><div class="lc"><div class="dots"><div class="dot ${step>=1?'on':''}"></div><div class="dot ${step>=2?'on':''}"></div></div><p style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#111;margin-bottom:4px">Create Account</p><p style="color:#888;font-size:13.5px;margin-bottom:18px">Step ${step} of 2 — ${step===1?'Your Details':'Set Your Password'}</p>${step===1?`<div class="r2"><div class="fgrp"><label>First Name</label><input class="inp" id="rfn" type="text" placeholder="Jane" value="${d.fn||''}"/>${fe.fn?`<div class="ferr">⚠ ${fe.fn}</div>`:''}</div><div class="fgrp"><label>Last Name</label><input class="inp" id="rln" type="text" placeholder="Smith" value="${d.ln||''}"/>${fe.ln?`<div class="ferr">⚠ ${fe.ln}</div>`:''}</div></div><div class="fgrp"><label>Email</label><input class="inp" id="rem" type="email" placeholder="jane@email.com" value="${d.em||''}"/>${fe.em?`<div class="ferr">⚠ ${fe.em}</div>`:''}</div><div class="fgrp"><label>Phone</label><input class="inp" id="rph" type="tel" placeholder="+1 (555) 000-0000" value="${d.ph||''}"/>${fe.ph?`<div class="ferr">⚠ ${fe.ph}</div>`:''}</div><div class="fgrp"><label>Country of Origin</label><input class="inp" id="rco" type="text" placeholder="e.g. United States" value="${d.co||''}"/>${fe.co?`<div class="ferr">⚠ ${fe.co}</div>`:''}</div><div class="fgrp"><label>City</label><input class="inp" id="rcy" type="text" placeholder="e.g. New York" value="${d.cy||''}"/>${fe.cy?`<div class="ferr">⚠ ${fe.cy}</div>`:''}</div>${bY('Continue →','rs1()')}`:`<div class="fgrp"><label>New Password</label><input class="inp" id="rp1" type="password" placeholder="Min 6 characters" oninput="upS()"/>${fe.p1?`<div class="ferr">⚠ ${fe.p1}</div>`:''}<div id="pwstr"></div></div><div class="fgrp"><label>Confirm Password</label><input class="inp" id="rp2" type="password" placeholder="Confirm password"/>${fe.p2?`<div class="ferr">⚠ ${fe.p2}</div>`:''}</div>${bY('Continue →','rs2()')}${bPo('← Back',"st({reg:{...S.reg,_step:1,_fe:{}}})")}`}<p style="text-align:center;margin-top:14px;font-size:13px;color:#888">Have an account? <span style="cursor:pointer;font-weight:600;color:${P}" onclick="st({scr:'login',err:null})">Sign In</span></p></div></div></div>`}
+function rReg(){const d=S.reg,step=d._step||1,b=S.bdDis?0:BH,fe=d._fe||{};return`<div class="pg pg-w" style="padding-top:${b+20}px"><div style="width:100%;max-width:440px"><div style="text-align:center;margin-bottom:20px">${logo()}<div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:#111;margin-top:10px">Experience <em style="color:${P};font-style:normal">Travel</em></div></div><div class="lc"><div class="dots"><div class="dot ${step>=1?'on':''}"></div><div class="dot ${step>=2?'on':''}"></div></div><p style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#111;margin-bottom:4px">Create Account</p><p style="color:#888;font-size:13.5px;margin-bottom:18px">Step ${step} of 2 — ${step===1?'Your Details':'Set Your Password'}</p>${step===1?`<div class="r2"><div class="fgrp"><label>First Name</label><input class="inp" id="rfn" type="text" placeholder="Jane" value="${d.fn||''}"/>${fe.fn?`<div class="ferr">⚠ ${fe.fn}</div>`:''}</div><div class="fgrp"><label>Last Name</label><input class="inp" id="rln" type="text" placeholder="Smith" value="${d.ln||''}"/>${fe.ln?`<div class="ferr">⚠ ${fe.ln}</div>`:''}</div></div><div class="fgrp"><label>Email</label><input class="inp" id="rem" type="email" placeholder="jane@email.com" value="${d.em||''}"/>${fe.em?`<div class="ferr">⚠ ${fe.em}</div>`:''}</div><div class="fgrp"><label>Phone</label><input class="inp" id="rph" type="tel" placeholder="+1 (555) 000-0000" value="${d.ph||''}"/>${fe.ph?`<div class="ferr">⚠ ${fe.ph}</div>`:''}</div><div class="fgrp"><label>Country of Origin</label><input class="inp" id="rco" type="text" placeholder="e.g. United States" value="${d.co||''}"/>${fe.co?`<div class="ferr">⚠ ${fe.co}</div>`:''}</div><div class="fgrp"><label>City</label><input class="inp" id="rcy" type="text" placeholder="e.g. New York" value="${d.cy||''}"/>${fe.cy?`<div class="ferr">⚠ ${fe.cy}</div>`:''}</div><div class="fgrp"><label>Date of Birth</label><input class="inp" id="rbday" type="date" value="${d.bday||''}" style="color:#333"/></div>${bY('Continue →','rs1()')}`:`<div class="fgrp"><label>New Password</label><input class="inp" id="rp1" type="password" placeholder="Min 6 characters" oninput="upS()"/>${fe.p1?`<div class="ferr">⚠ ${fe.p1}</div>`:''}<div id="pwstr"></div></div><div class="fgrp"><label>Confirm Password</label><input class="inp" id="rp2" type="password" placeholder="Confirm password"/>${fe.p2?`<div class="ferr">⚠ ${fe.p2}</div>`:''}</div>${bY('Continue →','rs2()')}${bPo('← Back',"st({reg:{...S.reg,_step:1,_fe:{}}})")}`}<p style="text-align:center;margin-top:14px;font-size:13px;color:#888">Have an account? <span style="cursor:pointer;font-weight:600;color:${P}" onclick="st({scr:'login',err:null})">Sign In</span></p></div></div></div>`}
 function pwS(v){
   if(!v)return{sc:0,lb:'',co:'#ccc'};
   let sc=0;
