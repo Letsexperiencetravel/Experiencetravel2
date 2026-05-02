@@ -163,7 +163,7 @@ html,body{min-height:100%;font-family:'Inter',sans-serif;background:#fff}
   <meta property="og:title" content="Experience Travel — Find Your Perfect Destination">
   <meta property="og:description" content="Experience Travel helped find your perfect trip or relocation destination based on your personality and lifestyle.">
   <meta property="og:image" content="https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80">
-  <meta property="og:url" content="https://experiencetravel2.vercel.app">
+  <meta property="og:url" content="https://letsexperiencetravel.com">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Experience Travel — Find Your Perfect Destination">
@@ -559,6 +559,28 @@ window.saveNote=function(id){
 };
 window.shareViaMethod=function(id,method){const saved=S.saved.find(x=>x.id===id);if(!saved)return;const link='https://'+getShareLink(id);const note=S.shareData[id]?.note||'';const msg='Check out '+saved.city+', '+saved.country+' on Experience Travel!'+(note?'\n'+note:'')+'\n'+link;if(method==='copy'){navigator.clipboard?.writeText(link).catch(()=>{});toast('Link copied!')}else if(method==='native'){if(navigator.share){navigator.share({title:'Experience Travel — '+saved.city,text:msg,url:link}).catch(()=>{})}else{navigator.clipboard?.writeText(link).catch(()=>{});toast('Link copied!')}}else if(method==='whatsapp'){window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}else if(method==='email'){window.open('mailto:?subject='+encodeURIComponent(saved.city+' on Experience Travel')+'&body='+encodeURIComponent(msg),'_blank')}};
 
+
+function sendShareEmail(toEmail,city,flag,token,note,perm){
+  const shareUrl='https://letsexperiencetravel.com/share/'+token;
+  const fromName=S.user?.firstName||S.user?.name||'Someone';
+  const body={
+    to:toEmail,
+    subject:fromName+' shared '+flag+' '+city+' with you on Experience Travel',
+    html:'<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:20px">'
+      +'<h2 style="color:#E535A0">'+flag+' '+fromName+' shared '+city+' with you!</h2>'
+      +(note?'<p style="background:#f5f5f5;padding:12px;border-radius:8px;font-style:italic">"'+note+'"</p>':'')
+      +'<p>You have been given <strong>'+(perm==='edit'?'edit access':'view access')+'</strong> to this trip plan.</p>'
+      +'<a href="'+shareUrl+'" style="display:inline-block;padding:12px 24px;background:linear-gradient(135deg,#E535A0,#F5E420);color:#111;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0">View '+city+' Plan →</a>'
+      +'<p style="color:#888;font-size:12px">Sign up or log in at the link above to see the full plan, notes, and itinerary.</p>'
+      +'<hr style="border:none;border-top:1px solid #eee;margin:20px 0">'
+      +'<p style="color:#aaa;font-size:11px">Experience Travel · letsexperiencetravel.com</p>'
+      +'</div>'
+  };
+  fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(r=>r.json())
+    .then(d=>{if(d.error)console.warn('Email error:',d.error);else console.log('Email sent to',toEmail);})
+    .catch(e=>console.warn('Email send failed:',e));
+}
 window.addSharePerson=function(id){
   const inp=document.getElementById('sh-email');
   if(!inp||!inp.value.trim()){toast('Please enter a name or email');return;}
@@ -595,12 +617,14 @@ window.addSharePerson=function(id){
     };
     supa.from('shared_trips').upsert(shareRecord,{onConflict:'token'})
       .then(({error})=>{
-        if(error)console.error('Share save error:',error.message);
+        if(error){console.error('Share save error:',error.message);toast('Error saving share');}
         else{
           syncDestinationToSupabase(id);
-          toast('✓ Added — share the link!');
+          // Send email notification via API
+          sendShareEmail(e,saved.city,saved.flag,sd.token,sd.note||'',perm);
+          toast('✓ '+e+' added — email sent with link!');
         }
-      }).catch(e=>console.error('Share exception:',e));
+      }).catch(err=>{console.error('Share exception:',err);toast('Error saving share');});
   }
   saveState();
   openShareDirect(id);
@@ -804,7 +828,7 @@ function checkSession(){
 function doFP(){
   const e=document.getElementById('fpe')?.value.trim();
   if(!e||!/\S+@\S+\.\S+/.test(e)){toast('Enter a valid email address');return}
-  supa.auth.resetPasswordForEmail(e,{redirectTo:'https://experiencetravel2.vercel.app'}).then(({error})=>{
+  supa.auth.resetPasswordForEmail(e,{redirectTo:'https://letsexperiencetravel.com'}).then(({error})=>{
     if(error){toast(error.message);return}
     st({fpSent:true,fpEmail:e});
   });
@@ -1294,10 +1318,9 @@ function saveNotes(id){
   toast('Notes saved!');
 }
 function getShareLink(id){
-  // Returns the full URL path for sharing - token stored in shareData
   const sd=S.shareData[id]||{};
-  if(sd.token)return`https://experiencetravel2.vercel.app/share/${sd.token}`;
-  return`https://experiencetravel2.vercel.app/share/${(id||'').replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,12)}`;
+  const token=sd.token||(id||'').replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,12);
+  return`https://letsexperiencetravel.com/share/${token}`;
 }
 function genToken(){return Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,10);}
 function rSv(){
