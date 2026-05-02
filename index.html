@@ -570,14 +570,49 @@ window.addSharePerson=function(id){
   const sd=S.shareData[id]||{people:[]};
   const noteEl=document.getElementById('share-note');
   if(noteEl)sd.note=noteEl.value;
-  sd.people=[...sd.people,{email:e,perm}];
+  // Generate token if not exists
+  if(!sd.token)sd.token=genToken();
+  sd.people=[...sd.people,{email:e,perm,addedAt:new Date().toISOString()}];
   S.shareData[id]=sd;
   inp.value='';
   radios.forEach(r=>r.checked=false);
+  // Save share record to Supabase
+  const saved=S.saved.find(x=>x.id===id);
+  if(saved&&S.user?.id){
+    const shareRecord={
+      token:sd.token,
+      owner_id:S.user.id,
+      owner_name:S.user.firstName||S.user.name||'Someone',
+      city_id:id,
+      city:saved.city,
+      country:saved.country,
+      flag:saved.flag,
+      score:saved.score,
+      score_label:saved.scoreLabel,
+      trip_type:saved.tt,
+      share_note:sd.note||'',
+      people:JSON.stringify(sd.people)
+    };
+    supa.from('shared_trips').upsert(shareRecord,{onConflict:'token'})
+      .then(({error})=>{
+        if(error)console.error('Share save error:',error.message);
+        else{
+          syncDestinationToSupabase(id);
+          toast('✓ Added — share the link!');
+        }
+      }).catch(e=>console.error('Share exception:',e));
+  }
+  saveState();
   openShareDirect(id);
 };
 window.removeSharePerson=function(id,email){const sd=S.shareData[id];if(sd)sd.people=sd.people.filter(p=>p.email!==email);render()}
-window.copyShareLink=function(link){navigator.clipboard?.writeText('https://'+link).catch(()=>{});toast('Link copied!')}
+window.copyShareLink=function(link){
+  const fullUrl=link.startsWith('http')?link:'https://'+link;
+  if(navigator.clipboard){navigator.clipboard.writeText(fullUrl).catch(()=>fallbackCopy(fullUrl));}
+  else{fallbackCopy(fullUrl);}
+  toast('Link copied! ✓');
+}
+function fallbackCopy(text){const el=document.createElement('textarea');el.value=text;document.body.appendChild(el);el.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(el);}
 function rBnr(){if(S.bdDis)return'';return`<div class="sbnr"><button class="sbnr-x" onclick="st({bdDis:true})">✕</button><span class="sbnr-msg">Enjoying the app? Share it with a friend!</span><button class="sbnr-btn" onclick="share()">Share</button></div>`}
 function rNav(){const u=S.user,nm=(u?.firstName||'User');return`<div class="nav" style="top:${nt()}px"><div style="display:flex;align-items:center;gap:10px"><div class="nav-br">Experience <em>Travel</em></div></div><div style="display:flex;align-items:center;gap:8px">${navPill()}${S.scr!=='dash'?bSm('← Home',"st({scr:'dash'})",P,W,'#C8208A'):''}<button onclick="st({showAc:true,acMsg:'',acPwMsg:'',acTab:'info'})" style="display:flex;align-items:center;gap:7px;background:rgba(0,0,0,.04);border:1.5px solid rgba(0,0,0,.1);border-radius:10px;padding:6px 12px 6px 8px;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#111"><div style="width:26px;height:26px;border-radius:7px;overflow:hidden;flex-shrink:0"><img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 56 56%22%3E%3Crect width=%2256%22 height=%2256%22 fill=%22%23F5E420%22 rx=%2212%22/%3E%3Crect x=%228%22 y=%228%22 width=%2224%22 height=%2238%22 rx=%224%22 fill=%22%23E535A0%22/%3E%3Crect x=%2212%22 y=%2214%22 width=%2216%22 height=%2222%22 rx=%222%22 fill=%22%23F5E420%22/%3E%3Ccircle cx=%2220%22 cy=%2240%22 r=%222.5%22 fill=%22%23F5E420%22/%3E%3Cpath d=%22M30 28 L50 22 L46 28 L50 34 Z%22 fill=%22%23111%22/%3E%3C/svg%3E" style="width:100%;height:100%;object-fit:cover"/></div>My Account</button></div></div>`}
 function logo(){return`<div style="width:56px;height:56px;border-radius:14px;overflow:hidden;flex-shrink:0;box-shadow:3px 3px 0 #E535A0"><img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 56 56%22%3E%3Crect width=%2256%22 height=%2256%22 fill=%22%23F5E420%22 rx=%2212%22/%3E%3Crect x=%228%22 y=%228%22 width=%2224%22 height=%2238%22 rx=%224%22 fill=%22%23E535A0%22/%3E%3Crect x=%2212%22 y=%2214%22 width=%2216%22 height=%2222%22 rx=%222%22 fill=%22%23F5E420%22/%3E%3Ccircle cx=%2220%22 cy=%2240%22 r=%222.5%22 fill=%22%23F5E420%22/%3E%3Cpath d=%22M30 28 L50 22 L46 28 L50 34 Z%22 fill=%22%23111%22/%3E%3C/svg%3E" style="width:100%;height:100%;object-fit:cover"/></div>`}
@@ -673,17 +708,71 @@ function loadUserFromSupabase(u, wasUpgraded, sessionId){
           if(result.isPro){S.isPro=true;S.showProWelcome=true;}
           render();saveState();
         }).catch(()=>{render();saveState();});
-      }else{render();saveState();}
+      }else{
+        if(S.pendingShare&&S.pendingShare.data){acceptSharedTrip();}
+        else{render();saveState();}
+      }
     });
   });
 }
+
+function loadSharedTrip(token){
+  // Load share record from Supabase
+  supa.from('shared_trips').select('*').eq('token',token).single()
+    .then(({data,error})=>{
+      if(error||!data){
+        st({scr:'login',sharedTripError:'This share link is invalid or has expired.'});
+        return;
+      }
+      // Store pending share for after auth
+      S.pendingShare={token,data};
+      // Show preview screen
+      st({scr:'shared_preview',sharedTrip:data});
+    })
+    .catch(()=>st({scr:'login',sharedTripError:'Could not load shared trip.'}));
+}
+function acceptSharedTrip(){
+  const share=S.pendingShare?.data;
+  if(!share||!S.user?.id)return;
+  // Add destination to user's saved
+  const item={
+    id:share.city_id,city:share.city,country:share.country,
+    flag:share.flag,score:share.score,scoreLabel:share.score_label,
+    tt:share.trip_type,date:new Date().toLocaleDateString()
+  };
+  if(!S.sIds.has(item.id)){
+    S.saved=[...S.saved,item];
+    S.sIds=new Set([...S.sIds,item.id]);
+    supaSaveDestination(S.user.id,item);
+  }
+  // Copy notes from owner if available
+  if(share.share_note){
+    const n=S.notes[item.id]||{text:'',todos:[],savedBy:'',savedAt:''};
+    if(!n.text)n.text=share.share_note;
+    S.notes[item.id]=n;
+  }
+  S.pendingShare=null;
+  saveState();
+  saveQuizProgress();
+  toast('✓ '+share.city+' added to your destinations!');
+  st({scr:'dash'});
+}
 function checkSession(){
   const _search=window.location.search;
+  const _path=window.location.pathname;
   const _wasUpgraded=_search.includes('upgraded=true');
   const _wasCancelled=_search.includes('upgrade=cancelled');
   const _sessionId=new URLSearchParams(_search).get('session_id')||'';
   if(_wasUpgraded||_wasCancelled)history.replaceState({},'','/');
   if(_wasCancelled)setTimeout(()=>toast('Payment cancelled — you have not been charged.'),800);
+  // Detect shared trip link: /share/TOKEN
+  const _shareMatch=_path.match(/^\/share\/([a-z0-9]+)$/i);
+  if(_shareMatch){
+    const token=_shareMatch[1];
+    history.replaceState({},'','/');
+    loadSharedTrip(token);
+    return;
+  }
 
   supa.auth.getSession().then(({data})=>{
     const session=data.session;
@@ -1190,7 +1279,13 @@ function saveNotes(id){
   if(ta){const n=getNotes(id);n.text=ta.value;S.notes[id]=n;}
   toast('Notes saved!');
 }
-function getShareLink(id){return`experiencetravel.app/trip/${(id||'').replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,8)}`}
+function getShareLink(id){
+  // Returns the full URL path for sharing - token stored in shareData
+  const sd=S.shareData[id]||{};
+  if(sd.token)return`https://experiencetravel2.vercel.app/share/${sd.token}`;
+  return`https://experiencetravel2.vercel.app/share/${(id||'').replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,12)}`;
+}
+function genToken(){return Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,10);}
 function rSv(){
 const lS=S.saved.filter(x=>x.tt==='lt'),sS=S.saved.filter(x=>x.tt==='st'),tot=S.saved.length;
 const cmpLT=S.cmpSel.filter(x=>x.tt==='lt'),cmpST=S.cmpSel.filter(x=>x.tt==='st');
@@ -1318,6 +1413,14 @@ function rShare(){
   const saved=S.saved.find(x=>x.id===id);if(!saved)return'';
   const isST=saved.tt==='st';
   const link=getShareLink(id);
+  // Generate token for this destination if not set
+  if(!S.shareData[id]?.token){
+    const sd=S.shareData[id]||{people:[]};
+    sd.token=genToken();
+    S.shareData[id]=sd;
+    saveState();
+  }
+  const shareUrl=getShareLink(id);
   const sd=S.shareData[id]||{people:[]};
   const n=S.notes[id]||defaultNotes(saved.tt);
   const done=n.todos?.filter(t=>t.done).length||0;
@@ -1498,6 +1601,42 @@ function rProWelcome(){
   const benefits=[['🔍','Unlimited searches','Search as many times as you want'],['📝','Unlimited notes','Save notes on all destinations'],['🔗','Share trips','Share plans with friends and family'],['⚡','Priority results','Advanced AI personalisation']];
   return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({showProWelcome:false})" style="z-index:600"><div class="md" style="max-width:460px;text-align:center;padding:0;overflow:hidden"><div style="background:linear-gradient(135deg,#111,#1a1a1a);padding:40px 32px 28px"><div style="font-size:52px;margin-bottom:14px">🌍</div><div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#F5E420;margin-bottom:8px">Welcome to Pro!</div><div style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.6">You now have full access to Experience Travel Pro</div></div><div style="padding:24px 28px;background:#fff"><div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#888;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px">Your Pro Benefits</div>${benefits.map(([icon,title,desc])=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06);text-align:left"><div style="font-size:20px;width:28px;text-align:center;flex-shrink:0">${icon}</div><div><div style="font-weight:700;font-size:13px;color:#111">${title}</div><div style="font-size:12px;color:#888;margin-top:1px">${desc}</div></div></div>`).join('')}<button onclick="st({showProWelcome:false})" style="width:100%;margin-top:18px;padding:14px;background:linear-gradient(135deg,#E535A0,#F5E420);border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#111;cursor:pointer">Start Exploring →</button><div style="font-size:11px;color:#aaa;margin-top:10px">Receipt sent to ${S.user?.email||'your email'}</div></div></div></div>`;
 }
+
+function rSharedPreview(){
+  const d=S.sharedTrip;
+  if(!d)return'';
+  const img=(P[d.city]||'');
+  const isST=d.trip_type==='st';
+  return`<div class="pg" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#111 0%,#1a1a1a 100%)">
+    <div style="width:100%;max-width:420px">
+      <!-- Logo -->
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff">Experience <em style="color:#E535A0;font-style:normal">Travel</em></div>
+      </div>
+      <!-- Destination card -->
+      <div style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);margin-bottom:20px">
+        <div style="position:relative;height:180px;background:#222">
+          ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'"/>`:''}
+          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1),rgba(0,0,0,.65))"></div>
+          <div style="position:absolute;bottom:14px;left:16px;right:16px">
+            <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff">${d.flag} ${d.city}, ${d.country}</div>
+            <div style="font-size:13px;color:rgba(255,255,255,.85);margin-top:3px">${d.score_label} · ${d.score}/100 · ${isST?'Short-Term Travel':'Long-Term Relocation'}</div>
+          </div>
+        </div>
+        <div style="padding:20px">
+          <div style="font-size:13px;color:#555;margin-bottom:4px">Shared by</div>
+          <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#111;margin-bottom:14px">${d.owner_name}</div>
+          ${d.share_note?`<div style="background:#F5F5F5;border-radius:10px;padding:12px 14px;font-size:13px;color:#444;font-style:italic;margin-bottom:14px">"${d.share_note}"</div>`:''}
+          <div style="font-size:12px;color:#888;line-height:1.6">Sign up or log in to view the full breakdown, planning notes, visa info, and add this destination to your account.</div>
+        </div>
+      </div>
+      <!-- Auth buttons -->
+      <button onclick="S.pendingShare=S.pendingShare||{data:${JSON.stringify(d).replace(/'/g,'\\x27')}};st({scr:'reg',reg:{fn:'',ln:'',em:'',ph:'',co:'',cy:'',bday:'',_fe:{}},regStep:1})" style="display:block;width:100%;padding:15px;background:linear-gradient(135deg,#E535A0,#F5E420);border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#111;cursor:pointer;margin-bottom:10px">Create Free Account →</button>
+      <button onclick="S.pendingShare=S.pendingShare||{data:${JSON.stringify(d).replace(/'/g,'\\x27')}};st({scr:'login'})" style="display:block;width:100%;padding:15px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#fff;cursor:pointer">Already have an account? Log in</button>
+    </div>
+  </div>`;
+}
+
 function render(){
   const app=document.getElementById('app');let h='';
   switch(S.scr){
@@ -1509,6 +1648,7 @@ function render(){
     case 'results':h=rRes();break;
     case 'qd_done':h=rQDDone();break;case 'readiness':h=rRQ();break;
     case 'rq_results':h=rRQRes();break;
+    case 'shared_preview':h=rSharedPreview();break;
     default:h=rLogin();
   }
   h=rBnr()+h;
