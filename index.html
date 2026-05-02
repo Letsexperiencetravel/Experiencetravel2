@@ -188,7 +188,7 @@ async function supaSignIn(email,password){
   const {data:profile}=await supa.from('profiles').select('*').eq('id',data.user.id).single();
   return{user:data.user,profile};
 }
-async function supaSignOut(){
+async function supaSignOut(){unsubscribeAll();
   await supa.auth.signOut();
   localStorage.removeItem(STORAGE_KEY);
 }
@@ -387,30 +387,43 @@ function hideModalDirect(){
 }
 
 function refreshSharedNotes(cityId){
-  // Load latest notes for a shared destination from Supabase
-  if(!S.user?.id||!cityId)return;
-  supa.from('saved_destinations').select('notes_data,share_data')
-    .eq('city_id',cityId).then(({data})=>{
-      if(data&&data.length>0){
-        // Use the most recently updated notes (could be from owner or editor)
-        const latest=data.reduce((best,row)=>{
-          const rn=row.notes_data;
-          if(!rn)return best;
-          const notes=typeof rn==='object'?rn:JSON.parse(rn||'{}');
-          return notes;
-        },S.notes[cityId]||null);
-        if(latest){
-          S.notes[cityId]=typeof latest==='object'?latest:JSON.parse(latest);
+  if(!cityId)return;
+  // Find the share token for this city
+  const sd=S.shareData[cityId];
+  const token=sd?.token;
+  if(!token)return;
+  // Pull master notes from shared_trips.shared_notes
+  supa.from('shared_trips').select('shared_notes').eq('token',token).maybeSingle()
+    .then(({data})=>{
+      if(data?.shared_notes){
+        const notes=typeof data.shared_notes==='object'?data.shared_notes:JSON.parse(data.shared_notes||'{}');
+        // Only update if shared copy is different (has more todos etc)
+        const local=S.notes[cityId]||{todos:[]};
+        const sharedTodos=(notes.todos||[]).length;
+        const localTodos=(local.todos||[]).length;
+        if(sharedTodos>=localTodos){
+          S.notes[cityId]=notes;
           saveState();
+          console.log('Refreshed shared notes for',cityId,'todos:',sharedTodos);
         }
       }
     }).catch(()=>{});
 }
 function openNotesDirect(id){
-  S.showNotes=true;S.notesId=id;
-  const h=rNotes();
-  if(!h){hideModalDirect();return;}
-  showModalDirect(h);
+  S.notesId=id;
+  // If this destination has a share token, refresh notes from master copy first
+  const token=S.shareData[id]?.token;
+  if(token){
+    refreshSharedNotes(id);
+    setTimeout(()=>{
+      const h=rNotes();
+      if(h)showModalDirect(h);
+    },300); // brief delay to let refresh complete
+  }else{
+    const h=rNotes();
+    if(!h){hideModalDirect();return;}
+    showModalDirect(h);
+  }
 }
 function openShareDirect(id){
   S.showShare=true;S.shareId=id;S.shareEmail='';
@@ -430,7 +443,11 @@ function openShareDirect(id){
     };
     supa.from('shared_trips').upsert(rec,{onConflict:'token'})
       .then(({error})=>{if(error)console.warn('Share record error:',error.message);
-        else console.log('Share record saved for token:',sd.token);})
+        else{
+          console.log('Share record saved for token:',sd.token);
+          // Subscribe to realtime updates for this trip
+          subscribeToSharedTrip(sd.token, id, saved.city);
+        }})
       .catch(()=>{});
     saveState();
   }
@@ -823,7 +840,13 @@ function loadUserFromSupabase(u, wasUpgraded, sessionId){
         }).catch(()=>{render();saveState();});
       }else{
         if(S.pendingShare&&S.pendingShare.data){acceptSharedTrip();}
-        else{render();saveState();}
+        else{
+          render();saveState();
+          // Start realtime subscriptions for shared destinations
+          setTimeout(setupRealtimeForSharedDestinations, 1000);
+          // Request notification permission
+          setTimeout(requestNotificationPermission, 2000);
+        }
       }
     });
   });
@@ -864,12 +887,22 @@ function acceptSharedTrip(){
     S.sIds=new Set([...S.sIds,item.id]);
     supaSaveDestination(S.user.id,item);
   }
-  // Copy notes from owner if available
-  if(share.share_note){
+  // Load shared notes from shared_trips.shared_notes (the master copy)
+  if(share.shared_notes){
+    const sharedNotes=typeof share.shared_notes==='object'?share.shared_notes:JSON.parse(share.shared_notes||'{}');
+    if(sharedNotes&&Object.keys(sharedNotes).length>0){
+      S.notes[item.id]=sharedNotes;
+    }
+  } else if(share.share_note){
     const n=S.notes[item.id]||{text:'',todos:[],savedBy:'',savedAt:''};
     if(!n.text)n.text=share.share_note;
     S.notes[item.id]=n;
   }
+  // Store the token so this user can sync notes back
+  if(!S.shareData[item.id])S.shareData[item.id]={people:[],token:share.token};
+  S.shareData[item.id].token=share.token;
+  // Subscribe to realtime updates for this shared trip
+  setTimeout(()=>subscribeToSharedTrip(share.token, item.id, item.city), 500);
   // Mark this person as joined in shared_trips
   if(share.token&&S.user?.email){
     try{
@@ -883,6 +916,95 @@ function acceptSharedTrip(){
   saveQuizProgress();
   toast('✓ '+share.city+' added to your destinations!');
   st({scr:'dash',showSv:true});
+}
+
+// Track active realtime subscriptions
+let _realtimeSubs = {};
+
+function subscribeToSharedTrip(token, cityId, cityName){
+  if(!token||_realtimeSubs[token])return; // already subscribed
+  console.log('Subscribing to realtime for', cityName, token);
+  const sub = supa.channel('shared_trip_'+token)
+    .on('postgres_changes',{
+      event:'UPDATE',
+      schema:'public',
+      table:'shared_trips',
+      filter:'token=eq.'+token
+    }, (payload)=>{
+      console.log('Realtime update for', cityName, payload);
+      const newNotes = payload.new?.shared_notes;
+      if(!newNotes)return;
+      const current = S.notes[cityId];
+      const currentTodos = (current?.todos||[]).length;
+      const newTodos = (typeof newNotes==='object'?newNotes:JSON.parse(newNotes||'{}')).todos||[];
+      // Update local notes
+      S.notes[cityId] = typeof newNotes==='object'?newNotes:JSON.parse(newNotes||'{}');
+      saveState();
+      saveQuizProgress();
+      // If notes modal is open for this city, refresh it
+      if(S.notesId===cityId){
+        const h=rNotes();
+        if(h)showModalDirect(h);
+      }
+      // Show notification
+      const added = newTodos.length - currentTodos;
+      if(added>0){
+        const who = payload.new?.owner_name||'Someone';
+        showSharedNotification(cityName, who+' added '+added+' item'+(added>1?'s':'')+' to the plan');
+      } else if(newTodos.length !== currentTodos || JSON.stringify(newNotes)!==JSON.stringify(current)){
+        showSharedNotification(cityName, 'Plan notes were updated');
+      }
+    })
+    .subscribe((status)=>{
+      console.log('Realtime status for', cityName+':', status);
+    });
+  _realtimeSubs[token] = sub;
+}
+
+function unsubscribeAll(){
+  Object.values(_realtimeSubs).forEach(sub=>{
+    try{supa.removeChannel(sub);}catch(e){}
+  });
+  _realtimeSubs={};
+}
+
+function showSharedNotification(cityName, message){
+  // In-app toast with city name
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a2e;border:1px solid #E535A0;color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:9999;max-width:300px;text-align:center;box-shadow:0 4px 20px rgba(229,53,160,.3)';
+  el.innerHTML='<div style="font-size:10px;color:#E535A0;font-weight:700;letter-spacing:.1em;margin-bottom:3px">'+cityName.toUpperCase()+'</div>'+message;
+  document.body.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .5s';setTimeout(()=>el.remove(),500);},4000);
+  
+  // Browser push notification (if permission granted)
+  if(Notification.permission==='granted'){
+    try{
+      new Notification('Experience Travel — '+cityName,{
+        body:message,
+        icon:'/cover-art.png',
+        badge:'/cover-art.png',
+        tag:'shared-'+cityName
+      });
+    }catch(e){}
+  }
+}
+
+function setupRealtimeForSharedDestinations(){
+  // Subscribe to all destinations that have share tokens
+  Object.entries(S.shareData||{}).forEach(([cityId,sd])=>{
+    if(sd?.token&&(sd.people||[]).length>0){
+      const saved=S.saved.find(x=>x.id===cityId);
+      if(saved)subscribeToSharedTrip(sd.token, cityId, saved.city);
+    }
+  });
+}
+
+async function requestNotificationPermission(){
+  if(!('Notification' in window))return false;
+  if(Notification.permission==='granted')return true;
+  if(Notification.permission==='denied')return false;
+  const result=await Notification.requestPermission();
+  return result==='granted';
 }
 function checkSession(){
   const _search=window.location.search;
@@ -1291,6 +1413,15 @@ function syncDestinationToSupabase(cityId){
     supaSaveDestination(S.user.id,item)
       .then(()=>console.log('Synced:',cityId))
       .catch(e=>console.error('Sync failed:',e));
+  }
+  // Also push notes to shared_trips if this city has a share token
+  const sd=S.shareData[cityId];
+  if(sd?.token&&(sd.people||[]).length>0){
+    const notes=S.notes[cityId]||null;
+    supa.from('shared_trips').update({shared_notes:notes})
+      .eq('token',sd.token)
+      .then(({error})=>{if(!error)console.log('Shared notes synced for',cityId);})
+      .catch(()=>{});
   }
 }
 function sC(e,city,country,idx){
