@@ -385,6 +385,27 @@ function hideModalDirect(){
   // Reset state flags without re-render
   S.showNotes=false;S.showShare=false;S.notesId=null;S.shareId=null;
 }
+
+function refreshSharedNotes(cityId){
+  // Load latest notes for a shared destination from Supabase
+  if(!S.user?.id||!cityId)return;
+  supa.from('saved_destinations').select('notes_data,share_data')
+    .eq('city_id',cityId).then(({data})=>{
+      if(data&&data.length>0){
+        // Use the most recently updated notes (could be from owner or editor)
+        const latest=data.reduce((best,row)=>{
+          const rn=row.notes_data;
+          if(!rn)return best;
+          const notes=typeof rn==='object'?rn:JSON.parse(rn||'{}');
+          return notes;
+        },S.notes[cityId]||null);
+        if(latest){
+          S.notes[cityId]=typeof latest==='object'?latest:JSON.parse(latest);
+          saveState();
+        }
+      }
+    }).catch(()=>{});
+}
 function openNotesDirect(id){
   S.showNotes=true;S.notesId=id;
   const h=rNotes();
@@ -616,7 +637,7 @@ window.addSharePerson=function(id){
   if(noteEl)sd.note=noteEl.value;
   // Generate token if not exists
   if(!sd.token)sd.token=genToken();
-  sd.people=[...sd.people,{email:e,perm,addedAt:new Date().toISOString()}];
+  sd.people=[...sd.people,{email:e,perm,joined:false,addedAt:new Date().toISOString()}];
   S.shareData[id]=sd;
   inp.value='';
   radios.forEach(r=>r.checked=false);
@@ -649,6 +670,19 @@ window.addSharePerson=function(id){
       }).catch(err=>{console.error('Share exception:',err);toast('Error saving share');});
   }
   saveState();
+  openShareDirect(id);
+};
+
+window.toggleSharePerm=function(id,email){
+  const sd=S.shareData[id];
+  if(!sd)return;
+  sd.people=(sd.people||[]).map(p=>p.email===email?{...p,perm:p.perm==='edit'?'view':'edit'}:p);
+  S.shareData[id]=sd;
+  saveState();
+  syncDestinationToSupabase(id);
+  if(sd.token&&S.user?.id){
+    supa.from('shared_trips').update({people:JSON.stringify(sd.people)}).eq('token',sd.token).then(()=>{}).catch(()=>{});
+  }
   openShareDirect(id);
 };
 window.removeSharePerson=function(idOrEl,email){
@@ -836,11 +870,19 @@ function acceptSharedTrip(){
     if(!n.text)n.text=share.share_note;
     S.notes[item.id]=n;
   }
+  // Mark this person as joined in shared_trips
+  if(share.token&&S.user?.email){
+    try{
+      const people=JSON.parse(share.people||'[]');
+      const updated=people.map(p=>p.email===S.user?.email?{...p,joined:true}:p);
+      supa.from('shared_trips').update({people:JSON.stringify(updated)}).eq('token',share.token).then(()=>{}).catch(()=>{});
+    }catch(e){}
+  }
   S.pendingShare=null;
   saveState();
   saveQuizProgress();
   toast('✓ '+share.city+' added to your destinations!');
-  st({scr:'dash',showSv:true});  // Go straight to My Destinations
+  st({scr:'dash',showSv:true});
 }
 function checkSession(){
   const _search=window.location.search;
@@ -1497,77 +1539,76 @@ function rShare(){
   const id=S.shareId;if(!id)return'';
   const saved=S.saved.find(x=>x.id===id);if(!saved)return'';
   if(!S.shareData[id])S.shareData[id]={people:[],token:genToken()};
-  if(!S.shareData[id].token){S.shareData[id].token=genToken();saveState();}
+  if(!S.shareData[id].token){S.shareData[id].token=genToken();}
   const sd=S.shareData[id];
   const link=getShareLink(id);
-  const img=P[saved.city]||'';
-  const noteVal=(sd.note||'').replace(/"/g,'&quot;');
-  let accessRows='';
+  const img=getPhotoUrl(saved.city,saved.country);
+  const imgHtml=img?('<img src="'+img+'" style="width:100%;height:100%;object-fit:cover"/>'):'<div style="width:100%;height:100%;background:linear-gradient(135deg,#E535A0,#1a1a2e)"></div>';
+
+  // People list
+  let peopleRows='';
   (sd.people||[]).forEach(p=>{
     const initial=(p.email||'?')[0].toUpperCase();
-    const permLabel=p.perm==='edit'?'&#9999;&#65039; Can edit':'&#128065; View only';
-    accessRows+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(0,0,0,.06)">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:32px;height:32px;border-radius:50%;background:#E535A0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">${initial}</div>
-        <div><div style="font-size:13px;font-weight:600;color:#111">${p.email}</div><div style="font-size:11px;color:#888">${permLabel}</div></div>
+    const joined=p.joined||false;
+    const permView=p.perm==='view';
+    peopleRows+=`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)">
+      <div style="width:34px;height:34px;border-radius:50%;background:#E535A0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0">${initial}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.email}</div>
+        <div style="font-size:11px;color:${joined?'#4ade80':'#f59e0b'}">${joined?'&#10003; Joined':'Invite sent'}</div>
       </div>
-      <button onclick="removeSharePerson(this.dataset.id,this.dataset.email)" data-id="${id}" data-email="${p.email}" style="padding:5px 12px;background:#fee2e2;border:none;border-radius:6px;font-size:12px;font-weight:600;color:#dc2626;cursor:pointer">Remove</button>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button onclick="toggleSharePerm('${id}','${p.email}')" style="padding:4px 10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:6px;font-size:11px;font-weight:600;color:#fff;cursor:pointer">${permView?'View':'Edit'}</button>
+        <button onclick="removeSharePerson(this)" data-id="${id}" data-email="${p.email}" style="padding:4px 10px;background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.3);border-radius:6px;font-size:11px;font-weight:600;color:#f87171;cursor:pointer">Remove</button>
+      </div>
     </div>`;
   });
-  const accessSection=accessRows?`<div style="border-top:1px solid rgba(0,0,0,.07);padding-top:16px">
-    <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:.08em;margin-bottom:10px">WHO HAS ACCESS</div>
-    ${accessRows}</div>`:'';
-  const imgHtml=img?('<img src="'+img+'" style="width:100%;height:100%;object-fit:cover"/>'):'';
+
   return `<div class="ov" onclick="if(event.target.classList.contains('ov'))hideModalDirect()" style="z-index:360">
-  <div class="md" style="max-width:440px;border-radius:20px;overflow:hidden;padding:0;background:#fff">
-    <div style="position:relative;height:130px;background:#222">
+  <div class="md" style="max-width:440px;border-radius:20px;overflow:hidden;padding:0;background:#1a1a2e;color:#fff">
+    <!-- Photo header -->
+    <div style="position:relative;height:130px;background:#222;flex-shrink:0">
       ${imgHtml}
-      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1),rgba(0,0,0,.6))"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.05),rgba(0,0,0,.7))"></div>
       <button onclick="hideModalDirect()" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.45);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center">&#10005;</button>
       <div style="position:absolute;bottom:12px;left:16px">
-        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#fff">Share ${saved.flag||''} ${saved.city}</div>
-        <div style="font-size:12px;color:rgba(255,255,255,.8)">Control who can see or edit this trip</div>
+        <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff">&#128279; Share ${saved.flag||''} ${saved.city}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.75)">Plan this trip together</div>
       </div>
     </div>
-    <div style="padding:20px">
-      <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:.08em;margin-bottom:8px">SHARE LINK</div>
+    <div style="padding:18px;max-height:70vh;overflow-y:auto">
+
+      <!-- Share link -->
+      <div style="font-size:10px;font-weight:700;color:#888;letter-spacing:.1em;margin-bottom:8px">SHARE LINK</div>
       <div style="display:flex;gap:8px;margin-bottom:16px">
-        <div style="flex:1;background:#f5f5f5;border:1.5px solid #e0e0e0;border-radius:10px;padding:10px 12px;font-size:12px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${link}</div>
-        <button onclick="copyShareLink('${link}')" style="padding:10px 16px;background:#E535A0;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Copy</button>
+        <div style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 12px;font-size:11px;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${link}</div>
+        <button onclick="copyShareLink('${link}')" style="padding:9px 14px;background:#E535A0;color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">Copy</button>
       </div>
-      <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:.08em;margin-bottom:8px">SHARE THIS TRIP</div>
-      <div style="display:flex;gap:10px;margin-bottom:20px">
-        <button onclick="copyShareLink('${link}')" style="flex:1;padding:11px;background:#f5f5f5;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;font-weight:700;color:#333;cursor:pointer">&#128279; Copy Link</button>
-        <button onclick="window.nativeShare('${link}','${saved.city}','${(sd.note||'').replace(/'/g,"")}')" style="flex:1;padding:11px;background:linear-gradient(135deg,#E535A0,#c0278a);border:none;border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer">&#8593; Share</button>
-      </div>
-      <div style="border-top:1px solid #f0f0f0;padding-top:16px">
-        <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:.08em;margin-bottom:4px">GRANT ACCESS</div>
-        <div style="font-size:12px;color:#aaa;margin-bottom:12px">Invite someone and choose their permission level.</div>
-        <div style="background:#f9f9f9;border:1.5px solid #e0e0e0;border-radius:12px;padding:14px;margin-bottom:12px">
-          <div style="font-size:11px;font-weight:700;color:#888;margin-bottom:8px">EMAIL OR NAME</div>
-          <input id="sh-email" type="email" placeholder="friend@email.com" style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:12px"/>
-          <div style="font-size:11px;font-weight:700;color:#888;margin-bottom:8px">PERMISSION LEVEL <span style="color:#E535A0">*REQUIRED</span></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-            <label style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;cursor:pointer" id="pcard-view-${id}">
-              <div style="display:flex;align-items:center;gap:7px">
-                <input type="radio" name="sh-perm-${id}" value="view" onchange="document.getElementById('pcard-view-${id}').style.borderColor='#E535A0';document.getElementById('pcard-edit-${id}').style.borderColor='#e0e0e0'"/>
-                <span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#111">&#128065; View Only</span>
-              </div>
-              <div style="font-size:11.5px;color:#888;padding-left:20px">Can see, cannot edit</div>
-            </label>
-            <label style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;cursor:pointer" id="pcard-edit-${id}">
-              <div style="display:flex;align-items:center;gap:7px">
-                <input type="radio" name="sh-perm-${id}" value="edit" onchange="document.getElementById('pcard-edit-${id}').style.borderColor='#E535A0';document.getElementById('pcard-view-${id}').style.borderColor='#e0e0e0'"/>
-                <span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#111">&#9999;&#65039; Can Edit</span>
-              </div>
-              <div style="font-size:11.5px;color:#888;padding-left:20px">Update notes and checklist</div>
-            </label>
-          </div>
-          <button onclick="addSharePerson('${id}')" style="display:block;width:100%;padding:11px;background:#E535A0;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Add Person &#8594;</button>
+
+      <!-- Permission + Share -->
+      <div style="font-size:10px;font-weight:700;color:#888;letter-spacing:.1em;margin-bottom:10px">INVITE WITH ACCESS</div>
+      <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px;margin-bottom:16px">
+        <input id="sh-email" type="email" placeholder="friend@email.com" style="width:100%;padding:10px 12px;border:1px solid rgba(255,255,255,.15);border-radius:8px;font-size:13px;background:rgba(255,255,255,.08);color:#fff;box-sizing:border-box;margin-bottom:10px;outline:none" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <label id="pcard-v-${id}" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,255,255,.06);border:1.5px solid #E535A0;border-radius:10px;cursor:pointer">
+            <input type="radio" name="sh-perm-${id}" value="view" checked onchange="document.getElementById('pcard-v-${id}').style.borderColor='#E535A0';document.getElementById('pcard-e-${id}').style.borderColor='rgba(255,255,255,.15)'"/>
+            <div><div style="font-size:12px;font-weight:700;color:#fff">&#128065; View Only</div><div style="font-size:10px;color:#888">Can see the plan</div></div>
+          </label>
+          <label id="pcard-e-${id}" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;cursor:pointer">
+            <input type="radio" name="sh-perm-${id}" value="edit" onchange="document.getElementById('pcard-e-${id}').style.borderColor='#E535A0';document.getElementById('pcard-v-${id}').style.borderColor='rgba(255,255,255,.15)'"/>
+            <div><div style="font-size:12px;font-weight:700;color:#fff">&#9999;&#65039; Can Edit</div><div style="font-size:10px;color:#888">Add notes & todos</div></div>
+          </label>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="addSharePerson('${id}')" style="flex:1;padding:11px;background:#E535A0;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Send Invite &#8594;</button>
+          <button onclick="window.nativeShare('${link}','${saved.city}','')" style="padding:11px 14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer" title="Share link">&#8679;</button>
         </div>
       </div>
-      ${accessSection}
-      <p style="font-size:11.5px;color:#bbb;text-align:center;line-height:1.6;margin-top:14px">Anyone with the link can view. Only invited editors can update notes and checklist.</p>
+
+      <!-- Who has access -->
+      ${peopleRows?`<div style="font-size:10px;font-weight:700;color:#888;letter-spacing:.1em;margin-bottom:8px">SHARED WITH</div>${peopleRows}`:''}
+
+      <p style="font-size:11px;color:#555;text-align:center;line-height:1.6;margin-top:14px">Anyone with the link can view. Only invited editors can update notes.</p>
     </div>
   </div>
 </div>`;
