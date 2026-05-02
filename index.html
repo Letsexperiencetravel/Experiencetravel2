@@ -644,6 +644,19 @@ window.removeSharePerson=function(id,email){
   }
   openShareDirect(id);
 }
+window.nativeShare=function(url,city,note){
+  if(navigator.share){
+    navigator.share({
+      title:'Check out '+city+' on Experience Travel',
+      text:note?'"'+note+'" — shared via Experience Travel':'Shared via Experience Travel',
+      url:url
+    }).catch(()=>{});
+  }else{
+    // Fallback: copy to clipboard
+    window.copyShareLink(url);
+    toast('Link copied — paste to share!');
+  }
+};
 window.copyShareLink=function(link){
   const fullUrl=link.startsWith('http')?link:'https://'+link;
   if(navigator.clipboard){navigator.clipboard.writeText(fullUrl).catch(()=>fallbackCopy(fullUrl));}
@@ -1445,7 +1458,6 @@ function rNotes(){
   </div>
   <div style="margin-top:14px;padding:10px 13px;background:${isST?'rgba(34,197,94,.06)':'rgba(245,228,32,.06)'};border:1px solid ${isST?'rgba(34,197,94,.2)':'rgba(245,228,32,.2)'};border-radius:10px;display:flex;align-items:center;gap:12px"><div style="font-size:22px">${saved.flag}</div><div><div style="font-size:12px;font-weight:700;color:${isST?'#16A34A':'#7A5C00'}">${isST?'Trip Progress':'Planning Progress'}</div><div style="background:#E5E7EB;border-radius:8px;height:5px;overflow:hidden;width:160px;margin:4px 0"><div style="height:100%;width:${Math.round((done/Math.max(1,n.todos.length))*100)}%;background:${isST?'linear-gradient(90deg,#22C55E,#16A34A)':'linear-gradient(90deg,#D4C000,#F5E420)'};transition:width .4s"></div></div><div style="font-size:11px;color:#888">${done} of ${n.todos.length} tasks completed</div></div></div>
   </div></div>`}
-function rShare(){
   const id=S.shareId;if(!id)return'';
   const saved=S.saved.find(x=>x.id===id);if(!saved)return'';
   const isST=saved.tt==='st';
@@ -1555,7 +1567,81 @@ function rShare(){
       <p style="font-size:11.5px;color:#bbb;text-align:center;line-height:1.6;margin-top:14px">Anyone with the link can view. Only invited editors can update notes &amp; checklist.</p>
     </div>
   </div>
-</div>`;
+function rShare(){
+  const id=S.shareId;if(!id)return'';
+  const saved=S.saved.find(x=>x.id===id);if(!saved)return'';
+  const isST=saved.tt==='st';
+  if(!S.shareData[id]?.token){
+    const sd2=S.shareData[id]||{people:[]};
+    sd2.token=genToken();S.shareData[id]=sd2;saveState();
+  }
+  const link=getShareLink(id);
+  const sd=S.shareData[id]||{people:[]};
+  const img=destImg(saved.id);
+  let accessSection='';
+  if(sd.people&&sd.people.length>0){
+    accessSection='<div style="font-size:11px;font-weight:700;color:#888;letter-spacing:.08em;margin-bottom:10px">WHO HAS ACCESS</div>';
+    sd.people.forEach(p=>{
+      accessSection+='<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(0,0,0,.06)">'
+        +'<div style="display:flex;align-items:center;gap:10px">'
+        +'<div style="width:32px;height:32px;border-radius:50%;background:#E535A0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">'+((p.email||'?')[0].toUpperCase())+'</div>'
+        +'<div><div style="font-size:13px;font-weight:600;color:#111">'+p.email+'</div>'
+        +'<div style="font-size:11px;color:#888">'+(p.perm==='edit'?'✏️ Can edit':'👁 View only')+'</div></div></div>'
+        +'<button onclick="removeSharePerson(\''+id+'\',\''+p.email+'\')" style="padding:5px 12px;background:#fee2e2;border:none;border-radius:6px;font-size:12px;font-weight:600;color:#dc2626;cursor:pointer">Remove</button>'
+        +'</div>';
+    });
+  }
+    const imgHtml=img?('<img src="'+img+'" style="width:100%;height:100%;object-fit:cover"/>'):'';
+  const noteVal=(sd.note||'').replace(/"/g,'&quot;');
+  const cityFlag=(saved.flag||'')+' '+saved.city;
+  const noteForShare=(sd.note||'').replace(/'/g,'');
+  return('<div class="ov" onclick="if(event.target.classList.contains('ov'))hideModalDirect()" style="z-index:360">'
+    +'<div class="md" style="max-width:440px;border-radius:20px;overflow:hidden;padding:0;background:#fff">'
+    +'<div style="position:relative;height:130px;background:#222">'
+    +imgHtml
+    +'<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1),rgba(0,0,0,.6))"></div>'
+    +'<button onclick="hideModalDirect()" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.45);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center">✕</button>'
+    +'<div style="position:absolute;bottom:12px;left:16px">'
+    +'<div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#fff">🔗 Share '+cityFlag+'</div>'
+    +'<div style="font-size:12px;color:rgba(255,255,255,.8)">Control who can see or edit this trip</div>'
+    +'</div></div>'
+    +'<div style="padding:20px">'
+    +'<div style="font-size:11px;font-weight:700;color:#888;letter-spacing:.08em;margin-bottom:8px">SHARE LINK</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:16px">'
+    +'<div style="flex:1;background:#f5f5f5;border:1.5px solid #e0e0e0;border-radius:10px;padding:10px 12px;font-size:12px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+link+'</div>'
+    +'<button onclick="copyShareLink(''+link+'')" style="padding:10px 16px;background:#E535A0;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Copy</button>'
+    +'</div>'
+    +'<div style="font-size:11px;font-weight:700;color:#888;letter-spacing:.08em;margin-bottom:8px">MESSAGE FOR RECIPIENTS</div>'
+    +'<textarea id="share-note" placeholder="Add a note for the people you're sharing with..." style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;font-family:inherit;resize:none;height:70px;box-sizing:border-box;margin-bottom:16px">'+noteVal+'</textarea>'
+    +'<div style="font-size:11px;font-weight:700;color:#888;letter-spacing:.08em;margin-bottom:8px">SHARE THIS TRIP</div>'
+    +'<div style="display:flex;gap:10px;margin-bottom:20px">'
+    +'<button onclick="copyShareLink(''+link+'')" style="flex:1;padding:11px;background:#f5f5f5;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;font-weight:700;color:#333;cursor:pointer">🔗 Copy Link</button>'
+    +'<button onclick="window.nativeShare(''+link+'',''+cityFlag+'',''+noteForShare+'')" style="flex:1;padding:11px;background:linear-gradient(135deg,#E535A0,#c0278a);border:none;border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer">↑ Share</button>'
+    +'</div>'
+    +'<div style="border-top:1px solid #f0f0f0;padding-top:16px">'
+    +'<div style="font-size:11px;font-weight:700;color:#888;letter-spacing:.08em;margin-bottom:4px">GRANT ACCESS</div>'
+    +'<div style="font-size:12px;color:#aaa;margin-bottom:12px">Invite someone and choose their permission level.</div>'
+    +'<div style="background:#f9f9f9;border:1.5px solid #e0e0e0;border-radius:12px;padding:14px;margin-bottom:12px">'
+    +'<div style="font-size:11px;font-weight:700;color:#888;margin-bottom:8px">EMAIL OR NAME</div>'
+    +'<input id="sh-email" type="email" placeholder="friend@email.com" style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:12px"/>'
+    +'<div style="font-size:11px;font-weight:700;color:#888;margin-bottom:8px">PERMISSION LEVEL <span style="color:#E535A0">*REQUIRED</span></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'
+    +'<label id="pcard-view-'+id+'" style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;cursor:pointer">'
+    +'<div style="display:flex;align-items:center;gap:7px">'
+    +'<input type="radio" name="sh-perm-'+id+'" value="view" onchange="document.getElementById('pcard-view-'+id+'').style.borderColor='#E535A0';document.getElementById('pcard-edit-'+id+'').style.borderColor='#e0e0e0'"/>'
+    +'<span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#111">👁 View Only</span></div>'
+    +'<div style="font-size:11.5px;color:#888;padding-left:20px">Can see — can't edit</div></label>'
+    +'<label id="pcard-edit-'+id+'" style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;cursor:pointer">'
+    +'<div style="display:flex;align-items:center;gap:7px">'
+    +'<input type="radio" name="sh-perm-'+id+'" value="edit" onchange="document.getElementById('pcard-edit-'+id+'').style.borderColor='#E535A0';document.getElementById('pcard-view-'+id+'').style.borderColor='#e0e0e0'"/>'
+    +'<span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#111">✏️ Can Edit</span></div>'
+    +'<div style="font-size:11.5px;color:#888;padding-left:20px">Update notes & checklist</div></label>'
+    +'</div>'
+    +'<button onclick="addSharePerson(''+id+'')" style="display:block;width:100%;padding:11px;background:#E535A0;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Add Person →</button>'
+    +'</div></div>'
+    +(accessSection?'<div style="border-top:1px solid rgba(0,0,0,.07);padding-top:16px">'+accessSection+'</div>':'')
+    +'<p style="font-size:11.5px;color:#bbb;text-align:center;line-height:1.6;margin-top:14px">Anyone with the link can view. Only invited editors can update notes & checklist.</p>'
+    +'</div></div></div>');
 }
 
 function rCmp(){const items=S.cmpSel.filter(x=>x.tt===S.cmpType);if(items.length!==2)return'';const[a,b]=items;const da=getCmpD(a.country),db=getCmpD(b.country);const pca=gPC(a.country),pcb=gPC(b.country);
@@ -1644,35 +1730,42 @@ function rSharedPreview(){
   if(!d)return'';
   const img=(P[d.city]||'');
   const isST=d.trip_type==='st';
+  // Store trip data globally so buttons can access it
+  window._pendingShareData=d;
   return`<div class="pg" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#111 0%,#1a1a1a 100%)">
     <div style="width:100%;max-width:420px">
-      <!-- Logo -->
       <div style="text-align:center;margin-bottom:24px">
         <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff">Experience <em style="color:#E535A0;font-style:normal">Travel</em></div>
       </div>
-      <!-- Destination card -->
       <div style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);margin-bottom:20px">
         <div style="position:relative;height:180px;background:#222">
           ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'"/>`:''}
           <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1),rgba(0,0,0,.65))"></div>
           <div style="position:absolute;bottom:14px;left:16px;right:16px">
-            <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff">${d.flag} ${d.city}, ${d.country}</div>
+            <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff">${d.flag||''} ${d.city}, ${d.country}</div>
             <div style="font-size:13px;color:rgba(255,255,255,.85);margin-top:3px">${d.score_label} · ${d.score}/100 · ${isST?'Short-Term Travel':'Long-Term Relocation'}</div>
           </div>
         </div>
         <div style="padding:20px">
           <div style="font-size:13px;color:#555;margin-bottom:4px">Shared by</div>
-          <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#111;margin-bottom:14px">${d.owner_name}</div>
+          <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#111;margin-bottom:14px">${d.owner_name||'Someone'}</div>
           ${d.share_note?`<div style="background:#F5F5F5;border-radius:10px;padding:12px 14px;font-size:13px;color:#444;font-style:italic;margin-bottom:14px">"${d.share_note}"</div>`:''}
           <div style="font-size:12px;color:#888;line-height:1.6">Sign up or log in to view the full breakdown, planning notes, visa info, and add this destination to your account.</div>
         </div>
       </div>
-      <!-- Auth buttons -->
-      <button onclick="S.pendingShare=S.pendingShare||{data:${JSON.stringify(d).replace(/'/g,'\\x27')}};st({scr:'reg',reg:{fn:'',ln:'',em:'',ph:'',co:'',cy:'',bday:'',_fe:{}},regStep:1})" style="display:block;width:100%;padding:15px;background:linear-gradient(135deg,#E535A0,#F5E420);border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#111;cursor:pointer;margin-bottom:10px">Create Free Account →</button>
-      <button onclick="S.pendingShare=S.pendingShare||{data:${JSON.stringify(d).replace(/'/g,'\\x27')}};st({scr:'login'})" style="display:block;width:100%;padding:15px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#fff;cursor:pointer">Already have an account? Log in</button>
+      <button onclick="goSignupFromShare()" style="display:block;width:100%;padding:15px;background:linear-gradient(135deg,#E535A0,#F5E420);border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#111;cursor:pointer;margin-bottom:10px">Create Free Account →</button>
+      <button onclick="goLoginFromShare()" style="display:block;width:100%;padding:15px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#fff;cursor:pointer">Already have an account? Log in</button>
     </div>
   </div>`;
 }
+window.goSignupFromShare=function(){
+  S.pendingShare={data:window._pendingShareData};
+  st({scr:'reg',reg:{fn:'',ln:'',em:'',ph:'',co:'',cy:'',bday:'',_fe:{}},regStep:1});
+};
+window.goLoginFromShare=function(){
+  S.pendingShare={data:window._pendingShareData};
+  st({scr:'login'});
+};
 
 function render(){
   const app=document.getElementById('app');let h='';
