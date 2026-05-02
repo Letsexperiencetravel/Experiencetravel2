@@ -600,7 +600,7 @@ window.addTodo=function(id){
   saveQuizProgress();
   syncDestinationToSupabase(id);
   openNotesDirect(id);
-};;;;
+};
 window.updNoteDate=function(id,key,val){const n=getNotes(id);n[key]=val;S.notes[id]=n;
   saveState();};
 window.updNoteDate=function(id,field,val){const n=getNotes(id);n[field]=val;S.notes[id]=n;render()};
