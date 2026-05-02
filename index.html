@@ -2059,50 +2059,123 @@ function rSearchError(){
 
 
 window.shareFromResult=function(city,country,flag,score,scoreLabel,idx){
-  if(!S.user?.id){
-    // Not logged in - share homepage with invite copy
-    const txt='I just matched '+score+'% with '+city+', '+country+' on Experience Travel\n\nTake the quiz and find your perfect destination \u2193';
-    window.nativeShare('https://letsexperiencetravel.com',city,txt);
-    return;
+  // Save destination if not already saved
+  if(S.user?.id){
+    const cityId=city+'-'+country;
+    if(!S.sIds.has(cityId)){
+      const r=S.res[idx];
+      const item={id:cityId,tt:S.tt,city,country,flag,score,scoreLabel,highlights:r?.highlights||[],date:new Date().toLocaleDateString()};
+      S.saved=[...S.saved,item];S.sIds=new Set([...S.sIds,cityId]);
+      saveState();supaSaveDestination(S.user.id,item).catch(()=>{});
+    }
+    // Create share token
+    if(!S.shareData[cityId])S.shareData[cityId]={people:[],token:genToken()};
+    if(!S.shareData[cityId].token)S.shareData[cityId].token=genToken();
+    const token=S.shareData[cityId].token;
+    const shareUrl='https://letsexperiencetravel.com/share/'+token;
+    const firstName=S.user.firstName||'Someone';
+    // Save to shared_trips
+    supa.from('shared_trips').upsert({
+      token,owner_id:S.user.id,owner_name:firstName,
+      city_id:cityId,city,country,flag,score,
+      score_label:scoreLabel,trip_type:S.tt||'st',
+      share_note:'',people:JSON.stringify([])
+    },{onConflict:'token'}).then(()=>{saveState();}).catch(()=>{});
+    // Generate canvas and share
+    generateShareCard(city,country,flag,score,scoreLabel,firstName,shareUrl);
+  }else{
+    // Not logged in — just generate card with homepage link
+    generateShareCard(city,country,flag,score,scoreLabel,'','https://letsexperiencetravel.com');
   }
-  // Save destination first if not already saved
-  const cityId=city+'-'+country;
-  let saved=S.saved.find(x=>x.id===cityId);
-  if(!saved){
-    const r=S.res[idx];
-    const item={id:cityId,tt:S.tt,city,country,flag,score,scoreLabel,highlights:r?.highlights||[],date:new Date().toLocaleDateString()};
-    S.saved=[...S.saved,item];
-    S.sIds=new Set([...S.sIds,cityId]);
-    saved=item;
-    saveState();
-    supaSaveDestination(S.user.id,item).catch(()=>{});
-  }
-  // Create/get share token
-  if(!S.shareData[cityId])S.shareData[cityId]={people:[],token:genToken()};
-  if(!S.shareData[cityId].token)S.shareData[cityId].token=genToken();
-  const token=S.shareData[cityId].token;
-  const shareUrl='https://letsexperiencetravel.com/share/'+token;
-  const firstName=S.user.firstName||'Someone';
-  const msg=firstName+' matched '+score+'% with '+flag+' '+city+' on Experience Travel\n\n\"'+scoreLabel+'\" — take the quiz and find your own perfect destination!\n';
+};
 
-  // Save to shared_trips so the preview page works
-  const rec={
-    token,owner_id:S.user.id,
-    owner_name:firstName,
-    city_id:cityId,city,country,flag,score,
-    score_label:scoreLabel,trip_type:S.tt,
-    share_note:'',people:JSON.stringify([])
-  };
-  supa.from('shared_trips').upsert(rec,{onConflict:'token'})
-    .then(()=>{
-      saveState();
-      // Now share the /share/TOKEN link
-      window.nativeShare(shareUrl,city,msg);
-    })
-    .catch(()=>{
-      // Fallback: share homepage if DB fails
-      window.nativeShare('https://letsexperiencetravel.com',city,msg);
-    });
+function generateShareCard(city,country,flag,score,scoreLabel,firstName,shareUrl){
+  const isST=S.tt==='st';
+  const canvas=document.createElement('canvas');
+  canvas.width=1080;canvas.height=1080;
+  const ctx=canvas.getContext('2d');
+
+  // Dark background
+  const bg=ctx.createLinearGradient(0,0,1080,1080);
+  bg.addColorStop(0,'#0A0A0F');bg.addColorStop(0.5,'#12080F');bg.addColorStop(1,'#0A0F12');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,1080,1080);
+
+  // Pink glow top
+  const glow=ctx.createRadialGradient(540,0,0,540,0,600);
+  glow.addColorStop(0,'rgba(229,53,160,.18)');glow.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=glow;ctx.fillRect(0,0,1080,1080);
+
+  // Yellow glow bottom right
+  const glow2=ctx.createRadialGradient(1080,1080,0,1080,1080,500);
+  glow2.addColorStop(0,'rgba(245,228,32,.12)');glow2.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=glow2;ctx.fillRect(0,0,1080,1080);
+
+  // Score ring
+  const cx=540,cy=390,r=210;
+  // Track
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=22;ctx.stroke();
+  // Progress arc
+  const prog=(score/100)*Math.PI*2;
+  ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+prog);
+  const arcGrad=ctx.createLinearGradient(cx-r,cy,cx+r,cy);
+  arcGrad.addColorStop(0,'#F5E420');arcGrad.addColorStop(1,'#E535A0');
+  ctx.strokeStyle=arcGrad;ctx.lineWidth=22;ctx.lineCap='round';ctx.stroke();
+
+  // Flag in center of ring
+  ctx.font='130px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(flag||'✈️',cx,cy);
+
+  // Score below ring
+  ctx.textBaseline='alphabetic';
+  ctx.font='bold 90px -apple-system,Helvetica,Arial';ctx.fillStyle='#fff';
+  ctx.textAlign='center';ctx.fillText(score+'%',cx,cy+r+80);
+  ctx.font='22px -apple-system,Helvetica,Arial';ctx.fillStyle='rgba(255,255,255,.45)';
+  ctx.fillText('match score',cx,cy+r+118);
+
+  // City name
+  ctx.font='bold 68px -apple-system,Helvetica,Arial';ctx.fillStyle='#fff';
+  ctx.fillText(city+', '+country,cx,cy+r+195);
+
+  // Score label (coloured)
+  const labelColor=score>=90?'#F5E420':score>=80?'#E535A0':'rgba(255,255,255,.6)';
+  ctx.font='bold 26px -apple-system,Helvetica,Arial';ctx.fillStyle=labelColor;
+  ctx.fillText((scoreLabel||'').toUpperCase(),cx,cy+r+240);
+
+  // Attribution line
+  ctx.font='28px -apple-system,Helvetica,Arial';ctx.fillStyle='rgba(255,255,255,.4)';
+  ctx.fillText('My '+(isST?'travel':'relocation')+' match on',cx,930);
+
+  // Brand name gradient
+  const brGrad=ctx.createLinearGradient(cx-200,0,cx+200,0);
+  brGrad.addColorStop(0,'#F5E420');brGrad.addColorStop(1,'#E535A0');
+  ctx.font='bold 48px -apple-system,Helvetica,Arial';ctx.fillStyle=brGrad;
+  ctx.fillText('Experience Travel',cx,985);
+
+  // Share the card
+  canvas.toBlob(blob=>{
+    const url=URL.createObjectURL(blob);
+    const fname='my-match-'+city.toLowerCase().replace(/\s+/g,'-')+'.png';
+    const msg=(firstName?firstName+' matched ':'I matched ')+score+'% with '+flag+' '+city+' on Experience Travel\n\nTake the quiz — find your perfect destination:\n'+shareUrl;
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([blob],fname,{type:'image/png'})]})){
+      navigator.share({
+        title:'Experience Travel — '+city,
+        text:msg,
+        url:shareUrl,
+        files:[new File([blob],fname,{type:'image/png'})]
+      }).catch(()=>{
+        // Fallback if file share fails
+        navigator.share({title:'Experience Travel',text:msg,url:shareUrl}).catch(()=>{});
+      });
+    }else if(navigator.share){
+      navigator.share({title:'Experience Travel — '+city,text:msg,url:shareUrl}).catch(()=>{});
+    }else{
+      // Desktop fallback: download the image
+      const a=document.createElement('a');a.href=url;a.download=fname;a.click();
+      toast('Card downloaded! Share it anywhere 🎉');
+    }
+    setTimeout(()=>URL.revokeObjectURL(url),3000);
+  },'image/png');
 };
 
 function render(){
