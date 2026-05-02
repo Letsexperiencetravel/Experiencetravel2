@@ -811,6 +811,7 @@ function loadUserFromSupabase(u, wasUpgraded, sessionId){
   supa.from('profiles').select('*').eq('id',u.id).single().then(({data:p})=>{
     if(p){
       S.isPro=p.is_pro||false;
+      S.isApproved=p.is_approved||p.is_pro||false;  // Pro users always approved
       S.freeCnt=p.free_cnt||0;
       if(p.last_free_search)S.lastFreeSearch=new Date(p.last_free_search).getTime();
       S.proCnt=p.pro_cnt||0;
@@ -871,10 +872,21 @@ function loadUserFromSupabase(u, wasUpgraded, sessionId){
       }else{
         if(S.pendingShare&&S.pendingShare.data){acceptSharedTrip();}
         else{
-          render();saveState();
-          // Start realtime subscriptions for shared destinations
+          // Check waitlist status
+          const hasQuizActivity=p.quiz_answers&&Object.keys(p.quiz_answers).length>0;
+          const isApprovedUser=p.is_approved||p.is_pro||hasQuizActivity||!!S.pendingShare||!!S.inviteRef;
+          S.isApproved=isApprovedUser;
+          if(!isApprovedUser){
+            st({scr:'waitlist'});
+          }else{
+            // If they came via invite ref, approve them now
+            if(S.inviteRef&&!p.is_approved){
+              supa.from('profiles').update({is_approved:true}).eq('id',u.id).then(()=>{}).catch(()=>{});
+            }
+            render();
+          }
+          saveState();
           setTimeout(setupRealtimeForSharedDestinations, 1000);
-          // Request notification permission
           setTimeout(requestNotificationPermission, 2000);
         }
       }
@@ -1037,6 +1049,9 @@ async function requestNotificationPermission(){
   return result==='granted';
 }
 function checkSession(){
+  // Check for referral invite in URL (?ref=USERID)
+  const _refParam=new URLSearchParams(window.location.search).get('ref');
+  if(_refParam){S.inviteRef=_refParam;history.replaceState({},'','/');}
   const _search=window.location.search;
   const _path=window.location.pathname;
   const _wasUpgraded=_search.includes('upgraded=true');
@@ -1103,8 +1118,14 @@ supa.auth.signUp({email:d.em,password:p1,options:{data:{first_name:d.fn,last_nam
     if(error){st({reg:{...S.reg,_fe:{p1:error.message}}});return}
     const u=data.user;
     // Create profile row
-    supa.from('profiles').upsert({id:u.id,email:d.em,first_name:d.fn,last_name:d.ln,phone:d.ph||'',country:d.co||'',city:d.cy||'',is_pro:false,free_cnt:0,pro_cnt:0},{onConflict:'id'}).then(({error:pe})=>{if(pe)console.error('Profile create error:',pe.message);
-      st({scr:'onboarding',onboardStep:0,user:{id:u.id,firstName:d.fn,lastName:d.ln,email:d.em,phone:d.ph,country:d.co,city:d.cy},ans:{},qi:0,err:null,lc:1});
+    supa.from('profiles').upsert({id:u.id,email:d.em,first_name:d.fn,last_name:d.ln,phone:d.ph||'',country:d.co||'',city:d.cy||'',is_pro:false,free_cnt:0,pro_cnt:0,is_approved:!!S.pendingShare},{onConflict:'id'}).then(({error:pe})=>{if(pe)console.error('Profile create error:',pe.message);
+      const approved=!!S.pendingShare;
+      const newUser={id:u.id,firstName:d.fn,lastName:d.ln,email:d.em,phone:d.ph,country:d.co,city:d.cy};
+      if(approved){
+        st({scr:'onboarding',onboardStep:0,user:newUser,ans:{},qi:0,err:null,lc:1});
+      }else{
+        st({scr:'waitlist',user:newUser,ans:{},qi:0,err:null,lc:1});
+      }
     });
   });
 }
@@ -1376,7 +1397,7 @@ function rLoad(){
 function rRes(){const res=S.res||[],tl=S.tt==='lt'?'Long-Term Relocation':'Short-Term Travel',isST=S.tt==='st';const topCity=res[0]?.city||'your top match';return`<div>${rNav()}<div class="pg pg-w" style="padding-top:${pp()}px;padding-bottom:36px;justify-content:flex-start"><div style="text-align:center;margin-bottom:14px;max-width:580px;padding-top:16px"><span class="bdg bp">${tl}</span><div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;line-height:1.2;margin-bottom:4px;color:#111;margin-top:8px">Your Top Matched <span style="color:${P}">Destinations</span></div><p style="color:#999;font-size:13px">${isST?'Tap any card for your itinerary':'Tap any card for visa info, costs & pros/cons'}</p></div>
 <div class="rg" style="margin-top:12px">${res.map((r,idx)=>{const sv=S.sIds.has(`${r.city}-${r.country}`);return`<div class="rc" onclick="oD(${idx})"><div class="rc-img">${destImg(r.city,r.flag,true,r.country)}<div style="position:absolute;top:10px;right:10px;display:flex;gap:5px"><button onclick="event.stopPropagation();shareResult('${r.city}',${r.score},'${r.flag}','${r.country}')" style="background:rgba(0,0,0,.5);border:1.5px solid rgba(255,255,255,.3);border-radius:8px;padding:4px 8px;font-size:11px;color:#fff;cursor:pointer;backdrop-filter:blur(4px)">Share</button><button onclick="sC(event,'${r.city}','${r.country}',${idx})" style="background:${sv?P:'rgba(0,0,0,.5)'};border:1.5px solid ${sv?P:'rgba(255,255,255,.3)'};border-radius:8px;padding:4px 9px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:'Syne',sans-serif;backdrop-filter:blur(4px)">${sv?'Saved':'Save'}</button></div></div><div class="rc-body"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.35);font-weight:600">#${idx+1} Match</span><span style="color:${Y};font-weight:700;font-size:14px">${r.score}/100</span></div><div class="sb" style="margin-bottom:6px"><div class="sf" style="width:0%" id="sf-${idx}"></div></div><div style="font-size:10px;color:${P};margin-bottom:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">${r.scoreLabel}</div><ul class="rhl">${r.highlights.map(h=>`<li>${h}</li>`).join('')}</ul></div></div>`}).join('')}</div>
 <div style="width:100%;max-width:740px;margin-top:20px"><div class="cn-inner"><div style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.55"><strong style="color:#fff;font-size:15px">Not sure if ${topCity} is right for you?</strong><br><span style="font-size:13px;color:rgba(255,255,255,.6)">Book a free 30-min call — a consultant reviews your full profile.</span></div><button class="book-btn-sm" onclick="st({showCo:true,coSent:false,coTripType:S.tt||'lt'})">Book Free Call</button></div></div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px">${bSm('Refine Search',"st({scr:'fu',fI:0,fA:{}})",P,W,'#C8208A')}${bSm('← Dashboard',"st({scr:'dash'})",W,P,P)}</div></div></div>`}
+<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px">${bSm('📸 Share Results',"st({scr:'share_card'})",W,'#F5E420','#111')}${bSm('Refine Search',"st({scr:'fu',fI:0,fA:{}})",P,W,'#C8208A')}${bSm('← Dashboard',"st({scr:'dash'})",W,P,P)}</div></div></div>`}
 const QS=[
 {l:1,ln:"Who You Are",w:3,q:"When you have a completely free day, what do you naturally do?",t:"s",o:["Being outdoors in nature","Exploring a city","Staying in and recharging","Being social","Creating something","Seeking adventure"]},
 {l:1,ln:"Who You Are",w:10,q:"Are there any deal-breakers that would rule out a destination?",t:"db",o:["Anti-LGBTQ+ laws or culture","Extreme heat (95°F/35°C+)","Extreme cold or harsh winters","Very high humidity year-round","High crime or safety concerns","No English spoken at all","Strict religious laws","Politically unstable government","No direct international flights","Very expensive (NYC/London level)","Limited Western amenities","None — I'm open to almost anywhere ✓"]},
@@ -2053,6 +2074,117 @@ function rSearchError(){
   </div>`;
 }
 
+
+function rWaitlist(){
+  const pos=S.waitlistPos||'';
+  const email=S.user?.email||'';
+  const shareLink=S.user?.id?('https://letsexperiencetravel.com/share/invite-'+S.user.id.slice(0,8)):'';
+  return`<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;background:linear-gradient(135deg,#111 0%,#1a1a2e 60%)">
+    <div style="width:100%;max-width:400px;text-align:center">
+      <div style="font-size:56px;margin-bottom:20px">🔒</div>
+      <div style="font-size:11px;font-weight:700;color:#E535A0;letter-spacing:.15em;margin-bottom:10px">EXPERIENCE TRAVEL</div>
+      <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:12px">You're on the list</div>
+      <div style="font-size:15px;color:rgba(255,255,255,.65);line-height:1.7;margin-bottom:28px">We're opening access in waves to make sure every user gets the best experience. You'll get an email when it's your turn.</div>
+      
+      <!-- Skip the line -->
+      <div style="background:rgba(229,53,160,.1);border:1px solid rgba(229,53,160,.3);border-radius:16px;padding:20px;margin-bottom:20px">
+        <div style="font-size:13px;font-weight:700;color:#E535A0;margin-bottom:6px">✨ Skip the line</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.7);margin-bottom:14px;line-height:1.5">Share your invite link — anyone who signs up through it gets in immediately, and so do you.</div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;font-size:11px;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">letsexperiencetravel.com</div>
+          <button onclick="window.copyWaitlistInvite()" style="padding:9px 14px;background:#E535A0;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">Copy</button>
+        </div>
+        <button onclick="window.nativeShare('https://letsexperiencetravel.com?ref='+S.user?.id?.slice(0,8),'Experience Travel','I got early access to Experience Travel — it matches you to your perfect city. Use my invite link to skip the waitlist:')" style="display:block;width:100%;margin-top:8px;padding:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;font-size:13px;font-weight:600;color:#fff;cursor:pointer">↑ Share Invite</button>
+      </div>
+
+      <div style="font-size:12px;color:rgba(255,255,255,.3);margin-bottom:20px">Signed in as ${email}</div>
+      <button onclick="supaSignOut()" style="font-size:13px;color:rgba(255,255,255,.4);background:none;border:none;cursor:pointer;text-decoration:underline">Sign out</button>
+    </div>
+  </div>`;
+}
+
+window.copyWaitlistInvite=function(){
+  const link='https://letsexperiencetravel.com?ref='+(S.user?.id?.slice(0,8)||'');
+  if(navigator.clipboard)navigator.clipboard.writeText(link).then(()=>toast('Invite link copied! ✓')).catch(()=>{fallbackCopy(link);toast('Invite link copied! ✓');});
+  else{fallbackCopy(link);toast('Invite link copied! ✓');}
+};
+
+
+function rShareCard(){
+  const res=S.res||[];
+  const top=res[0];
+  if(!top)return'';
+  const photo=getPhotoUrl(top.city,top.country)||'';
+  const isST=S.tt==='st';
+  const matchType=isST?'Short-Term Travel':'Long-Term Relocation';
+  const scoreColor=top.score>=85?'#4ade80':top.score>=70?'#F5E420':'#E535A0';
+  // Top 3 highlights
+  const highlights=(top.highlights||[]).slice(0,3);
+  const hlHtml=highlights.map(h=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="width:6px;height:6px;border-radius:50%;background:#F5E420;flex-shrink:0"></div><div style="font-size:13px;color:rgba(255,255,255,.85)">${h}</div></div>`).join('');
+
+  return`<div style="min-height:100vh;display:flex;flex-direction:column;background:#111;position:relative">
+    <!-- Top bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;position:relative;z-index:10">
+      <button onclick="st({scr:'results'})" style="background:rgba(255,255,255,.1);border:none;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;cursor:pointer">← Back</button>
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.1em">SCREENSHOT TO SHARE</div>
+      <button onclick="window.nativeShare('https://letsexperiencetravel.com','Experience Travel','I matched ${top.score}% with ${top.city} on Experience Travel — find your perfect destination:')" style="background:#E535A0;border:none;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer">↑ Share</button>
+    </div>
+
+    <!-- THE CARD (designed to screenshot) -->
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:16px">
+      <div id="share-card-el" style="width:100%;max-width:380px;border-radius:24px;overflow:hidden;background:#111;box-shadow:0 24px 80px rgba(0,0,0,.8)">
+        
+        <!-- Photo header -->
+        <div style="position:relative;height:220px;background:#222;overflow:hidden">
+          ${photo?`<img src="${photo}" style="width:100%;height:100%;object-fit:cover;opacity:.85"/>`:''}
+          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1) 0%,rgba(0,0,0,.8) 100%)"></div>
+          <!-- Score badge -->
+          <div style="position:absolute;top:16px;right:16px;background:rgba(0,0,0,.6);backdrop-filter:blur(10px);border:1.5px solid ${scoreColor};border-radius:12px;padding:6px 12px;text-align:center">
+            <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900;color:${scoreColor}">${top.score}%</div>
+            <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.08em">MATCH</div>
+          </div>
+          <!-- City name -->
+          <div style="position:absolute;bottom:16px;left:16px;right:80px">
+            <div style="font-size:13px;color:rgba(255,255,255,.7);margin-bottom:4px">${top.flag||''} ${top.country}</div>
+            <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:900;color:#fff;line-height:1.1">${top.city}</div>
+            <div style="font-size:11px;color:#F5E420;font-weight:700;margin-top:4px">${matchType}</div>
+          </div>
+        </div>
+
+        <!-- Card body -->
+        <div style="padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#111 100%)">
+          <!-- Score bar -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.08em">MATCH SCORE</div>
+              <div style="font-size:11px;font-weight:700;color:${scoreColor}">${top.scoreLabel||'Great Match'}</div>
+            </div>
+            <div style="height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden">
+              <div style="height:100%;width:${top.score}%;background:linear-gradient(90deg,#E535A0,${scoreColor});border-radius:3px;transition:width .8s ease"></div>
+            </div>
+          </div>
+          <!-- Highlights -->
+          ${hlHtml?`<div style="margin-bottom:16px">${hlHtml}</div>`:''}
+          <!-- Bottom brand -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)">
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:#fff">Experience <span style="color:#E535A0">Travel</span></div>
+              <div style="font-size:10px;color:rgba(255,255,255,.4)">letsexperiencetravel.com</div>
+            </div>
+            <div style="background:linear-gradient(135deg,#E535A0,#F5E420);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;color:#111">Find yours →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instructions -->
+    <div style="text-align:center;padding:16px 24px 32px">
+      <div style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:8px">📸 Screenshot the card above to share on Instagram or TikTok</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.25)">Tag us @ExperienceTravel to be featured</div>
+    </div>
+  </div>`;
+}
+
 function render(){
   const app=document.getElementById('app');let h='';
   switch(S.scr){
@@ -2066,6 +2198,8 @@ function render(){
     case 'rq_results':h=rRQRes();break;
     case 'shared_preview':h=rSharedPreview();break;
     case 'onboarding':h=rOnboarding();break;
+    case 'waitlist':h=rWaitlist();break;
+    case 'share_card':h=rShareCard();break;
     case 'search_error':h=rSearchError();break;
     default:h=rLogin();
   }
