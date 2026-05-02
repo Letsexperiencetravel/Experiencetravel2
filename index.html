@@ -258,6 +258,13 @@ function getNotes(id){
     const img=P[city]||CP[country]||'';
   return`<div style="height:150px;position:relative;overflow:hidden;background:${d.grad}">${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover;display:block" loading="lazy" onerror="this.style.display='none'"/>`:''}><div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.05),rgba(0,0,0,.55))"></div><div style="position:absolute;top:10px;left:12px;font-size:28px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))">${flag}</div>${showCity?`<div style="position:absolute;bottom:10px;left:12px;font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.8)">${city}</div>`:'' }</div>`
 }
+// Global error boundary
+window.addEventListener('unhandledrejection',function(e){
+  const msg=(e.reason?.message||'Unknown error');
+  if(msg.includes('fetch')||msg.includes('network')||msg.includes('Failed')){
+    if(S?.scr==='loading'){st({scr:'search_error',searchErr:'Connection error. Please try again.'});}
+  }
+});
 const supa=supabase.createClient(SUPA_URL,SUPA_KEY);
 
 const FREE_LIMIT=1,PRO_LIMIT=999999,TOPUP_LIMIT=999999;
@@ -342,7 +349,12 @@ function searchesLeft(){
   if(S.isPro)return null; // unlimited
   return Math.max(0, FREE_LIMIT - S.freeCnt);
 }
-function navPill(){if(S.isPro){return`<span class="ppl">PRO ✦</span>`;}return S.freeCnt>=FREE_LIMIT?`<span class="spl" style="color:#DC2626;border-color:rgba(239,68,68,.3)">0 free left</span>`:`<span class="spl">1 free search</span>`}
+function navPill(){if(S.isPro){return`<span class="ppl">PRO ✦</span>`;}{
+    const now2=Date.now();
+    const used=S.lastFreeSearch&&(now2-S.lastFreeSearch)<86400000;
+    if(used){const h=Math.ceil(24-(now2-S.lastFreeSearch)/3600000);return`<span class="spl" style="color:#DC2626;border-color:rgba(239,68,68,.3)">Next in ${h}h</span>`;}
+    return`<span class="spl">1 free search</span>`;
+  }}
 function calcRQ(){let s=0;for(let i=0;i<5;i++){const a=S.rqA[i];if(a!==undefined)s+=RQ[i].sc[a]}return Math.min(100,s)}
 function rqLabel(s){if(s>=80)return{lbl:'Ready to Launch',icon:'🚀',col:'#22C55E',msg:"You have all the key pieces in place. The biggest barrier now is booking the flight."};if(s>=60)return{lbl:'Almost There',icon:'✈️',col:Y,msg:"You're close. A few targeted steps and you'll be ready within months."};if(s>=40)return{lbl:'Building Momentum',icon:'🌱',col:'#F97316',msg:"Good foundations — a focused 3-month plan will get you move-ready."};return{lbl:'Just Getting Started',icon:'🗺️',col:'#6366F1',msg:"Exciting early stage. Use this as your roadmap to get there step by step."}}
 function rqActions(a){const acts=[];if(a[2]===2)acts.push({icon:'🛂',text:'Renew your passport — allow 6–8 weeks processing time.'});if(a[2]===3)acts.push({icon:'🛂',text:'Apply for your passport now. Without it, no visa is possible.'});if(a[4]>=3)acts.push({icon:'🔍',text:'Deep-dive research on your top matched destination: visa, neighbourhoods, cost of living.'});if(a[4]===1||a[3]===4)acts.push({icon:'💻',text:'Set up provable remote income. Most digital nomad visas require 3 months of bank statements.'});if(a[1]===0)acts.push({icon:'💰',text:'Build your moving fund. Aim for $10,000 — 3 months of costs plus flights and deposit.'});if(a[0]>=3)acts.push({icon:'📅',text:'Set a concrete move date. Deadlines make plans real. Work backwards from the date.'});acts.push({icon:'📞',text:'Book a free planning consultation. A consultant will review your full profile and build your step-by-step plan.'});return acts.slice(0,4)}
@@ -477,6 +489,8 @@ function saveState(){
       cmpSel:S.cmpSel,
       aiItineraries:S.aiItineraries,
       archived:S.archived||{},
+      lastFreeSearch:S.lastFreeSearch||0,
+      searchCache:S.searchCache||{},
     };
     localStorage.setItem(STORAGE_KEY,JSON.stringify(toSave));
   }catch(e){console.warn('Save state error:',e);}
@@ -504,6 +518,8 @@ function loadState(){
       S.cmpSel=saved.cmpSel||[];
       S.aiItineraries=saved.aiItineraries||{};
       S.archived=saved.archived||{};
+    S.lastFreeSearch=saved.lastFreeSearch||0;
+    S.searchCache=saved.searchCache||{};
       if(S.user)S.scr='dash';
     }
     // If no uid match - start completely fresh (new user / different account)
@@ -796,6 +812,7 @@ function loadUserFromSupabase(u, wasUpgraded, sessionId){
     if(p){
       S.isPro=p.is_pro||false;
       S.freeCnt=p.free_cnt||0;
+      if(p.last_free_search)S.lastFreeSearch=new Date(p.last_free_search).getTime();
       S.proCnt=p.pro_cnt||0;
       S.topupCount=p.topup_count||0;
       S.user={...S.user,
@@ -1087,7 +1104,7 @@ supa.auth.signUp({email:d.em,password:p1,options:{data:{first_name:d.fn,last_nam
     const u=data.user;
     // Create profile row
     supa.from('profiles').upsert({id:u.id,email:d.em,first_name:d.fn,last_name:d.ln,phone:d.ph||'',country:d.co||'',city:d.cy||'',is_pro:false,free_cnt:0,pro_cnt:0},{onConflict:'id'}).then(({error:pe})=>{if(pe)console.error('Profile create error:',pe.message);
-      st({scr:'quiz_intro',user:{id:u.id,firstName:d.fn,lastName:d.ln,email:d.em,phone:d.ph,country:d.co,city:d.cy},ans:{},qi:0,err:null,lc:1});
+      st({scr:'onboarding',onboardStep:0,user:{id:u.id,firstName:d.fn,lastName:d.ln,email:d.em,phone:d.ph,country:d.co,city:d.cy},ans:{},qi:0,err:null,lc:1});
     });
   });
 }
@@ -1220,13 +1237,31 @@ function rDash(){
 }
 
 function rFU(){const qs=S.tt==='lt'?LTQ:STQ,q=qs[S.fI],tot=qs.length,pct=Math.round((S.fI/tot)*100);const isL=S.fI===tot-1,isC=q.t==='companion',isM=q.t==='m';const sel=S.fA[S.fI]!==undefined?S.fA[S.fI]:null;const isText=q.t==='text';const hA=isText?true:isC?csOk():isM?(Array.isArray(sel)&&sel.length>0):(sel!==null);let opt='';if(isC){opt=`<div style="margin-top:12px"><div id="c-solo" class="crow ${CS.solo?'s':''}"><div class="cleft" onclick="tgC('solo')"><div class="cchk">${CS.solo?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.solo?P:'#555'}">🧳 Moving Solo — Just Me</span></div></div><div id="c-partner" class="crow ${CS.partner?'s':''}"><div class="cleft" onclick="tgC('partner')"><div class="cchk">${CS.partner?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.partner?P:'#555'}">💑 Partner / Spouse</span></div></div><div id="c-kids" class="crow ${CS.kids>0?'s':''}"><div class="cleft" onclick="tgC('kids-toggle')" style="flex:1"><div class="cchk">${CS.kids>0?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.kids>0?P:'#555'}">👶 Children</span></div><div class="counter"><button class="cbtn" onclick="event.stopPropagation();adjC('kids',-1)">−</button><span class="cval" id="cv-kids">${CS.kids}</span><button class="cbtn" onclick="event.stopPropagation();adjC('kids',1)">+</button></div></div><div id="c-pets" class="crow ${CS.pets>0?'s':''}"><div class="cleft" onclick="tgC('pets-toggle')" style="flex:1"><div class="cchk">${CS.pets>0?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.pets>0?P:'#555'}">🐾 Pets</span></div><div class="counter"><button class="cbtn" onclick="event.stopPropagation();adjC('pets',-1)">−</button><span class="cval" id="cv-pets">${CS.pets}</span><button class="cbtn" onclick="event.stopPropagation();adjC('pets',1)">+</button></div></div></div>`}else if(isM){const sa=Array.isArray(sel)?sel:[];opt=`<div style="margin-top:10px"><div class="chips">${q.o.map((o,i)=>`<div class="chip fc ${sa.includes(i)?'s':''}" onclick="tFC(${i})">${o}</div>`).join('')}</div></div>`}else if(isText){const tv=typeof sel==='string'?sel:'';opt=`<div style="margin-top:14px"><input class="inp-dk" type="text" id="txt-ans" placeholder="e.g. Portugal, Japan, Mexico... (optional)" value="${tv}" oninput="sFT(this.value)" style="font-size:15px;padding:14px 16px;width:100%;"/><div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:10px">Leave blank to get recommendations across all countries</div></div>`}else{opt=`<div class="opts-d" style="margin-top:10px">${q.o.map((o,i)=>`<div class="opt-d ${sel===i?'s':''}" onclick="sFL(${i})"><div class="qdot"><div class="qdin"></div></div>${o}</div>`).join('')}</div>`}return`<div style="min-height:100vh;background:#fff">${rNav()}<div style="padding-top:${pp()}px;padding-bottom:30px;display:flex;justify-content:center;padding-left:16px;padding-right:16px"><div class="dc" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span class="bdg bp">${S.tt==='lt'?'Moving Abroad':'Short-Term Travel'}</span><span style="font-size:11.5px;color:rgba(255,255,255,.35);font-weight:600">${S.fI+1} / ${tot}</span></div><div class="prog prog-d"><div class="prog-b" style="width:${pct}%"></div></div><p style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#fff;line-height:1.45;margin-bottom:2px">${q.q}</p><p style="font-size:12px;color:rgba(255,255,255,.4);margin-top:2px">${isM?'Select all that apply':isC?'Select all that apply':'Choose one'}</p>${opt}<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">${S.fI>0?bSm('← Back','pF()',P,W,'#C8208A'):bSm('← Home',"st({scr:'dash'})",P,W,'#C8208A')} ${!isL?`<button id="nb" onclick="nF()" style="display:inline-flex;align-items:center;padding:10px 20px;background:${hA?P:'#333'};color:${hA?W:'#777'};border:2.5px solid ${hA?'#C8208A':'#444'};border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;opacity:1">Next →</button>`:`<button id="sb" onclick="doSearch()" style="display:inline-flex;align-items:center;padding:10px 20px;background:${hA?Y:'#333'};color:${hA?DK:'#777'};border:2.5px solid ${hA?'#D4C000':'#444'};border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;opacity:1">Find My Places →</button>`}</div></div></div></div>`}
-function doSearch(){saveQuizProgress();
+function doSearch(){
+  saveQuizProgress();
+  // Check result cache (1 hour TTL)
+  const cacheKey=(S.tt||'')+'|'+JSON.stringify(S.ans);
+  if(!S.searchCache)S.searchCache={};
+  const cached=S.searchCache[cacheKey];
+  if(cached&&cached.ts&&(Date.now()-cached.ts)<3600000){
+    console.log('✅ Using cached results');
+    st({scr:'results',res:cached.res,cmpSel:[],cmpType:S.tt});
+    return;
+  }
   if(!S.isPro){
-    if(S.freeCnt>=FREE_LIMIT){st({showPW:true});return;}
+    const now=Date.now();
+    const lastSearch=S.lastFreeSearch||0;
+    const hoursSince=(now-lastSearch)/(1000*60*60);
+    const canSearch=!lastSearch||hoursSince>=24;
+    if(!canSearch){
+      const hoursLeft=Math.ceil(24-hoursSince);
+      st({showPW:true,pwMsg:'Your free search resets in '+hoursLeft+' hour'+(hoursLeft===1?'':'s')+'. Upgrade to Pro for unlimited searches.'});
+      return;
+    }
+    S.lastFreeSearch=now;
     st({scr:'loading',freeCnt:S.freeCnt+1});
-    if(S.user?.id)supa.from('profiles').update({free_cnt:S.freeCnt+1}).eq('id',S.user.id).then(()=>{}).catch(()=>{});
+    if(S.user?.id)supa.from('profiles').update({free_cnt:S.freeCnt+1,last_free_search:new Date(now).toISOString()}).eq('id',S.user.id).then(()=>{}).catch(()=>{});
   }else{
-    // Pro members get unlimited searches
     st({scr:'loading'});
   }
 
@@ -1299,13 +1334,15 @@ function doSearch(){saveQuizProgress();
       try{
         const parsed=JSON.parse(txt.slice(s,e));
         if(parsed.results&&parsed.results.length){
+          S.searchCache[cacheKey]={res:parsed.results,ts:Date.now()};
+          saveState();
           st({scr:'results',res:parsed.results,err:null});
           return;
         }
       }catch(err){console.error('Parse err:',err);}
     }
-    st({scr:'results',res:[],err:'Could not parse results. Please try again.'});
-  }).catch(()=>st({scr:'results',res:[],err:'Connection error. Please try again.'}));
+    st({scr:'search_error',searchErr:'Could not parse results. Please try again.'});
+  }).catch(()=>st({scr:'search_error',searchErr:'Connection error. Please check your internet and try again.'}));
 }
 
 function rLoad(){
@@ -1941,6 +1978,81 @@ window.goLoginFromShare=function(){
   st({scr:'login'});
 };
 
+
+function rOnboarding(){
+  const step=S.onboardStep||0;
+  const steps=[
+    {
+      emoji:'✈️',
+      title:'Find Where You Actually Belong',
+      sub:'Not just a travel app. A life-match engine.',
+      body:'Answer 30 questions about your lifestyle, budget, and how you like to travel. Our AI matches you with destinations that actually fit — whether you want to move abroad or plan the perfect trip.',
+      btn:'How it works →',
+      bg:'linear-gradient(135deg,#E535A0 0%,#8B1A6B 100%)'
+    },
+    {
+      emoji:'🎯',
+      title:'Personalised to You',
+      sub:'Not generic recommendations.',
+      body:'Your results are built around your deal-breakers, your budget, and your lifestyle. Every city comes with a match score, real cost breakdowns, visa requirements, and an AI itinerary.',
+      btn:'What happens next →',
+      bg:'linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)'
+    },
+    {
+      emoji:'🗺️',
+      title:'Plan. Share. Go.',
+      sub:'Your trip, your crew.',
+      body:'Save destinations, build checklists, set trip dates, and share plans with anyone. Collaborate in real time — when one person checks something off, everyone sees it.',
+      btn:"Let's find my places →",
+      bg:'linear-gradient(135deg,#111 0%,#1a1a2e 60%,#E535A0 100%)'
+    }
+  ];
+  const s=steps[step];
+  const dots=steps.map((_,i)=>`<div style="width:${i===step?24:8}px;height:8px;border-radius:4px;background:${i===step?'#F5E420':'rgba(255,255,255,.3)'};transition:all .3s"></div>`).join('');
+  return`<div style="min-height:100vh;display:flex;flex-direction:column;background:${s.bg};padding:0">
+    <!-- Skip -->
+    <div style="display:flex;justify-content:flex-end;padding:20px 20px 0">
+      <button onclick="st({scr:'quiz_intro',onboardStep:0})" style="background:rgba(255,255,255,.12);border:none;color:rgba(255,255,255,.7);padding:8px 16px;border-radius:20px;font-size:13px;cursor:pointer">Skip</button>
+    </div>
+    <!-- Content -->
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 28px;text-align:center">
+      <div style="font-size:72px;margin-bottom:28px;animation:bb .6s ease">${s.emoji}</div>
+      <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:12px">${s.title}</div>
+      <div style="font-size:14px;color:#F5E420;font-weight:700;margin-bottom:20px;letter-spacing:.02em">${s.sub}</div>
+      <div style="font-size:15px;color:rgba(255,255,255,.8);line-height:1.7;max-width:320px">${s.body}</div>
+    </div>
+    <!-- Bottom -->
+    <div style="padding:24px 28px 40px">
+      <div style="display:flex;justify-content:center;gap:8px;margin-bottom:28px">${dots}</div>
+      <button onclick="${step<2?`st({onboardStep:${step+1}})`:`st({scr:'quiz_intro',onboardStep:0})`}" style="display:block;width:100%;padding:17px;background:${step<2?'rgba(255,255,255,.15)':'linear-gradient(135deg,#E535A0,#F5E420)'};border:${step<2?'1px solid rgba(255,255,255,.25)':'none'};border-radius:14px;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:${step<2?'#fff':'#111'};cursor:pointer;letter-spacing:.01em">${s.btn}</button>
+    </div>
+  </div>`;
+}
+
+
+function rSearchError(){
+  const msg=S.searchErr||'Something went wrong with your search.';
+  const isConnection=msg.toLowerCase().includes('connection')||msg.toLowerCase().includes('network');
+  return`<div class="pg" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;background:linear-gradient(135deg,#111 0%,#1a1a2e 60%)">
+    <div style="width:100%;max-width:380px;text-align:center">
+      <!-- Animated icon -->
+      <div style="font-size:64px;margin-bottom:24px;animation:bb .6s ease">${isConnection?'📡':'🗺️'}</div>
+      <!-- Brand label -->
+      <div style="font-size:11px;font-weight:700;color:#E535A0;letter-spacing:.15em;margin-bottom:12px">EXPERIENCE TRAVEL</div>
+      <!-- Title -->
+      <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:12px">${isConnection?'Lost the signal':'Couldn\'t find your places'}</div>
+      <!-- Sub -->
+      <div style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;margin-bottom:32px">${isConnection?'Check your connection and try again — your answers are saved so you won\'t lose anything.':'Our AI had a moment. Your answers are saved. Give it another go.'}</div>
+      <!-- Retry button -->
+      <button onclick="st({scr:'fu'})" style="display:block;width:100%;padding:16px;background:linear-gradient(135deg,#E535A0,#F5E420);border:none;border-radius:14px;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#111;cursor:pointer;margin-bottom:12px">Try Again</button>
+      <!-- Back button -->
+      <button onclick="st({scr:'dash'})" style="display:block;width:100%;padding:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:14px;font-size:14px;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer">Back to Dashboard</button>
+      <!-- Tip -->
+      <div style="margin-top:24px;font-size:12px;color:rgba(255,255,255,.3)">Your quiz answers are safe and saved</div>
+    </div>
+  </div>`;
+}
+
 function render(){
   const app=document.getElementById('app');let h='';
   switch(S.scr){
@@ -1953,6 +2065,8 @@ function render(){
     case 'qd_done':h=rQDDone();break;case 'readiness':h=rRQ();break;
     case 'rq_results':h=rRQRes();break;
     case 'shared_preview':h=rSharedPreview();break;
+    case 'onboarding':h=rOnboarding();break;
+    case 'search_error':h=rSearchError();break;
     default:h=rLogin();
   }
   h=rBnr()+h;
