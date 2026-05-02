@@ -605,7 +605,21 @@ window.addSharePerson=function(id){
   saveState();
   openShareDirect(id);
 };
-window.removeSharePerson=function(id,email){const sd=S.shareData[id];if(sd)sd.people=sd.people.filter(p=>p.email!==email);render()}
+window.removeSharePerson=function(id,email){
+  const sd=S.shareData[id];
+  if(sd){
+    sd.people=sd.people.filter(p=>p.email!==email);
+    S.shareData[id]=sd;
+    saveState();
+    syncDestinationToSupabase(id);
+    // Also update shared_trips in Supabase
+    if(sd.token&&S.user?.id){
+      supa.from('shared_trips').update({people:JSON.stringify(sd.people)})
+        .eq('token',sd.token).then(()=>{}).catch(()=>{});
+    }
+  }
+  openShareDirect(id);
+}
 window.copyShareLink=function(link){
   const fullUrl=link.startsWith('http')?link:'https://'+link;
   if(navigator.clipboard){navigator.clipboard.writeText(fullUrl).catch(()=>fallbackCopy(fullUrl));}
@@ -1452,7 +1466,7 @@ function rShare(){
         <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#fff">${saved.flag} ${saved.city}, ${saved.country}</div>
         <div style="font-size:12px;color:rgba(255,255,255,.8);margin-top:2px">${saved.scoreLabel} · ${saved.score}/100 · ${isST?'Short-Term Travel':'Long-Term Relocation'}</div>
       </div>
-      <button onclick="hideModalDirect()" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.45);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center">✕</button>
+      <button onclick="hideModalDirect()" onclick="hideModalDirect()" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.45);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center">✕</button>
     </div>
     <div style="padding:18px 22px 0;display:flex;align-items:flex-start;justify-content:space-between">
       <div>
@@ -1557,7 +1571,7 @@ function rAc(){const u=S.user||{},tab=S.acTab||'info';const tabs=[{id:'info',lb:
 ${tab==='info'?`<div class="asec"><h4>Personal Info</h4>${S.acMsg?`<div style="padding:8px 12px;border-radius:8px;font-size:12.5px;margin-bottom:12px;${S.acMsg.startsWith('✓')?'background:rgba(34,197,94,.12);color:#86EFAC;':'background:rgba(239,68,68,.15);color:#FCA5A5;'}">${S.acMsg}</div>`:''}<div class="fgdk" style="margin-bottom:9px"><label>First Name</label><input class="inp-dk" id="afn" type="text" value="${u.firstName||''}"/></div><div class="fgdk" style="margin-bottom:9px"><label>Last Name</label><input class="inp-dk" id="aln" type="text" value="${u.lastName||''}"/></div><div class="fgdk" style="margin-bottom:9px"><label>Email</label><input class="inp-dk" id="ae" type="email" value="${u.email||''}"/></div><div class="fgdk" style="margin-bottom:9px"><label>Phone</label><input class="inp-dk" id="ap" type="tel" value="${u.phone||''}"/></div><div class="fgdk" style="margin-bottom:9px"><label>Date of Birth</label><input class="inp-dk" id="abday" type="date" value="${u.bday||''}" style="color:rgba(255,255,255,.9)"/></div><div class="fgdk" style="margin-bottom:9px"><label>Country</label><input class="inp-dk" id="aco" type="text" value="${u.country||''}"/></div><div class="fgdk" style="margin-bottom:12px"><label>City</label><input class="inp-dk" id="acy" type="text" value="${u.city||''}"/></div><button onclick="svAc()" style="display:block;width:100%;padding:10px 18px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Save Changes</button></div>`:''}
 ${tab==='password'?`<div class="asec"><h4>Change Password</h4>${S.acPwMsg?`<div style="padding:8px 12px;border-radius:8px;font-size:12.5px;margin-bottom:12px;${S.acPwMsg.startsWith('✓')?'background:rgba(34,197,94,.12);color:#86EFAC;':'background:rgba(239,68,68,.15);color:#FCA5A5;'}">${S.acPwMsg}</div>`:''}<div class="fgdk" style="margin-bottom:9px"><label>Current Password</label><input class="inp-dk" id="pwc" type="password" placeholder="Current password"/></div><div class="fgdk" style="margin-bottom:4px"><label>New Password</label><input class="inp-dk" id="pw1" type="password" placeholder="Min 6 characters" oninput="upAcS()"/></div><div id="acpwstr" style="margin-bottom:9px"></div><div class="fgdk" style="margin-bottom:12px"><label>Confirm New Password</label><input class="inp-dk" id="pw2" type="password" placeholder="Confirm password"/></div><button onclick="chPw()" style="display:block;width:100%;padding:10px 18px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Update Password</button></div>`:''}
 ${tab==='profile'?`<div class="asec"><h4>Quiz Profile</h4><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div style="flex:1;background:var(--D3);border-radius:8px;overflow:hidden;height:6px"><div style="height:100%;background:linear-gradient(90deg,${Y},${P});width:${Math.round(Object.keys(S.ans).length/30*100)}%"></div></div><span style="font-size:12px;color:rgba(255,255,255,.5)">${Object.keys(S.ans).length}/30</span></div><p style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.6;margin-bottom:16px">Retake anytime to update and get fresh results.</p><button onclick="st({scr:'quiz_intro',ans:{},qi:0,showAc:false})" style="display:block;width:100%;padding:10px 18px;background:var(--D3);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff;cursor:pointer">Retake Quiz</button></div>`:''}
-${!S.isPro?`<div class="asec"><button onclick="st({showPW:true,showAc:false})" style="display:block;width:100%;padding:10px 18px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Upgrade — Multiple Searches/Day</button></div>`:''}
+${!S.isPro?`<div class="asec"><button onclick="st({showPW:true,showAc:false})" style="display:block;width:100%;padding:10px 18px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Upgrade to Pro — Unlimited Searches</button></div>`:''}
 <div style="padding:14px 18px">${bPo('Sign Out',"supa.auth.signOut();st({scr:'login',user:null,showAc:false,freeCnt:0,proCnt:0,topupCount:0,isPro:false,lc:0})")}</div>
 </div></div>`}
 window.upAcS=function(){const el=document.getElementById('acpwstr');if(!el)return;const v=document.getElementById('pw1')?.value||'';const{sc,lb,co}=pwS(v);if(sc>0){const sg=Array.from({length:4},(_,i)=>`<div class="pws-s ${i<sc?(sc<=1?'wk':sc<=2?'fr':'gd'):''}"></div>`).join('');el.innerHTML=`<div class="pws">${sg}</div><div style="font-size:10px;font-weight:600;color:${co};margin-top:4px">${lb}</div>`}else el.innerHTML=''};
@@ -1579,14 +1593,14 @@ function svAc(){
   st({acMsg:'✓ Saved!'});
   // Save to Supabase
   if(userId){
-    supa.from('profiles').upsert({
-      id:userId,first_name:fn,last_name:ln,phone:ph,country:co,city:cy,...(bday?{birthday:bday}:{})
-    },{onConflict:'id'}).then(({error})=>{
+    const profileUpdate={first_name:fn,last_name:ln,phone:ph,country:co,city:cy};
+    if(bday&&bday.trim())profileUpdate.birthday=bday;
+    supa.from('profiles').update(profileUpdate).eq('id',userId).then(({error})=>{
       if(error){
         console.error('Profile save error:',error.message);
         st({acMsg:'Error saving: '+error.message});
       }else{
-        console.log('Profile saved to Supabase ✅');
+        console.log('Profile saved ✅');
         st({acMsg:'✓ Saved!'});
       }
     });
