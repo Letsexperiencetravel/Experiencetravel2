@@ -393,6 +393,26 @@ function openNotesDirect(id){
 }
 function openShareDirect(id){
   S.showShare=true;S.shareId=id;S.shareEmail='';
+  // Ensure token exists and save to Supabase immediately
+  if(!S.shareData[id])S.shareData[id]={people:[],token:genToken()};
+  if(!S.shareData[id].token)S.shareData[id].token=genToken();
+  const sd=S.shareData[id];
+  const saved=S.saved.find(x=>x.id===id);
+  if(saved&&S.user?.id&&sd.token){
+    const rec={
+      token:sd.token,owner_id:S.user.id,
+      owner_name:S.user.firstName||S.user.name||'Someone',
+      city_id:id,city:saved.city,country:saved.country,
+      flag:saved.flag,score:saved.score,score_label:saved.scoreLabel,
+      trip_type:saved.tt,share_note:sd.note||'',
+      people:JSON.stringify(sd.people||[])
+    };
+    supa.from('shared_trips').upsert(rec,{onConflict:'token'})
+      .then(({error})=>{if(error)console.warn('Share record error:',error.message);
+        else console.log('Share record saved for token:',sd.token);})
+      .catch(()=>{});
+    saveState();
+  }
   const h=rShare();
   if(!h){hideModalDirect();return;}
   showModalDirect(h);
@@ -777,12 +797,11 @@ function loadUserFromSupabase(u, wasUpgraded, sessionId){
 
 function loadSharedTrip(token){
   console.log('Loading shared trip:', token);
-  supa.from('shared_trips').select('*').eq('token',token).single()
+  supa.from('shared_trips').select('*').eq('token',token).maybeSingle()
     .then(({data,error})=>{
       console.log('Share lookup result:', data, error);
       if(error||!data){
         console.warn('Share not found:', error?.message);
-        // Show home screen with a message
         S.pendingShare=null;
         render();
         setTimeout(()=>toast('This share link has expired or is invalid.'),500);
@@ -821,7 +840,7 @@ function acceptSharedTrip(){
   saveState();
   saveQuizProgress();
   toast('✓ '+share.city+' added to your destinations!');
-  st({scr:'dash'});
+  st({scr:'dash',showSv:true});  // Go straight to My Destinations
 }
 function checkSession(){
   const _search=window.location.search;
@@ -1516,12 +1535,10 @@ function rShare(){
         <div style="flex:1;background:#f5f5f5;border:1.5px solid #e0e0e0;border-radius:10px;padding:10px 12px;font-size:12px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${link}</div>
         <button onclick="copyShareLink('${link}')" style="padding:10px 16px;background:#E535A0;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Copy</button>
       </div>
-      <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:.08em;margin-bottom:8px">MESSAGE FOR RECIPIENTS</div>
-      <textarea id="share-note" placeholder="Add a note for the people you are sharing with..." style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;font-family:inherit;resize:none;height:70px;box-sizing:border-box;margin-bottom:16px">${noteVal}</textarea>
       <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:.08em;margin-bottom:8px">SHARE THIS TRIP</div>
       <div style="display:flex;gap:10px;margin-bottom:20px">
         <button onclick="copyShareLink('${link}')" style="flex:1;padding:11px;background:#f5f5f5;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;font-weight:700;color:#333;cursor:pointer">&#128279; Copy Link</button>
-        <button onclick="window.nativeShare('${link}','${saved.city}',document.getElementById('share-note')?.value||'')" style="flex:1;padding:11px;background:linear-gradient(135deg,#E535A0,#c0278a);border:none;border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer">&#8593; Share</button>
+        <button onclick="window.nativeShare('${link}','${saved.city}','${(sd.note||'').replace(/'/g,"")}')" style="flex:1;padding:11px;background:linear-gradient(135deg,#E535A0,#c0278a);border:none;border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer">&#8593; Share</button>
       </div>
       <div style="border-top:1px solid #f0f0f0;padding-top:16px">
         <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:.08em;margin-bottom:4px">GRANT ACCESS</div>
@@ -1637,10 +1654,16 @@ function rProWelcome(){
   return`<div class="ov" onclick="if(event.target.classList.contains('ov'))st({showProWelcome:false})" style="z-index:600"><div class="md" style="max-width:460px;text-align:center;padding:0;overflow:hidden"><div style="background:linear-gradient(135deg,#111,#1a1a1a);padding:40px 32px 28px"><div style="font-size:52px;margin-bottom:14px">🌍</div><div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#F5E420;margin-bottom:8px">Welcome to Pro!</div><div style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.6">You now have full access to Experience Travel Pro</div></div><div style="padding:24px 28px;background:#fff"><div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#888;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px">Your Pro Benefits</div>${benefits.map(([icon,title,desc])=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06);text-align:left"><div style="font-size:20px;width:28px;text-align:center;flex-shrink:0">${icon}</div><div><div style="font-weight:700;font-size:13px;color:#111">${title}</div><div style="font-size:12px;color:#888;margin-top:1px">${desc}</div></div></div>`).join('')}<button onclick="st({showProWelcome:false})" style="width:100%;margin-top:18px;padding:14px;background:linear-gradient(135deg,#E535A0,#F5E420);border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#111;cursor:pointer">Start Exploring →</button><div style="font-size:11px;color:#aaa;margin-top:10px">Receipt sent to ${S.user?.email||'your email'}</div></div></div></div>`;
 }
 
+
+function getPhotoUrl(city, country){
+  const cityPhotos={'Lisbon':'https://images.unsplash.com/photo-1588464083073-212b66f18851?w=600&q=80','Porto':'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=600&q=80','Barcelona':'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80','Madrid':'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?w=600&q=80','Tokyo':'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80','Kyoto':'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600&q=80','Osaka':'https://images.unsplash.com/photo-1590559899731-a382839e5549?w=600&q=80','Bali':'https://images.unsplash.com/photo-1537953773345-d172ccf13cf4?w=600&q=80','Paris':'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80','Amsterdam':'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=600&q=80','Berlin':'https://images.unsplash.com/photo-1560969184-10fe8719e047?w=600&q=80','Prague':'https://images.unsplash.com/photo-1541849546-216549ae216d?w=600&q=80','Vienna':'https://images.unsplash.com/photo-1516550893923-42d28e5677af?w=600&q=80','Budapest':'https://images.unsplash.com/photo-1541351155248-3d34cd7a51a2?w=600&q=80','Athens':'https://images.unsplash.com/photo-1555993539-1732b0258235?w=600&q=80','Rome':'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&q=80','Florence':'https://images.unsplash.com/photo-1541370976299-4d24be63c4fb?w=600&q=80','Istanbul':'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=600&q=80','Dubai':'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80','Bangkok':'https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=600&q=80','Singapore':'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=600&q=80','Seoul':'https://images.unsplash.com/photo-1546874177-9e664107314e?w=600&q=80','Cape Town':'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=600&q=80','Buenos Aires':'https://images.unsplash.com/photo-1589909202802-8f4aadce1849?w=600&q=80','Marrakech':'https://images.unsplash.com/photo-1597211684565-dca64d72bdfe?w=600&q=80','Mexico City':'https://images.unsplash.com/photo-1518638150340-f706e86654de?w=600&q=80','Tbilisi':'https://images.unsplash.com/photo-1565008576549-57569a49371d?w=600&q=80','Chiang Mai':'https://images.unsplash.com/photo-1523731407965-2430cd12f5e4?w=600&q=80','Phuket':'https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=600&q=80','Kuala Lumpur':'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=600&q=80','Seville':'https://images.unsplash.com/photo-1619928771523-93099a9dd3c1?w=600&q=80','Cartagena':'https://images.unsplash.com/photo-1583531172056-b34a2454fa3f?w=600&q=80','Lima':'https://images.unsplash.com/photo-1531968455001-5c5272a41129?w=600&q=80'};
+  const countryPhotos={'Spain':'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80','Japan':'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80','Thailand':'https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=600&q=80','Indonesia':'https://images.unsplash.com/photo-1537953773345-d172ccf13cf4?w=600&q=80','France':'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80','Italy':'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&q=80','Turkey':'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=600&q=80','UAE':'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80','South Africa':'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=600&q=80','Argentina':'https://images.unsplash.com/photo-1589909202802-8f4aadce1849?w=600&q=80','Morocco':'https://images.unsplash.com/photo-1597211684565-dca64d72bdfe?w=600&q=80','Mexico':'https://images.unsplash.com/photo-1518638150340-f706e86654de?w=600&q=80','Georgia':'https://images.unsplash.com/photo-1565008576549-57569a49371d?w=600&q=80','Colombia':'https://images.unsplash.com/photo-1596531762083-f62a0f3c3b4e?w=600&q=80','Peru':'https://images.unsplash.com/photo-1531968455001-5c5272a41129?w=600&q=80','Vietnam':'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=600&q=80','Portugal':'https://images.unsplash.com/photo-1588464083073-212b66f18851?w=600&q=80','Germany':'https://images.unsplash.com/photo-1560969184-10fe8719e047?w=600&q=80','Greece':'https://images.unsplash.com/photo-1555993539-1732b0258235?w=600&q=80','Hungary':'https://images.unsplash.com/photo-1541351155248-3d34cd7a51a2?w=600&q=80'};
+  return cityPhotos[city]||countryPhotos[country]||'';
+}
 function rSharedPreview(){
   const d=S.sharedTrip;
   if(!d)return'';
-  const img=(P[d.city]||'');
+  const img=getPhotoUrl(d.city, d.country);
   const isST=d.trip_type==='st';
   // Store trip data globally so buttons can access it
   window._pendingShareData=d;
