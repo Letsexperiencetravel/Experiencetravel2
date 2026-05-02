@@ -162,13 +162,13 @@ html,body{min-height:100%;font-family:'Inter',sans-serif;background:#fff}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <meta property="og:title" content="Experience Travel — Find Your Perfect Destination">
   <meta property="og:description" content="Experience Travel helped find your perfect trip or relocation destination based on your personality and lifestyle.">
-  <meta property="og:image" content="https://letsexperiencetravel.com/cover-art.svg">
+  <meta property="og:image" content="https://letsexperiencetravel.com/cover-art.png">
   <meta property="og:url" content="https://letsexperiencetravel.com">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Experience Travel — Find Your Perfect Destination">
   <meta name="twitter:description" content="Experience Travel helped find your perfect trip or relocation destination based on your personality and lifestyle.">
-  <meta name="twitter:image" content="https://letsexperiencetravel.com/cover-art.svg">
+  <meta name="twitter:image" content="https://letsexperiencetravel.com/cover-art.png">
 </head><body><div id="app"></div><script>
 const SUPA_URL='https://dttjiokwquspfffjjutv.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0dGppb2t3cXVzcGZmZmpqdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNDQ3OTAsImV4cCI6MjA5MjgyMDc5MH0.91qTmSnBGfUKeNSxpxcAzS9VtLJxPKTXc4uj-5NyPk8';
@@ -647,17 +647,22 @@ window.removeSharePerson=function(idOrEl,email){
   }
   openShareDirect(id);
 }
-window.nativeShare=function(url,city,note){
+window.nativeShare=function(url,city,noteArg){
+  // Always get fresh note from textarea if available
+  const note=(document.getElementById('share-note')?.value||noteArg||'').trim();
+  const text=note?('"'+note+'" — '+city+' on Experience Travel'):('Check out '+city+' on Experience Travel');
   if(navigator.share){
     navigator.share({
-      title:'Check out '+city+' on Experience Travel',
-      text:note?'"'+note+'" — shared via Experience Travel':'Shared via Experience Travel',
+      title:'Find Your Perfect Destination — '+city,
+      text:text,
       url:url
     }).catch(()=>{});
   }else{
-    // Fallback: copy to clipboard
-    window.copyShareLink(url);
-    toast('Link copied — paste to share!');
+    // Fallback: copy to clipboard with note
+    const copyText=note?(url+'\n\n"'+note+'"'):url;
+    if(navigator.clipboard){navigator.clipboard.writeText(copyText).catch(()=>fallbackCopy(copyText));}
+    else{fallbackCopy(copyText);}
+    toast('Link copied! ✓');
   }
 };
 window.copyShareLink=function(link){
