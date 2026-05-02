@@ -2059,38 +2059,13 @@ function rSearchError(){
 
 
 window.shareFromResult=function(city,country,flag,score,scoreLabel,idx){
-  // Save destination if not already saved
-  if(S.user?.id){
-    const cityId=city+'-'+country;
-    if(!S.sIds.has(cityId)){
-      const r=S.res[idx];
-      const item={id:cityId,tt:S.tt,city,country,flag,score,scoreLabel,highlights:r?.highlights||[],date:new Date().toLocaleDateString()};
-      S.saved=[...S.saved,item];S.sIds=new Set([...S.sIds,cityId]);
-      saveState();supaSaveDestination(S.user.id,item).catch(()=>{});
-    }
-    // Create share token
-    if(!S.shareData[cityId])S.shareData[cityId]={people:[],token:genToken()};
-    if(!S.shareData[cityId].token)S.shareData[cityId].token=genToken();
-    const token=S.shareData[cityId].token;
-    const shareUrl='https://letsexperiencetravel.com/share/'+token;
-    const firstName=S.user.firstName||'Someone';
-    // Save to shared_trips
-    supa.from('shared_trips').upsert({
-      token,owner_id:S.user.id,owner_name:firstName,
-      city_id:cityId,city,country,flag,score,
-      score_label:scoreLabel,trip_type:S.tt||'st',
-      share_note:'',people:JSON.stringify([])
-    },{onConflict:'token'}).then(()=>{saveState();}).catch(()=>{});
-    // Generate canvas and share
-    generateShareCard(city,country,flag,score,scoreLabel,firstName,shareUrl);
-  }else{
-    // Not logged in — just generate card with homepage link
-    generateShareCard(city,country,flag,score,scoreLabel,'','https://letsexperiencetravel.com');
-  }
-};
-
-function generateShareCard(city,country,flag,score,scoreLabel,firstName,shareUrl){
+  // Store for card screen fallback
+  S.shareCardData={city,country,flag,score,scoreLabel,isST:S.tt==='st'};
   const isST=S.tt==='st';
+  const firstName=S.user?.firstName||'I';
+  const msg=firstName+(firstName==='I'?' matched ':' matched ')+score+'% with '+city+' on Experience Travel!\nFind your perfect destination \u2193\nhttps://letsexperiencetravel.com';
+
+  // Generate canvas card
   const canvas=document.createElement('canvas');
   canvas.width=1080;canvas.height=1080;
   const ctx=canvas.getContext('2d');
@@ -2099,83 +2074,148 @@ function generateShareCard(city,country,flag,score,scoreLabel,firstName,shareUrl
   const bg=ctx.createLinearGradient(0,0,1080,1080);
   bg.addColorStop(0,'#0A0A0F');bg.addColorStop(0.5,'#12080F');bg.addColorStop(1,'#0A0F12');
   ctx.fillStyle=bg;ctx.fillRect(0,0,1080,1080);
-
   // Pink glow top
-  const glow=ctx.createRadialGradient(540,0,0,540,0,600);
-  glow.addColorStop(0,'rgba(229,53,160,.18)');glow.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=glow;ctx.fillRect(0,0,1080,1080);
-
-  // Yellow glow bottom right
-  const glow2=ctx.createRadialGradient(1080,1080,0,1080,1080,500);
-  glow2.addColorStop(0,'rgba(245,228,32,.12)');glow2.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=glow2;ctx.fillRect(0,0,1080,1080);
+  const g1=ctx.createRadialGradient(540,0,0,540,0,600);
+  g1.addColorStop(0,'rgba(229,53,160,.18)');g1.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g1;ctx.fillRect(0,0,1080,1080);
+  // Yellow glow bottom
+  const g2=ctx.createRadialGradient(1080,1080,0,1080,1080,500);
+  g2.addColorStop(0,'rgba(245,228,32,.12)');g2.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g2;ctx.fillRect(0,0,1080,1080);
 
   // Score ring
-  const cx=540,cy=390,r=210;
-  // Track
-  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+  const cx=540,cy=390,rad=210;
+  ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);
   ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=22;ctx.stroke();
-  // Progress arc
   const prog=(score/100)*Math.PI*2;
-  ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+prog);
-  const arcGrad=ctx.createLinearGradient(cx-r,cy,cx+r,cy);
-  arcGrad.addColorStop(0,'#F5E420');arcGrad.addColorStop(1,'#E535A0');
-  ctx.strokeStyle=arcGrad;ctx.lineWidth=22;ctx.lineCap='round';ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,rad,-Math.PI/2,-Math.PI/2+prog);
+  const arcG=ctx.createLinearGradient(cx-rad,cy,cx+rad,cy);
+  arcG.addColorStop(0,'#F5E420');arcG.addColorStop(1,'#E535A0');
+  ctx.strokeStyle=arcG;ctx.lineWidth=22;ctx.lineCap='round';ctx.stroke();
 
-  // Flag in center of ring
+  // Flag
   ctx.font='130px serif';ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText(flag||'✈️',cx,cy);
 
-  // Score below ring
+  // Score
   ctx.textBaseline='alphabetic';
-  ctx.font='bold 90px -apple-system,Helvetica,Arial';ctx.fillStyle='#fff';
-  ctx.textAlign='center';ctx.fillText(score+'%',cx,cy+r+80);
-  ctx.font='22px -apple-system,Helvetica,Arial';ctx.fillStyle='rgba(255,255,255,.45)';
-  ctx.fillText('match score',cx,cy+r+118);
+  ctx.font='bold 100px -apple-system,Helvetica';ctx.fillStyle='#fff';ctx.textAlign='center';
+  ctx.fillText(score+'%',cx,cy+rad+85);
+  ctx.font='24px -apple-system,Helvetica';ctx.fillStyle='rgba(255,255,255,.4)';
+  ctx.fillText('match score',cx,cy+rad+125);
 
-  // City name
-  ctx.font='bold 68px -apple-system,Helvetica,Arial';ctx.fillStyle='#fff';
-  ctx.fillText(city+', '+country,cx,cy+r+195);
+  // City
+  ctx.font='bold 64px -apple-system,Helvetica';ctx.fillStyle='#fff';
+  ctx.fillText(city+', '+country,cx,cy+rad+200);
 
-  // Score label (coloured)
-  const labelColor=score>=90?'#F5E420':score>=80?'#E535A0':'rgba(255,255,255,.6)';
-  ctx.font='bold 26px -apple-system,Helvetica,Arial';ctx.fillStyle=labelColor;
-  ctx.fillText((scoreLabel||'').toUpperCase(),cx,cy+r+240);
+  // Label
+  const lc=score>=90?'#F5E420':score>=80?'#E535A0':'rgba(255,255,255,.6)';
+  ctx.font='bold 26px -apple-system,Helvetica';ctx.fillStyle=lc;
+  ctx.fillText((scoreLabel||'').toUpperCase(),cx,cy+rad+248);
 
-  // Attribution line
-  ctx.font='28px -apple-system,Helvetica,Arial';ctx.fillStyle='rgba(255,255,255,.4)';
+  // Footer
+  ctx.font='28px -apple-system,Helvetica';ctx.fillStyle='rgba(255,255,255,.35)';
   ctx.fillText('My '+(isST?'travel':'relocation')+' match on',cx,930);
+  const brG=ctx.createLinearGradient(cx-200,0,cx+200,0);
+  brG.addColorStop(0,'#F5E420');brG.addColorStop(1,'#E535A0');
+  ctx.font='bold 48px -apple-system,Helvetica';ctx.fillStyle=brG;
+  ctx.fillText('Experience Travel',cx,988);
 
-  // Brand name gradient
-  const brGrad=ctx.createLinearGradient(cx-200,0,cx+200,0);
-  brGrad.addColorStop(0,'#F5E420');brGrad.addColorStop(1,'#E535A0');
-  ctx.font='bold 48px -apple-system,Helvetica,Arial';ctx.fillStyle=brGrad;
-  ctx.fillText('Experience Travel',cx,985);
-
-  // Share the card
   canvas.toBlob(blob=>{
-    const url=URL.createObjectURL(blob);
     const fname='my-match-'+city.toLowerCase().replace(/\s+/g,'-')+'.png';
-    const msg=(firstName?firstName+' matched ':'I matched ')+score+'% with '+flag+' '+city+' on Experience Travel\n\nTake the quiz — find your perfect destination:\n'+shareUrl;
-    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([blob],fname,{type:'image/png'})]})){
-      navigator.share({
-        title:'Experience Travel — '+city,
-        text:msg,
-        url:shareUrl,
-        files:[new File([blob],fname,{type:'image/png'})]
-      }).catch(()=>{
-        // Fallback if file share fails
-        navigator.share({title:'Experience Travel',text:msg,url:shareUrl}).catch(()=>{});
-      });
+    const file=new File([blob],fname,{type:'image/png'});
+    // Try file share first (works on iPhone/Android)
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      navigator.share({title:'Experience Travel',text:msg,files:[file]})
+        .catch(()=>{ st({scr:'share_card'}); }); // fallback to card screen
     }else if(navigator.share){
-      navigator.share({title:'Experience Travel — '+city,text:msg,url:shareUrl}).catch(()=>{});
+      // Share URL only (desktop Safari / some Android)
+      navigator.share({title:'Experience Travel',text:msg,url:'https://letsexperiencetravel.com'})
+        .catch(()=>{ st({scr:'share_card'}); });
     }else{
-      // Desktop fallback: download the image
-      const a=document.createElement('a');a.href=url;a.download=fname;a.click();
-      toast('Card downloaded! Share it anywhere 🎉');
+      // Desktop Chrome: show card screen to screenshot
+      st({scr:'share_card'});
     }
-    setTimeout(()=>URL.revokeObjectURL(url),3000);
   },'image/png');
+};;;
+;
+
+
+function rShareCard(){
+  const d=S.shareCardData;
+  if(!d)return'';
+  const {city,country,flag,score,scoreLabel,isST}=d;
+  const scoreColor=score>=90?'#F5E420':score>=80?'#E535A0':'rgba(255,255,255,.7)';
+  const pct=score/100;
+  const r=110, cx=160, cy=160;
+  // SVG arc for score ring
+  const angle=pct*2*Math.PI;
+  const x1=cx+r*Math.sin(0), y1=cy-r;
+  const x2=cx+r*Math.sin(angle), y2=cy-r*Math.cos(angle);
+  const large=pct>0.5?1:0;
+  const arc=`M ${cx} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`;
+  return`<div style="min-height:100vh;display:flex;flex-direction:column;background:#0A0A0F">
+    <!-- Top bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px">
+      <button onclick="st({scr:'results'})" style="background:rgba(255,255,255,.1);border:none;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;cursor:pointer">← Back</button>
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.1em">YOUR MATCH CARD</div>
+      <button onclick="window.shareCardNow()" style="background:#E535A0;border:none;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer">↑ Share</button>
+    </div>
+
+    <!-- The card - full width, screenshot this -->
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:12px">
+      <div style="width:100%;max-width:360px;border-radius:28px;overflow:hidden;background:linear-gradient(145deg,#0A0A0F 0%,#12080F 50%,#0A0F12 100%);box-shadow:0 0 60px rgba(229,53,160,.25),0 0 120px rgba(245,228,32,.1)">
+        
+        <!-- Score ring section -->
+        <div style="padding:36px 24px 24px;text-align:center;position:relative">
+          <!-- Glow bg -->
+          <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:280px;height:280px;background:radial-gradient(circle,rgba(229,53,160,.15) 0%,transparent 70%);pointer-events:none"></div>
+          <!-- SVG ring -->
+          <svg width="320" height="320" viewBox="0 0 320 320" style="display:block;margin:0 auto">
+            <defs>
+              <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#F5E420"/>
+                <stop offset="100%" stop-color="#E535A0"/>
+              </linearGradient>
+            </defs>
+            <!-- Track -->
+            <circle cx="160" cy="160" r="110" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="18"/>
+            <!-- Progress -->
+            <path d="${arc}" fill="none" stroke="url(#arcGrad)" stroke-width="18" stroke-linecap="round"/>
+            <!-- Flag in center -->
+            <text x="160" y="180" text-anchor="middle" font-size="72" dominant-baseline="middle">${flag||'✈️'}</text>
+          </svg>
+          <!-- Score number -->
+          <div style="font-family:'Syne',sans-serif;font-size:56px;font-weight:900;color:#fff;margin-top:-16px;line-height:1">${score}%</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.35);margin-bottom:16px;letter-spacing:.05em">match score</div>
+        </div>
+
+        <!-- City info -->
+        <div style="padding:0 28px 28px;text-align:center">
+          <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:900;color:#fff;margin-bottom:6px">${city}</div>
+          <div style="font-size:15px;color:rgba(255,255,255,.5);margin-bottom:10px">${country}</div>
+          <div style="display:inline-block;padding:5px 14px;border-radius:20px;border:1.5px solid ${scoreColor};color:${scoreColor};font-size:12px;font-weight:700;letter-spacing:.08em;margin-bottom:24px">${(scoreLabel||'').toUpperCase()}</div>
+          <!-- Divider -->
+          <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:18px">
+            <div style="font-size:13px;color:rgba(255,255,255,.35);margin-bottom:4px">My ${isST?'travel':'relocation'} match on</div>
+            <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;background:linear-gradient(90deg,#F5E420,#E535A0);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Experience Travel</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instructions -->
+    <div style="text-align:center;padding:16px 24px 36px">
+      <div style="font-size:14px;color:rgba(255,255,255,.5);margin-bottom:6px">📸 Screenshot the card above</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.25)">Post it anywhere — Instagram, TikTok, WhatsApp</div>
+    </div>
+  </div>`;
+}
+
+window.shareCardNow=function(){
+  const d=S.shareCardData;if(!d)return;
+  const msg=(S.user?.firstName||'I')+' matched '+d.score+'% with '+d.flag+' '+d.city+' on Experience Travel\n\nFind your perfect destination ↓';
+  window.nativeShare('https://letsexperiencetravel.com',d.city,msg);
 };
 
 function render(){
@@ -2193,6 +2233,7 @@ function render(){
     case 'onboarding':h=rOnboarding();break;
     
     case 'search_error':h=rSearchError();break;
+    case 'share_card':h=rShareCard();break;
     default:h=rLogin();
   }
   h=rBnr()+h;
