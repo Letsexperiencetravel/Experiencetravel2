@@ -769,19 +769,26 @@ function loadUserFromSupabase(u, wasUpgraded, sessionId){
 }
 
 function loadSharedTrip(token){
-  // Load share record from Supabase
+  console.log('Loading shared trip:', token);
   supa.from('shared_trips').select('*').eq('token',token).single()
     .then(({data,error})=>{
+      console.log('Share lookup result:', data, error);
       if(error||!data){
-        st({scr:'login',sharedTripError:'This share link is invalid or has expired.'});
+        console.warn('Share not found:', error?.message);
+        // Show home screen with a message
+        S.pendingShare=null;
+        render();
+        setTimeout(()=>toast('This share link has expired or is invalid.'),500);
         return;
       }
-      // Store pending share for after auth
       S.pendingShare={token,data};
-      // Show preview screen
       st({scr:'shared_preview',sharedTrip:data});
     })
-    .catch(()=>st({scr:'login',sharedTripError:'Could not load shared trip.'}));
+    .catch(e=>{
+      console.error('loadSharedTrip error:',e);
+      render();
+      setTimeout(()=>toast('Could not load shared trip.'),500);
+    });
 }
 function acceptSharedTrip(){
   const share=S.pendingShare?.data;
@@ -818,9 +825,10 @@ function checkSession(){
   if(_wasUpgraded||_wasCancelled)history.replaceState({},'','/');
   if(_wasCancelled)setTimeout(()=>toast('Payment cancelled — you have not been charged.'),800);
   // Detect shared trip link: /share/TOKEN
-  const _shareMatch=_path.match(/^\/share\/([a-z0-9]+)$/i);
+  const _shareMatch=_path.match(/^\/share\/([a-z0-9]+)\/?$/i)||_path.match(/\/share\/([a-z0-9]{8,20})/i);
   if(_shareMatch){
     const token=_shareMatch[1];
+    console.log('Share token detected:',token,'from path:',_path);
     history.replaceState({},'','/');
     loadSharedTrip(token);
     return;
@@ -1483,7 +1491,7 @@ function rShare(){
   const accessSection=accessRows?`<div style="border-top:1px solid rgba(0,0,0,.07);padding-top:16px">
     <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:.08em;margin-bottom:10px">WHO HAS ACCESS</div>
     ${accessRows}</div>`:'';
-  const imgHtml=img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover"/>`:'';
+  const imgHtml=img?('<img src="'+img+'" style="width:100%;height:100%;object-fit:cover"/>'):'';
   return `<div class="ov" onclick="if(event.target.classList.contains('ov'))hideModalDirect()" style="z-index:360">
   <div class="md" style="max-width:440px;border-radius:20px;overflow:hidden;padding:0;background:#fff">
     <div style="position:relative;height:130px;background:#222">
