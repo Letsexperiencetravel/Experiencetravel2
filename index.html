@@ -503,10 +503,20 @@ window.deleteTodo=function(id,tid){
   saveState();saveQuizProgress();syncDestinationToSupabase(id);
   openNotesDirect(id);
 }
-window.moveTodo=function(id,tid,dir){const n=getNotes(id);const idx=n.todos.findIndex(t=>t.id===tid);const ni=idx+dir;if(ni<0||ni>=n.todos.length)return;const arr=[...n.todos];[arr[idx],arr[ni]]=[arr[ni],arr[idx]];n.todos=arr;S.notes[id]=n;render(;
-  saveState();saveQuizProgress();syncDestinationToSupabase(id);
+window.moveTodo=function(id,tid,dir){
+  const n=getNotes(id);
+  const idx=n.todos.findIndex(t=>t.id===tid);
+  const ni=idx+dir;
+  if(ni<0||ni>=n.todos.length)return;
+  const arr=[...n.todos];
+  [arr[idx],arr[ni]]=[arr[ni],arr[idx]];
+  n.todos=arr;
+  S.notes[id]=n;
+  saveState();
+  saveQuizProgress();
+  syncDestinationToSupabase(id);
   openNotesDirect(id);
-}
+};
 window.updateTodoText=function(id,tid,val){
   const n=getNotes(id);
   n.todos=(n.todos||[]).map(t=>t.id===tid?{...t,text:val}:t);
