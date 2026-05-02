@@ -827,6 +827,16 @@ function loadUserFromSupabase(u, wasUpgraded, sessionId){
           if(r.share_data&&typeof r.share_data==='object')S.shareData[r.city_id]=r.share_data;
           else if(r.share_data&&typeof r.share_data==='string'){try{S.shareData[r.city_id]=JSON.parse(r.share_data);}catch(e){}}
         });
+        // After restoring shareData, subscribe to realtime for all shared trips with tokens
+        setTimeout(()=>{
+          rows.forEach(r=>{
+            const sd=S.shareData[r.city_id];
+            if(sd?.token){
+              console.log('Restoring realtime sub for',r.city,'token:',sd.token);
+              subscribeToSharedTrip(sd.token,r.city_id,r.city);
+            }
+          });
+        },1500);
       }
 
       // Handle Stripe upgrade redirect
@@ -876,44 +886,44 @@ function loadSharedTrip(token){
 function acceptSharedTrip(){
   const share=S.pendingShare?.data;
   if(!share||!S.user?.id)return;
-  // Add destination to user's saved
   const item={
     id:share.city_id,city:share.city,country:share.country,
     flag:share.flag,score:share.score,scoreLabel:share.score_label,
     tt:share.trip_type,date:new Date().toLocaleDateString()
   };
-  if(!S.sIds.has(item.id)){
-    S.saved=[...S.saved,item];
-    S.sIds=new Set([...S.sIds,item.id]);
-    supaSaveDestination(S.user.id,item);
-  }
-  // Load shared notes from shared_trips.shared_notes (the master copy)
+  // Load master notes
   if(share.shared_notes){
-    const sharedNotes=typeof share.shared_notes==='object'?share.shared_notes:JSON.parse(share.shared_notes||'{}');
-    if(sharedNotes&&Object.keys(sharedNotes).length>0){
-      S.notes[item.id]=sharedNotes;
-    }
-  } else if(share.share_note){
+    const sn=typeof share.shared_notes==='object'?share.shared_notes:JSON.parse(share.shared_notes||'{}');
+    if(sn&&Object.keys(sn).length>0)S.notes[item.id]=sn;
+  }else if(share.share_note){
     const n=S.notes[item.id]||{text:'',todos:[],savedBy:'',savedAt:''};
     if(!n.text)n.text=share.share_note;
     S.notes[item.id]=n;
   }
-  // Store the token so this user can sync notes back
-  if(!S.shareData[item.id])S.shareData[item.id]={people:[],token:share.token};
+  // Store share token so recipient can push edits back
+  if(!S.shareData[item.id])S.shareData[item.id]={people:[]};
   S.shareData[item.id].token=share.token;
-  // Subscribe to realtime updates for this shared trip
-  setTimeout(()=>subscribeToSharedTrip(share.token, item.id, item.city), 500);
-  // Mark this person as joined in shared_trips
+  // Add to saved list
+  if(!S.sIds.has(item.id)){
+    S.saved=[...S.saved,item];
+    S.sIds=new Set([...S.sIds,item.id]);
+  }
+  // Save to Supabase - includes share_data with token so it persists on next login
+  supaSaveDestination(S.user.id,item);
+  saveState();
+  saveQuizProgress();
+  // Mark as joined
   if(share.token&&S.user?.email){
     try{
       const people=JSON.parse(share.people||'[]');
       const updated=people.map(p=>p.email===S.user?.email?{...p,joined:true}:p);
-      supa.from('shared_trips').update({people:JSON.stringify(updated)}).eq('token',share.token).then(()=>{}).catch(()=>{});
+      supa.from('shared_trips').update({people:JSON.stringify(updated)})
+        .eq('token',share.token).then(()=>{}).catch(()=>{});
     }catch(e){}
   }
+  // Subscribe to realtime updates
+  setTimeout(()=>subscribeToSharedTrip(share.token,item.id,item.city),500);
   S.pendingShare=null;
-  saveState();
-  saveQuizProgress();
   toast('✓ '+share.city+' added to your destinations!');
   st({scr:'dash',showSv:true});
 }
@@ -1414,14 +1424,19 @@ function syncDestinationToSupabase(cityId){
       .then(()=>console.log('Synced:',cityId))
       .catch(e=>console.error('Sync failed:',e));
   }
-  // Also push notes to shared_trips if this city has a share token
+  // Push notes to shared_trips master copy if this city has a token
   const sd=S.shareData[cityId];
-  if(sd?.token&&(sd.people||[]).length>0){
+  const token=sd?.token;
+  if(token){
     const notes=S.notes[cityId]||null;
+    console.log('Pushing shared_notes for',cityId,'token:',token,'notes:',!!notes);
     supa.from('shared_trips').update({shared_notes:notes})
-      .eq('token',sd.token)
-      .then(({error})=>{if(!error)console.log('Shared notes synced for',cityId);})
-      .catch(()=>{});
+      .eq('token',token)
+      .then(({data,error})=>{
+        if(error)console.error('shared_notes push error:',error.message);
+        else console.log('✅ Shared notes pushed for',cityId);
+      })
+      .catch(e=>console.error('shared_notes push exception:',e));
   }
 }
 function sC(e,city,country,idx){
