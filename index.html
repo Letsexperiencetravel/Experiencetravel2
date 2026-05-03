@@ -2059,26 +2059,23 @@ function rSearchError(){
 
 
 window.shareFromResult=function(city,country,flag,score,scoreLabel,idx){
-  // Store for card screen fallback
-  S.shareCardData={city,country,flag,score,scoreLabel,isST:S.tt==='st'};
   const isST=S.tt==='st';
-  const firstName=S.user?.firstName||'I';
-  const msg=firstName+(firstName==='I'?' matched ':' matched ')+score+'% with '+city+' on Experience Travel!\nFind your perfect destination \u2193\nhttps://letsexperiencetravel.com';
+  const firstName=S.user?.firstName||'';
+  const who=firstName?firstName+' matched':'I matched';
+  const msg=who+' '+score+'% with '+city+' on Experience Travel!\nFind your perfect destination \u2193\nhttps://letsexperiencetravel.com';
 
-  // Generate canvas card
+  // Build canvas card
   const canvas=document.createElement('canvas');
   canvas.width=1080;canvas.height=1080;
   const ctx=canvas.getContext('2d');
 
-  // Dark background
+  // Background
   const bg=ctx.createLinearGradient(0,0,1080,1080);
   bg.addColorStop(0,'#0A0A0F');bg.addColorStop(0.5,'#12080F');bg.addColorStop(1,'#0A0F12');
   ctx.fillStyle=bg;ctx.fillRect(0,0,1080,1080);
-  // Pink glow top
   const g1=ctx.createRadialGradient(540,0,0,540,0,600);
   g1.addColorStop(0,'rgba(229,53,160,.18)');g1.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=g1;ctx.fillRect(0,0,1080,1080);
-  // Yellow glow bottom
   const g2=ctx.createRadialGradient(1080,1080,0,1080,1080,500);
   g2.addColorStop(0,'rgba(245,228,32,.12)');g2.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=g2;ctx.fillRect(0,0,1080,1080);
@@ -2104,40 +2101,45 @@ window.shareFromResult=function(city,country,flag,score,scoreLabel,idx){
   ctx.font='24px -apple-system,Helvetica';ctx.fillStyle='rgba(255,255,255,.4)';
   ctx.fillText('match score',cx,cy+rad+125);
 
-  // City
+  // City + country
   ctx.font='bold 64px -apple-system,Helvetica';ctx.fillStyle='#fff';
-  ctx.fillText(city+', '+country,cx,cy+rad+200);
+  ctx.fillText(city,cx,cy+rad+200);
+  ctx.font='32px -apple-system,Helvetica';ctx.fillStyle='rgba(255,255,255,.5)';
+  ctx.fillText(country,cx,cy+rad+248);
 
-  // Label
+  // Label badge
   const lc=score>=90?'#F5E420':score>=80?'#E535A0':'rgba(255,255,255,.6)';
-  ctx.font='bold 26px -apple-system,Helvetica';ctx.fillStyle=lc;
-  ctx.fillText((scoreLabel||'').toUpperCase(),cx,cy+rad+248);
+  ctx.font='bold 24px -apple-system,Helvetica';ctx.fillStyle=lc;
+  ctx.fillText((scoreLabel||'').toUpperCase(),cx,cy+rad+295);
 
   // Footer
   ctx.font='28px -apple-system,Helvetica';ctx.fillStyle='rgba(255,255,255,.35)';
-  ctx.fillText('My '+(isST?'travel':'relocation')+' match on',cx,930);
-  const brG=ctx.createLinearGradient(cx-200,0,cx+200,0);
+  ctx.fillText('My '+(isST?'travel':'relocation')+' match on',cx,920);
+  const brG=ctx.createLinearGradient(cx-220,0,cx+220,0);
   brG.addColorStop(0,'#F5E420');brG.addColorStop(1,'#E535A0');
   ctx.font='bold 48px -apple-system,Helvetica';ctx.fillStyle=brG;
-  ctx.fillText('Experience Travel',cx,988);
+  ctx.fillText('Experience Travel',cx,978);
 
   canvas.toBlob(blob=>{
     const fname='my-match-'+city.toLowerCase().replace(/\s+/g,'-')+'.png';
     const file=new File([blob],fname,{type:'image/png'});
-    // Try file share first (works on iPhone/Android)
+    // Try with image file (works on iPhone/Android)
     if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-      navigator.share({title:'Experience Travel',text:msg,files:[file]})
-        .catch(()=>{ st({scr:'share_card'}); }); // fallback to card screen
+      navigator.share({title:'Experience Travel',text:msg,files:[file]}).catch(()=>{
+        // If image share fails, try without image
+        if(navigator.share)navigator.share({title:'Experience Travel',text:msg,url:'https://letsexperiencetravel.com'}).catch(()=>{});
+      });
     }else if(navigator.share){
-      // Share URL only (desktop Safari / some Android)
-      navigator.share({title:'Experience Travel',text:msg,url:'https://letsexperiencetravel.com'})
-        .catch(()=>{ st({scr:'share_card'}); });
+      // No file share support - share text + URL only (desktop Safari)
+      navigator.share({title:'Experience Travel',text:msg,url:'https://letsexperiencetravel.com'}).catch(()=>{});
     }else{
-      // Desktop Chrome: show card screen to screenshot
-      st({scr:'share_card'});
+      // Desktop Chrome - copy message to clipboard and toast
+      const fullMsg=msg+'\nhttps://letsexperiencetravel.com';
+      if(navigator.clipboard)navigator.clipboard.writeText(fullMsg).then(()=>toast('Message copied! Paste it anywhere to share ✓')).catch(()=>{fallbackCopy(fullMsg);toast('Message copied! Paste it anywhere to share ✓');});
+      else{fallbackCopy(fullMsg);toast('Message copied! Paste anywhere to share ✓');}
     }
   },'image/png');
-};;;
+};;;;
 ;
 
 
