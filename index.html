@@ -2061,10 +2061,35 @@ function rSearchError(){
 window.shareFromResult=function(city,country,flag,score,scoreLabel,idx){
   const isST=S.tt==='st';
   const firstName=S.user?.firstName||'';
-  const who=firstName?firstName+' matched':'I matched';
-  const msg=who+' '+score+'% with '+city+' on Experience Travel!\nFind your perfect destination \u2193\nhttps://letsexperiencetravel.com';
+  const who=firstName||'Someone';
 
-  // Build canvas card
+  // Step 1: Create share token so link goes to preview page not homepage
+  let shareUrl='https://letsexperiencetravel.com';
+  if(S.user?.id){
+    const cityId=city+'-'+country;
+    if(!S.shareData[cityId])S.shareData[cityId]={people:[],token:genToken()};
+    if(!S.shareData[cityId].token)S.shareData[cityId].token=genToken();
+    const token=S.shareData[cityId].token;
+    shareUrl='https://letsexperiencetravel.com/share/'+token;
+    // Save destination + share record
+    if(!S.sIds.has(cityId)){
+      const r2=S.res[idx]||{};
+      const item={id:cityId,tt:S.tt,city,country,flag,score,scoreLabel,highlights:r2.highlights||[],date:new Date().toLocaleDateString()};
+      S.saved=[...S.saved,item];S.sIds=new Set([...S.sIds,cityId]);
+      saveState();supaSaveDestination(S.user.id,item).catch(()=>{});
+    }
+    supa.from('shared_trips').upsert({
+      token,owner_id:S.user.id,owner_name:who,
+      city_id:cityId,city,country,flag,score,
+      score_label:scoreLabel,trip_type:S.tt||'st',
+      share_note:'',people:'[]'
+    },{onConflict:'token'}).then(()=>saveState()).catch(()=>{});
+  }
+
+  // Step 2: Compose message
+  const msg=who+' matched '+score+'% with '+flag+' '+city+' on Experience Travel! \n\nFind your perfect destination \u2193';
+
+  // Step 3: Generate canvas card
   const canvas=document.createElement('canvas');
   canvas.width=1080;canvas.height=1080;
   const ctx=canvas.getContext('2d');
@@ -2073,15 +2098,15 @@ window.shareFromResult=function(city,country,flag,score,scoreLabel,idx){
   const bg=ctx.createLinearGradient(0,0,1080,1080);
   bg.addColorStop(0,'#0A0A0F');bg.addColorStop(0.5,'#12080F');bg.addColorStop(1,'#0A0F12');
   ctx.fillStyle=bg;ctx.fillRect(0,0,1080,1080);
-  const g1=ctx.createRadialGradient(540,0,0,540,0,600);
-  g1.addColorStop(0,'rgba(229,53,160,.18)');g1.addColorStop(1,'rgba(0,0,0,0)');
+  const g1=ctx.createRadialGradient(540,200,0,540,200,500);
+  g1.addColorStop(0,'rgba(229,53,160,.2)');g1.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=g1;ctx.fillRect(0,0,1080,1080);
-  const g2=ctx.createRadialGradient(1080,1080,0,1080,1080,500);
-  g2.addColorStop(0,'rgba(245,228,32,.12)');g2.addColorStop(1,'rgba(0,0,0,0)');
+  const g2=ctx.createRadialGradient(900,900,0,900,900,400);
+  g2.addColorStop(0,'rgba(245,228,32,.15)');g2.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=g2;ctx.fillRect(0,0,1080,1080);
 
   // Score ring
-  const cx=540,cy=390,rad=210;
+  const cx=540,cy=400,rad=210;
   ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);
   ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=22;ctx.stroke();
   const prog=(score/100)*Math.PI*2;
@@ -2090,56 +2115,79 @@ window.shareFromResult=function(city,country,flag,score,scoreLabel,idx){
   arcG.addColorStop(0,'#F5E420');arcG.addColorStop(1,'#E535A0');
   ctx.strokeStyle=arcG;ctx.lineWidth=22;ctx.lineCap='round';ctx.stroke();
 
-  // Flag
-  ctx.font='130px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  // Flag emoji in center
+  ctx.font='120px serif';ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText(flag||'✈️',cx,cy);
 
-  // Score
+  // Score number
   ctx.textBaseline='alphabetic';
-  ctx.font='bold 100px -apple-system,Helvetica';ctx.fillStyle='#fff';ctx.textAlign='center';
-  ctx.fillText(score+'%',cx,cy+rad+85);
-  ctx.font='24px -apple-system,Helvetica';ctx.fillStyle='rgba(255,255,255,.4)';
-  ctx.fillText('match score',cx,cy+rad+125);
+  ctx.font='bold 96px -apple-system,Arial,sans-serif';
+  ctx.fillStyle='#ffffff';ctx.textAlign='center';
+  ctx.fillText(score+'%',cx,cy+rad+80);
+  ctx.font='24px -apple-system,Arial,sans-serif';
+  ctx.fillStyle='rgba(255,255,255,.4)';
+  ctx.fillText('match score',cx,cy+rad+120);
 
-  // City + country
-  ctx.font='bold 64px -apple-system,Helvetica';ctx.fillStyle='#fff';
-  ctx.fillText(city,cx,cy+rad+200);
-  ctx.font='32px -apple-system,Helvetica';ctx.fillStyle='rgba(255,255,255,.5)';
-  ctx.fillText(country,cx,cy+rad+248);
+  // City name
+  ctx.font='bold 60px -apple-system,Arial,sans-serif';
+  ctx.fillStyle='#ffffff';
+  ctx.fillText(city,cx,cy+rad+195);
 
-  // Label badge
+  // Country
+  ctx.font='30px -apple-system,Arial,sans-serif';
+  ctx.fillStyle='rgba(255,255,255,.5)';
+  ctx.fillText(country,cx,cy+rad+242);
+
+  // Score label
   const lc=score>=90?'#F5E420':score>=80?'#E535A0':'rgba(255,255,255,.6)';
-  ctx.font='bold 24px -apple-system,Helvetica';ctx.fillStyle=lc;
+  ctx.font='bold 26px -apple-system,Arial,sans-serif';
+  ctx.fillStyle=lc;
   ctx.fillText((scoreLabel||'').toUpperCase(),cx,cy+rad+295);
 
-  // Footer
-  ctx.font='28px -apple-system,Helvetica';ctx.fillStyle='rgba(255,255,255,.35)';
-  ctx.fillText('My '+(isST?'travel':'relocation')+' match on',cx,920);
-  const brG=ctx.createLinearGradient(cx-220,0,cx+220,0);
-  brG.addColorStop(0,'#F5E420');brG.addColorStop(1,'#E535A0');
-  ctx.font='bold 48px -apple-system,Helvetica';ctx.fillStyle=brG;
-  ctx.fillText('Experience Travel',cx,978);
+  // Footer text
+  ctx.font='26px -apple-system,Arial,sans-serif';
+  ctx.fillStyle='rgba(255,255,255,.35)';
+  ctx.fillText('My '+(isST?'travel':'relocation')+' match on',cx,930);
 
-  canvas.toBlob(blob=>{
-    const fname='my-match-'+city.toLowerCase().replace(/\s+/g,'-')+'.png';
+  // Brand gradient text (simulate with two colors)
+  ctx.font='bold 52px -apple-system,Arial,sans-serif';
+  const brG=ctx.createLinearGradient(200,0,880,0);
+  brG.addColorStop(0,'#F5E420');brG.addColorStop(0.5,'#F5A623');brG.addColorStop(1,'#E535A0');
+  ctx.fillStyle=brG;
+  ctx.fillText('Experience Travel',cx,990);
+
+  // Step 4: Share
+  canvas.toBlob(function(blob){
+    const fname=city.toLowerCase().replace(/\s+/g,'-')+'-match.png';
     const file=new File([blob],fname,{type:'image/png'});
-    // Try with image file (works on iPhone/Android)
-    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-      navigator.share({title:'Experience Travel',text:msg,files:[file]}).catch(()=>{
-        // If image share fails, try without image
-        if(navigator.share)navigator.share({title:'Experience Travel',text:msg,url:'https://letsexperiencetravel.com'}).catch(()=>{});
+    const shareData={title:'Experience Travel — '+city,text:msg,url:shareUrl};
+    const shareDataWithFile={...shareData,files:[file]};
+
+    if(navigator.share){
+      // Try with image first
+      const canShareFile=navigator.canShare&&navigator.canShare(shareDataWithFile);
+      const sharePromise=canShareFile
+        ?navigator.share(shareDataWithFile)
+        :navigator.share(shareData);
+      sharePromise.catch(err=>{
+        if(err.name!=='AbortError'){
+          // Last resort: share without file
+          navigator.share(shareData).catch(()=>{});
+        }
       });
-    }else if(navigator.share){
-      // No file share support - share text + URL only (desktop Safari)
-      navigator.share({title:'Experience Travel',text:msg,url:'https://letsexperiencetravel.com'}).catch(()=>{});
     }else{
-      // Desktop Chrome - copy message to clipboard and toast
-      const fullMsg=msg+'\nhttps://letsexperiencetravel.com';
-      if(navigator.clipboard)navigator.clipboard.writeText(fullMsg).then(()=>toast('Message copied! Paste it anywhere to share ✓')).catch(()=>{fallbackCopy(fullMsg);toast('Message copied! Paste it anywhere to share ✓');});
-      else{fallbackCopy(fullMsg);toast('Message copied! Paste anywhere to share ✓');}
+      // Desktop: copy message + link to clipboard
+      const clip=msg+'\n'+shareUrl;
+      if(navigator.clipboard){
+        navigator.clipboard.writeText(clip)
+          .then(()=>toast('Copied! Paste into iMessage, WhatsApp or anywhere ✓'))
+          .catch(()=>{fallbackCopy(clip);toast('Copied! Paste to share ✓');});
+      }else{
+        fallbackCopy(clip);toast('Copied! Paste to share ✓');
+      }
     }
   },'image/png');
-};;;;
+};;;;;
 ;
 
 
