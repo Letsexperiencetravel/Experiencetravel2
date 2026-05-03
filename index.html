@@ -783,6 +783,7 @@ function rLogin(){
     <div class="divl">or</div>
     ${bP('Create an Account',"st({scr:'reg',err:null,reg:{}})")}
     <p style="text-align:center;margin-top:14px"><span onclick="st({showFP:true,fpSent:false})" style="cursor:pointer;font-size:13px;font-weight:600;color:${P}">Forgot Password?</span></p>
+  <div style="text-align:center;padding:16px 0 4px"><button onclick="st({scr:'privacy',prevScr:'login'})" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:11px;cursor:pointer;text-decoration:underline">Privacy Policy</button></div>
   </div></div></div>`}
 function doLogin(){
   const e=document.getElementById('le')?.value.trim();
@@ -1075,7 +1076,9 @@ function doFP(){
     st({fpSent:true,fpEmail:e});
   });
 }
-function rReg(){const d=S.reg,step=d._step||1,b=S.bdDis?0:BH,fe=d._fe||{};return`<div class="pg pg-w" style="padding-top:${b+20}px"><div style="width:100%;max-width:440px"><div style="text-align:center;margin-bottom:20px">${logo()}<div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:#111;margin-top:10px">Experience <em style="color:${P};font-style:normal">Travel</em></div></div><div class="lc"><div class="dots"><div class="dot ${step>=1?'on':''}"></div><div class="dot ${step>=2?'on':''}"></div></div><p style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#111;margin-bottom:4px">Create Account</p><p style="color:#888;font-size:13.5px;margin-bottom:18px">Step ${step} of 2 — ${step===1?'Your Details':'Set Your Password'}</p>${step===1?`<div class="r2"><div class="fgrp"><label>First Name</label><input class="inp" id="rfn" type="text" placeholder="Jane" value="${d.fn||''}"/>${fe.fn?`<div class="ferr">⚠ ${fe.fn}</div>`:''}</div><div class="fgrp"><label>Last Name</label><input class="inp" id="rln" type="text" placeholder="Smith" value="${d.ln||''}"/>${fe.ln?`<div class="ferr">⚠ ${fe.ln}</div>`:''}</div></div><div class="fgrp"><label>Email</label><input class="inp" id="rem" type="email" placeholder="jane@email.com" value="${d.em||''}"/>${fe.em?`<div class="ferr">⚠ ${fe.em}</div>`:''}</div><div class="fgrp"><label>Phone</label><input class="inp" id="rph" type="tel" placeholder="+1 (555) 000-0000" value="${d.ph||''}"/>${fe.ph?`<div class="ferr">⚠ ${fe.ph}</div>`:''}</div><div class="fgrp"><label>Country of Origin</label><input class="inp" id="rco" type="text" placeholder="e.g. United States" value="${d.co||''}"/>${fe.co?`<div class="ferr">⚠ ${fe.co}</div>`:''}</div><div class="fgrp"><label>City</label><input class="inp" id="rcy" type="text" placeholder="e.g. New York" value="${d.cy||''}"/>${fe.cy?`<div class="ferr">⚠ ${fe.cy}</div>`:''}</div><div class="fgrp"><label>Date of Birth</label><input class="inp" id="rbday" type="date" value="${d.bday||''}" style="color:#333"/></div>${bY('Continue →','rs1()')}`:`<div class="fgrp"><label>New Password</label><input class="inp" id="rp1" type="password" placeholder="Min 6 characters" oninput="upS()"/>${fe.p1?`<div class="ferr">⚠ ${fe.p1}</div>`:''}<div id="pwstr"></div></div><div class="fgrp"><label>Confirm Password</label><input class="inp" id="rp2" type="password" placeholder="Confirm password"/>${fe.p2?`<div class="ferr">⚠ ${fe.p2}</div>`:''}</div>${bY('Continue →','rs2()')}${bPo('← Back',"st({reg:{...S.reg,_step:1,_fe:{}}})")}`}<p style="text-align:center;margin-top:14px;font-size:13px;color:#888">Have an account? <span style="cursor:pointer;font-weight:600;color:${P}" onclick="st({scr:'login',err:null})">Sign In</span></p></div></div></div>`}
+function rReg(){const d=S.reg,step=d._step||1,b=S.bdDis?0:BH,fe=d._fe||{};return`<div class="pg pg-w" style="padding-top:${b+20}px"><div style="width:100%;max-width:440px"><div style="text-align:center;margin-bottom:20px">${logo()}<div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:#111;margin-top:10px">Experience <em style="color:${P};font-style:normal">Travel</em></div></div><div class="lc"><div class="dots"><div class="dot ${step>=1?'on':''}"></div><div class="dot ${step>=2?'on':''}"></div></div><p style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#111;margin-bottom:4px">Create Account</p><p style="color:#888;font-size:13.5px;margin-bottom:18px">Step ${step} of 2 — ${step===1?'Your Details':'Set Your Password'}</p>${step===1?`<div class="r2"><div class="fgrp"><label>First Name</label><input class="inp" id="rfn" type="text" placeholder="Jane" value="${d.fn||''}"/>${fe.fn?`<div class="ferr">⚠ ${fe.fn}</div>`:''}</div><div class="fgrp"><label>Last Name</label><input class="inp" id="rln" type="text" placeholder="Smith" value="${d.ln||''}"/>${fe.ln?`<div class="ferr">⚠ ${fe.ln}</div>`:''}</div></div><div class="fgrp"><label>Email</label><input class="inp" id="rem" type="email" placeholder="jane@email.com" value="${d.em||''}"/>${fe.em?`<div class="ferr">⚠ ${fe.em}</div>`:''}</div><div class="fgrp"><label>Phone</label><input class="inp" id="rph" type="tel" placeholder="+1 (555) 000-0000" value="${d.ph||''}"/>${fe.ph?`<div class="ferr">⚠ ${fe.ph}</div>`:''}</div><div class="fgrp"><label>Country of Origin</label><input class="inp" id="rco" type="text" placeholder="e.g. United States" value="${d.co||''}"/>${fe.co?`<div class="ferr">⚠ ${fe.co}</div>`:''}</div><div class="fgrp"><label>City</label><input class="inp" id="rcy" type="text" placeholder="e.g. New York" value="${d.cy||''}"/>${fe.cy?`<div class="ferr">⚠ ${fe.cy}</div>`:''}</div><div class="fgrp"><label>Date of Birth</label><input class="inp" id="rbday" type="date" value="${d.bday||''}" style="color:#333"/></div>${bY('Continue →','rs1()')}`:`<div class="fgrp"><label>New Password</label><input class="inp" id="rp1" type="password" placeholder="Min 6 characters" oninput="upS()"/>${fe.p1?`<div class="ferr">⚠ ${fe.p1}</div>`:''}<div id="pwstr"></div></div><div class="fgrp"><label>Confirm Password</label><input class="inp" id="rp2" type="password" placeholder="Confirm password"/>${fe.p2?`<div class="ferr">⚠ ${fe.p2}</div>`:''}</div>${bY('Continue →','rs2()')}${bPo('← Back',"st({reg:{...S.reg,_step:1,_fe:{}}})")}`}<p style="text-align:center;margin-top:14px;font-size:13px;color:#888">Have an account? <span style="cursor:pointer;font-weight:600;color:${P}" onclick="st({scr:'login',err:null})">Sign In</span></p>
+<div style="text-align:center;padding:12px 0 4px"><span style="font-size:11px;color:rgba(255,255,255,.4)">By continuing you agree to our </span><button onclick="st({scr:'privacy',prevScr:'reg'})" style="background:none;border:none;color:#E535A0;font-size:11px;cursor:pointer;text-decoration:underline">Privacy Policy</button></div>
+</div></div></div>`}
 function pwS(v){
   if(!v)return{sc:0,lb:'',co:'#ccc'};
   let sc=0;
@@ -1886,6 +1889,7 @@ ${tab==='info'?`<div class="asec"><h4>Personal Info</h4>${S.acMsg?`<div style="p
 ${tab==='password'?`<div class="asec"><h4>Change Password</h4>${S.acPwMsg?`<div style="padding:8px 12px;border-radius:8px;font-size:12.5px;margin-bottom:12px;${S.acPwMsg.startsWith('✓')?'background:rgba(34,197,94,.12);color:#86EFAC;':'background:rgba(239,68,68,.15);color:#FCA5A5;'}">${S.acPwMsg}</div>`:''}<div class="fgdk" style="margin-bottom:9px"><label>Current Password</label><input class="inp-dk" id="pwc" type="password" placeholder="Current password"/></div><div class="fgdk" style="margin-bottom:4px"><label>New Password</label><input class="inp-dk" id="pw1" type="password" placeholder="Min 6 characters" oninput="upAcS()"/></div><div id="acpwstr" style="margin-bottom:9px"></div><div class="fgdk" style="margin-bottom:12px"><label>Confirm New Password</label><input class="inp-dk" id="pw2" type="password" placeholder="Confirm password"/></div><button onclick="chPw()" style="display:block;width:100%;padding:10px 18px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Update Password</button></div>`:''}
 ${tab==='profile'?`<div class="asec"><h4>Quiz Profile</h4><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div style="flex:1;background:var(--D3);border-radius:8px;overflow:hidden;height:6px"><div style="height:100%;background:linear-gradient(90deg,${Y},${P});width:${Math.round(Object.keys(S.ans).length/30*100)}%"></div></div><span style="font-size:12px;color:rgba(255,255,255,.5)">${Object.keys(S.ans).length}/30</span></div><p style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.6;margin-bottom:16px">Retake anytime to update and get fresh results.</p><button onclick="st({scr:'quiz_intro',ans:{},qi:0,showAc:false})" style="display:block;width:100%;padding:10px 18px;background:var(--D3);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff;cursor:pointer">Retake Quiz</button></div>`:''}
 ${!S.isPro?`<div class="asec"><button onclick="st({showPW:true,showAc:false})" style="display:block;width:100%;padding:10px 18px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Upgrade to Pro — Unlimited Searches</button></div>`:''}
+<div style="padding:8px 18px 2px"><button onclick="st({scr:'privacy',prevScr:'dash'})" style="background:none;border:none;color:#888;font-size:13px;cursor:pointer;padding:0;text-decoration:underline">Privacy Policy</button></div>
 <div style="padding:14px 18px">${bPo('Sign Out',"supa.auth.signOut();st({scr:'login',user:null,showAc:false,freeCnt:0,proCnt:0,topupCount:0,isPro:false,lc:0})")}</div>
 </div></div>`}
 window.upAcS=function(){const el=document.getElementById('acpwstr');if(!el)return;const v=document.getElementById('pw1')?.value||'';const{sc,lb,co}=pwS(v);if(sc>0){const sg=Array.from({length:4},(_,i)=>`<div class="pws-s ${i<sc?(sc<=1?'wk':sc<=2?'fr':'gd'):''}"></div>`).join('');el.innerHTML=`<div class="pws">${sg}</div><div style="font-size:10px;font-weight:600;color:${co};margin-top:4px">${lb}</div>`}else el.innerHTML=''};
@@ -2154,15 +2158,28 @@ window.shareFromResult=function(city,country,flag,score,scoreLabel,idx){
         navigator.share({files:[file],text:msg}).catch(err=>{
           if(err&&err.name!=='AbortError')fallbackShare();
         });
-      }else if(navigator.share){
-        // Desktop: share text + url (iMessage will show link preview - that's ok)
-        navigator.share({title:'Experience Travel',text:msg,url:'https://letsexperiencetravel.com'}).catch(()=>fallbackShare());
       }else{
-        // No share API: download image
+        // Desktop: download the card PNG + copy message to clipboard
+        // Step 1: download image
+        const objUrl=URL.createObjectURL(blob);
         const a=document.createElement('a');
-        a.href=URL.createObjectURL(blob);
-        a.download=fname;a.click();
-        toast('Card saved! Share it anywhere 🎉');
+        a.href=objUrl;a.download=fname;
+        document.body.appendChild(a);a.click();
+        document.body.removeChild(a);
+        setTimeout(()=>URL.revokeObjectURL(objUrl),3000);
+        // Step 2: copy message to clipboard
+        const clip=msg+'\nhttps://letsexperiencetravel.com';
+        if(navigator.clipboard){
+          navigator.clipboard.writeText(clip).then(()=>{
+            toast('Card downloaded + message copied! ✓ Attach the image and paste the message');
+          }).catch(()=>{
+            fallbackCopy(clip);
+            toast('Card downloaded! Message copied — paste it with the image ✓');
+          });
+        }else{
+          fallbackCopy(clip);
+          toast('Card downloaded! ✓ Attach it in iMessage');
+        }
       }
     },'image/png');
   }catch(e){console.error('Share error:',e);fallbackShare();}
@@ -2267,6 +2284,45 @@ window.shareCardNow=function(){
   window.nativeShare('https://letsexperiencetravel.com',d.city,msg);
 };
 
+
+function rPrivacy(){
+  return`<div class="pg" style="min-height:100vh;background:#fff;color:#333">
+    <div style="position:sticky;top:0;background:#fff;border-bottom:1px solid #eee;padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:10">
+      <button onclick="history.back?history.back():st({scr:S.prevScr||'login'})" style="background:none;border:none;font-size:22px;cursor:pointer;color:#333;padding:0">←</button>
+      <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#111">Privacy Policy</div>
+    </div>
+    <div style="padding:24px 20px;max-width:700px;margin:0 auto;font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#595959">
+      <div style="font-size:22px;font-weight:700;color:#111;margin-bottom:6px">PRIVACY POLICY</div>
+      <div style="color:#888;margin-bottom:24px">Last updated May 02, 2026</div>
+      <p>This Privacy Notice for <strong>EXPERIENCE REALITY</strong> ("we," "us," or "our") describes how and why we might access, collect, store, use, and/or share your personal information when you use our services, including when you download and use our app Experience Travel.</p>
+      <p><strong>Questions or concerns?</strong> Contact us at <a href="mailto:contact@theexperiencereality.com" style="color:#E535A0">contact@theexperiencereality.com</a></p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">1. WHAT INFORMATION DO WE COLLECT?</h2>
+      <p><strong>Personal information you provide:</strong> We collect names, phone numbers, email addresses, usernames, passwords, and account login information when you register or use our Services.</p>
+      <p><strong>Payment data:</strong> Payment processing is handled by Stripe. We do not store your card details. See <a href="https://stripe.com/privacy" style="color:#E535A0" target="_blank">Stripe's privacy policy</a>.</p>
+      <p><strong>Automatically collected:</strong> We collect device information, IP address, browser type, and usage data when you use our Services.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">2. HOW DO WE PROCESS YOUR INFORMATION?</h2>
+      <p>We process your information to provide and improve our Services, manage your account, communicate with you, and for security and fraud prevention. We use AI technology (Claude by Anthropic) to generate personalised destination matches based on your quiz answers.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">3. DO WE USE AI?</h2>
+      <p>Yes. Our destination matching is powered by Claude (Anthropic). Your quiz answers and preferences are shared with Anthropic's API to generate your results. This data is processed in accordance with Anthropic's privacy policy.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">4. WITH WHOM DO WE SHARE YOUR INFORMATION?</h2>
+      <p>We do not sell your personal information. We share data only with service providers necessary to operate the app: Supabase (database), Stripe (payments), Anthropic (AI matching), and Resend (email). We may share information in the event of a business transfer or as required by law.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">5. HOW LONG DO WE KEEP YOUR INFORMATION?</h2>
+      <p>We keep your information for as long as you have an account with us. When you delete your account, we will delete or anonymize your personal information.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">6. HOW DO WE KEEP YOUR INFORMATION SAFE?</h2>
+      <p>We use Supabase with row-level security, encrypted connections (HTTPS), and Stripe for payment security. No system is 100% secure, but we take reasonable measures to protect your data.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">7. DO WE COLLECT INFORMATION FROM MINORS?</h2>
+      <p>No. We do not knowingly collect data from children under 18. By using the Services you confirm you are at least 18 years old.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">8. WHAT ARE YOUR RIGHTS?</h2>
+      <p>Depending on where you live you may have the right to access, correct, or delete your personal information. To exercise your rights, email us at <a href="mailto:contact@theexperiencereality.com" style="color:#E535A0">contact@theexperiencereality.com</a>.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">9. DO WE MAKE UPDATES TO THIS NOTICE?</h2>
+      <p>Yes. We may update this Privacy Policy from time to time. We will notify you of material changes by posting a notice in the app.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">10. HOW CAN YOU CONTACT US?</h2>
+      <p>EXPERIENCE REALITY<br>Townsend, DE 19734<br>United States<br><a href="mailto:contact@theexperiencereality.com" style="color:#E535A0">contact@theexperiencereality.com</a></p>
+      <div style="margin-top:32px;padding-top:20px;border-top:1px solid #eee;font-size:12px;color:#aaa">Generated with Termly · Last updated May 2, 2026</div>
+    </div>
+  </div>`;
+}
+
 function render(){
   const app=document.getElementById('app');let h='';
   switch(S.scr){
@@ -2283,6 +2339,7 @@ function render(){
     
     case 'search_error':h=rSearchError();break;
     case 'share_card':h=rShareCard();break;
+    case 'privacy':h=rPrivacy();break;
     default:h=rLogin();
   }
   h=rBnr()+h;
