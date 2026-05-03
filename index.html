@@ -2185,8 +2185,17 @@ window.shareFromResult=function(city,country,flag,score,scoreLabel,idx){
   }catch(e){console.error('Share error:',e);fallbackShare();}
 
   function fallbackShare(){
-    if(navigator.share){
-      navigator.share({title:'Experience Travel',text:msg,url:'https://letsexperiencetravel.com'}).catch(()=>{});
+    const canFile=typeof navigator.canShare==='function'&&navigator.canShare({files:[file]});
+    if(navigator.share&&canFile){
+      // Mobile (iPhone/Android): share image file - shows card in iMessage
+      navigator.share({files:[file],text:msg}).catch(err=>{
+        if(err&&err.name==='AbortError')return;
+        // File share failed, try text only
+        navigator.share({title:'Experience Travel',text:msg,url:'https://letsexperiencetravel.com'}).catch(()=>{});
+      });
+    }else if(navigator.share){
+      // Desktop: URL share
+      navigator.share({title:'Experience Travel — '+city,text:msg,url:'https://letsexperiencetravel.com'}).catch(()=>{});
     }else{
       fallbackCopy(msg+'\nletsexperiencetravel.com');
       toast('Copied! Paste to share ✓');
