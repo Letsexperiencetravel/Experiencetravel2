@@ -2059,46 +2059,37 @@ function rSearchError(){
 
 
 window.shareFromResult=function(city,country,flag,score,scoreLabel,idx){
-  // Safety: ensure scoreLabel has a value
-  const label=(scoreLabel||'Great Match');
+  const label=scoreLabel||'Great Match';
   const isST=(S.tt||'st')==='st';
   const firstName=S.user?.firstName||'';
   const who=firstName||'Someone';
-  const msg=who+' matched '+score+'% with '+flag+' '+city+' on Experience Travel!\n\nFind your perfect destination \u2193';
+  // Message text only - NO URL so iMessage shows the card image not a link preview
+  const msg=who+' matched '+score+'% with '+flag+' '+city+' on Experience Travel!\n\nFind your perfect destination \u2193\nletsexperiencetravel.com';
 
-  // Step 1: Create share token so link goes to preview page
-  let shareUrl='https://letsexperiencetravel.com';
+  // Save to shared_trips so if they do share the link it works
   if(S.user?.id){
     const cityId=city+'-'+country;
     if(!S.shareData[cityId])S.shareData[cityId]={people:[],token:genToken()};
     if(!S.shareData[cityId].token)S.shareData[cityId].token=genToken();
     const token=S.shareData[cityId].token;
-    shareUrl='https://letsexperiencetravel.com/share/'+token;
-    // Save destination if not already saved
     if(!S.sIds.has(cityId)){
       const r2=(Array.isArray(S.res)?S.res[idx]:null)||{highlights:[]};
       const item={id:cityId,tt:S.tt||'st',city,country,flag,score,scoreLabel:label,highlights:r2.highlights||[],date:new Date().toLocaleDateString()};
-      S.saved=[...S.saved,item];
-      S.sIds=new Set([...S.sIds,cityId]);
-      saveState();
-      supaSaveDestination(S.user.id,item).catch(()=>{});
+      S.saved=[...S.saved,item];S.sIds=new Set([...S.sIds,cityId]);
+      saveState();supaSaveDestination(S.user.id,item).catch(()=>{});
     }
-    // Save to shared_trips
     supa.from('shared_trips').upsert({
-      token,owner_id:S.user.id,owner_name:who,
-      city_id:cityId,city,country,flag,score,
-      score_label:label,trip_type:S.tt||'st',
-      share_note:'',people:'[]'
-    },{onConflict:'token'})
-    .then(()=>saveState()).catch(()=>{});
+      token,owner_id:S.user.id,owner_name:who,city_id:cityId,city,country,flag,score,
+      score_label:label,trip_type:S.tt||'st',share_note:'',people:'[]'
+    },{onConflict:'token'}).then(()=>saveState()).catch(()=>{});
   }
 
-  // Step 2: Try to generate canvas card and share
+  // Generate canvas match card
   try{
     const canvas=document.createElement('canvas');
     canvas.width=1080;canvas.height=1080;
     const ctx=canvas.getContext('2d');
-    if(!ctx)throw new Error('No canvas context');
+    if(!ctx)throw new Error('no ctx');
 
     // Background
     const bg=ctx.createLinearGradient(0,0,1080,1080);
@@ -2136,17 +2127,14 @@ window.shareFromResult=function(city,country,flag,score,scoreLabel,idx){
 
     // City + Country
     ctx.font='bold 60px -apple-system,Arial,sans-serif';
-    ctx.fillStyle='#ffffff';
-    ctx.fillText(city,cx,cy+rad+195);
+    ctx.fillStyle='#ffffff';ctx.fillText(city,cx,cy+rad+195);
     ctx.font='30px -apple-system,Arial,sans-serif';
-    ctx.fillStyle='rgba(255,255,255,.5)';
-    ctx.fillText(country,cx,cy+rad+242);
+    ctx.fillStyle='rgba(255,255,255,.5)';ctx.fillText(country,cx,cy+rad+242);
 
-    // Label
+    // Score label
     const lc=score>=90?'#F5E420':score>=80?'#E535A0':'rgba(255,255,255,.6)';
     ctx.font='bold 26px -apple-system,Arial,sans-serif';
-    ctx.fillStyle=lc;
-    ctx.fillText(label.toUpperCase(),cx,cy+rad+292);
+    ctx.fillStyle=lc;ctx.fillText(label.toUpperCase(),cx,cy+rad+292);
 
     // Footer
     ctx.font='26px -apple-system,Arial,sans-serif';
@@ -2155,28 +2143,39 @@ window.shareFromResult=function(city,country,flag,score,scoreLabel,idx){
     const brG=ctx.createLinearGradient(180,0,900,0);
     brG.addColorStop(0,'#F5E420');brG.addColorStop(0.5,'#F5A623');brG.addColorStop(1,'#E535A0');
     ctx.font='bold 52px -apple-system,Arial,sans-serif';
-    ctx.fillStyle=brG;
-    ctx.fillText('Experience Travel',cx,988);
+    ctx.fillStyle=brG;ctx.fillText('Experience Travel',cx,988);
 
-    // Share the canvas
     canvas.toBlob(function(blob){
-      if(!blob){doTextShare(msg,shareUrl);return;}
+      if(!blob){fallbackShare();return;}
       const fname=city.toLowerCase().replace(/\s+/g,'-')+'-match.png';
       const file=new File([blob],fname,{type:'image/png'});
-      const shareData={title:'Experience Travel — '+city,text:msg,url:shareUrl};
-      if(navigator.share){
-        const canFile=navigator.canShare&&navigator.canShare({...shareData,files:[file]});
-        (canFile?navigator.share({...shareData,files:[file]}):navigator.share(shareData))
-          .catch(err=>{if(err&&err.name!=='AbortError')doTextShare(msg,shareUrl);});
+      if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+        // Mobile: share image file + text only (NO url = no link preview = card shows as image)
+        navigator.share({files:[file],text:msg}).catch(err=>{
+          if(err&&err.name!=='AbortError')fallbackShare();
+        });
+      }else if(navigator.share){
+        // Desktop: share text + url (iMessage will show link preview - that's ok)
+        navigator.share({title:'Experience Travel',text:msg,url:'https://letsexperiencetravel.com'}).catch(()=>fallbackShare());
       }else{
-        doTextShare(msg,shareUrl);
+        // No share API: download image
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download=fname;a.click();
+        toast('Card saved! Share it anywhere 🎉');
       }
     },'image/png');
-  }catch(e){
-    console.error('Share card error:',e);
-    doTextShare(msg,shareUrl);
+  }catch(e){console.error('Share error:',e);fallbackShare();}
+
+  function fallbackShare(){
+    if(navigator.share){
+      navigator.share({title:'Experience Travel',text:msg,url:'https://letsexperiencetravel.com'}).catch(()=>{});
+    }else{
+      fallbackCopy(msg+'\nletsexperiencetravel.com');
+      toast('Copied! Paste to share ✓');
+    }
   }
-};
+};;
 
 function doTextShare(msg,url){
   if(navigator.share){
