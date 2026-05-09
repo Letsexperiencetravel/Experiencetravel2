@@ -800,7 +800,7 @@ function rLogin(){
     ${bY('Sign In →','doLogin()')}
     <div class="divl">or</div>
     ${bP('Create an Account',"st({scr:'reg',err:null,reg:{}})")}
-    <p style="text-align:center;margin-top:14px"><span onclick="st({showFP:true,fpSent:false})" style="cursor:pointer;font-size:13px;font-weight:600;color:${P}">Forgot Password?</span></p>
+    <p style="text-align:center;margin-top:14px"><span onclick="st({scr:'forgot',fpSent:false})" style="cursor:pointer;font-size:13px;font-weight:600;color:${P}">Forgot Password?</span></p>
   <div style="text-align:center;padding:16px 0 4px"><button onclick="st({scr:'privacy',prevScr:'login'})" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:11px;cursor:pointer;text-decoration:underline">Privacy Policy</button></div>
   </div></div></div>`}
 function doLogin(){
@@ -1060,6 +1060,25 @@ function checkSession(){
   const _hash=window.location.hash;
   // Handle Supabase email confirmation redirect
   // Supabase appends #access_token=...&type=signup or ?token_hash=...&type=signup
+  const _isRecovery=(_hash.includes('access_token')&&_hash.includes('type=recovery'))||
+    (_search.includes('token_hash')&&_search.includes('type=recovery'));
+  if(_isRecovery){
+    history.replaceState({},'','/');
+    // Show password reset form
+    supa.auth.getSession().then(({data:{session}})=>{
+      if(session){
+        // User is authenticated via recovery token - show change password screen
+        loadUserFromSupabase(session.user,false,'');
+        setTimeout(()=>{
+          toast('Set your new password in My Account → Change Password');
+          st({showAc:true,acTab:'password'});
+        },800);
+      }else{
+        st({scr:'login',err:'Reset link expired. Please request a new one.'});
+      }
+    });
+    return;
+  }
   const _isConfirmation=(_hash.includes('access_token')&&_hash.includes('type=signup'))||
     (_search.includes('token_hash')&&_search.includes('type=signup'))||
     (_search.includes('token_hash')&&_search.includes('type=email'));
@@ -2374,6 +2393,73 @@ function rPrivacy(){
   </div>`;
 }
 
+
+function rForgot(){
+  const sent=S.fpSent||false;
+  return`<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;background:linear-gradient(135deg,#0A0A0F 0%,#12080F 60%)">
+    <div style="width:100%;max-width:400px">
+      <!-- Back -->
+      <button onclick="st({scr:'login',fpSent:false})" style="background:rgba(255,255,255,.08);border:none;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;cursor:pointer;margin-bottom:32px">← Back to Login</button>
+
+      <!-- Icon -->
+      <div style="text-align:center;font-size:52px;margin-bottom:20px">🔐</div>
+
+      ${sent?`
+      <!-- Sent state -->
+      <div style="text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:900;color:#fff;margin-bottom:12px">Check your email</div>
+        <div style="font-size:15px;color:rgba(255,255,255,.6);line-height:1.7;margin-bottom:28px">We've sent a password reset link to your email. Click the link to set a new password.</div>
+        <div style="background:rgba(229,53,160,.1);border:1px solid rgba(229,53,160,.3);border-radius:12px;padding:16px;font-size:13px;color:rgba(255,255,255,.6);margin-bottom:24px">
+          Didn't get it? Check your spam folder, or <button onclick="st({fpSent:false})" style="background:none;border:none;color:#E535A0;font-size:13px;cursor:pointer;padding:0;text-decoration:underline">try again</button>
+        </div>
+        <button onclick="st({scr:'login',fpSent:false})" style="display:block;width:100%;padding:15px;background:linear-gradient(135deg,#E535A0,#F5E420);border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#111;cursor:pointer">Back to Login</button>
+      </div>
+      `:`
+      <!-- Form state -->
+      <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:900;color:#fff;margin-bottom:10px;text-align:center">Reset your password</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.55);text-align:center;margin-bottom:28px;line-height:1.6">Enter your email and we'll send you a link to reset your password.</div>
+
+      <div style="margin-bottom:16px">
+        <label style="display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.1em;margin-bottom:8px">EMAIL ADDRESS</label>
+        <input id="fp-email" type="email" placeholder="you@email.com" autocomplete="email"
+          style="width:100%;padding:14px 16px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;font-size:15px;color:#fff;box-sizing:border-box;outline:none"
+          onkeydown="if(event.key==='Enter')window.doForgot()"/>
+      </div>
+
+      <button onclick="window.doForgot()" style="display:block;width:100%;padding:15px;background:linear-gradient(135deg,#E535A0,#F5E420);border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#111;cursor:pointer;margin-bottom:16px">Send Reset Link →</button>
+
+      <div id="fp-err" style="text-align:center;font-size:13px;color:#f87171;min-height:20px"></div>
+      `}
+    </div>
+  </div>`;
+}
+
+window.doForgot=async function(){
+  const email=document.getElementById('fp-email')?.value.trim();
+  const errEl=document.getElementById('fp-err');
+  if(!email||!/\S+@\S+\.\S+/.test(email)){
+    if(errEl)errEl.textContent='Please enter a valid email address';
+    return;
+  }
+  if(errEl)errEl.textContent='Sending...';
+  const btn=document.querySelector('button[onclick="window.doForgot()"]');
+  if(btn){btn.disabled=true;btn.textContent='Sending...';}
+  try{
+    const {error}=await supa.auth.resetPasswordForEmail(email,{
+      redirectTo:'https://letsexperiencetravel.com/reset-password'
+    });
+    if(error){
+      if(errEl)errEl.textContent=error.message;
+      if(btn){btn.disabled=false;btn.textContent='Send Reset Link →';}
+    }else{
+      st({fpSent:true});
+    }
+  }catch(e){
+    if(errEl)errEl.textContent='Something went wrong. Please try again.';
+    if(btn){btn.disabled=false;btn.textContent='Send Reset Link →';}
+  }
+};
+
 function render(){
   const app=document.getElementById('app');let h='';
   switch(S.scr){
@@ -2391,6 +2477,7 @@ function render(){
     case 'search_error':h=rSearchError();break;
     case 'share_card':h=rShareCard();break;
     case 'privacy':h=rPrivacy();break;
+    case 'forgot':h=rForgot();break;
     default:h=rLogin();
   }
   h=rBnr()+h;
