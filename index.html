@@ -298,7 +298,15 @@ const bPo=(l,o)=>`<button onclick="${o}" style="display:block;width:100%;padding
 const bSm=(l,o,bg,col,bor)=>`<button onclick="${o}" style="display:inline-flex;align-items:center;padding:10px 18px;background:${bg};color:${col};border:2.5px solid ${bor};border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">${l}</button>`;
 window.updShareNote=function(id,val){if(!S.shareData[id])S.shareData[id]={people:[]};S.shareData[id].note=val};
 function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2800)}
-function share(){if(navigator.share)navigator.share({title:'Experience Travel',url:'https://experiencereality.com'}).catch(()=>{});else toast('Link copied!')}
+function share(){
+  const msg='Find your perfect travel destination with Experience Travel';
+  if(navigator.share){
+    navigator.share({title:'Experience Travel',text:msg,url:'https://letsexperiencetravel.com'}).catch(()=>{});
+  }else{
+    if(navigator.clipboard)navigator.clipboard.writeText('https://letsexperiencetravel.com').then(()=>toast('Link copied! \u2713')).catch(()=>{fallbackCopy('https://letsexperiencetravel.com');toast('Link copied! \u2713');});
+    else{fallbackCopy('https://letsexperiencetravel.com');toast('Link copied! \u2713');}
+  }
+}
 function shareResult(city,score,flag,country){
   const isST=S.tt==='st';
   const label=isST?'Short-Term Travel Match':'Long-Term Relocation Match';
