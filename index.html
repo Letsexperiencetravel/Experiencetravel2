@@ -1152,10 +1152,11 @@ function checkSession(){
       S.user=null;S.saved=[];S.sIds=new Set();S.notes={};S.shareData={};
       S.ans={};S.fA={};S.rqA={};S.isPro=false;S.freeCnt=0;S.proCnt=0;
       S.cmpSel=[];S.aiItineraries={};S.userProfile=null;S.tt=null;
+      S.scr='login';S.err=null;S.showAc=false;S.showSv=false;
       localStorage.removeItem(STORAGE_KEY);
       render();
     }
-  }).catch(()=>render());
+  }).catch(()=>{S.scr='login';render();});
 }
 function doFP(){
   const e=document.getElementById('fpe')?.value.trim();
@@ -2545,6 +2546,9 @@ window.doResetPassword=async function(){
 };
 
 function render(){
+  // Guard: no user on protected screen → login
+  const _pub=['login','reg','onboarding','shared_preview','forgot','reset_password','privacy','share_card'];
+  if(!S.user&&!_pub.includes(S.scr)){S.scr='login';}
   const app=document.getElementById('app');let h='';
   switch(S.scr){
     case 'login':h=rLogin();break;case 'reg':h=rReg();break;
