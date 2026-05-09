@@ -57,7 +57,7 @@ html,body{min-height:100%;font-family:'Inter',sans-serif;background:#fff}
 .nav{position:fixed;left:0;right:0;z-index:200;background:rgba(255,255,255,.96);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.08);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between}
 .nav-av{width:34px;height:34px;border-radius:50%;background:var(--Y);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#111;font-family:'Syne',sans-serif;border:2px solid var(--P);box-shadow:2px 2px 0 var(--P)}
 .nav-br{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#111}.nav-br em{color:var(--P);font-style:normal}
-.spl{font-size:11px;color:#999;background:#F5F5F5;border:1px solid rgba(0,0,0,.1);padding:3px 9px;border-radius:8px}.ppl{font-size:10px;font-weight:800;padding:4px 10px;border-radius:20px;background:linear-gradient(90deg,var(--Y),var(--P));color:#111;letter-spacing:.5px;white-space:nowrap}
+.spl{font-size:11px;color:#999;background:#F5F5F5;border:1px solid rgba(0,0,0,.1);padding:3px 9px;border-radius:8px}.ppl{font-size:10px;font-weight:700;padding:3px 9px;border-radius:8px;background:linear-gradient(90deg,var(--Y),var(--P));color:#111}
 .dg{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:720px}
 .tile{border-radius:18px;padding:22px 20px;cursor:pointer;transition:all .22s;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;border:1.5px solid transparent}.tile:hover{transform:translateY(-3px)}
 .t-pk{background:linear-gradient(135deg,var(--P),#A01470);border-color:var(--PD)}.t-pk:hover{box-shadow:0 12px 40px rgba(229,53,160,.35)}
@@ -258,6 +258,19 @@ function getNotes(id){
     const img=P[city]||CP[country]||'';
   return`<div style="height:150px;position:relative;overflow:hidden;background:${d.grad}">${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover;display:block" loading="lazy" onerror="this.style.display='none'"/>`:''}><div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.05),rgba(0,0,0,.55))"></div><div style="position:absolute;top:10px;left:12px;font-size:28px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))">${flag}</div>${showCity?`<div style="position:absolute;bottom:10px;left:12px;font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.8)">${city}</div>`:'' }</div>`
 }
+// Listen for auth state changes (handles email confirmation)
+function initAuthListener(){
+  supa.auth.onAuthStateChange((event,session)=>{
+    if(event==='SIGNED_IN'&&session&&!S.user?.id){
+      console.log('Auth state change: SIGNED_IN');
+      loadUserFromSupabase(session.user,false,'');
+      if(document.referrer.includes('supabase')||window.location.hash.includes('access_token')){
+        setTimeout(()=>toast('✓ Email confirmed! Welcome to Experience Travel 🎉'),600);
+      }
+    }
+  });
+}
+
 // Global error boundary
 window.addEventListener('unhandledrejection',function(e){
   const msg=(e.reason?.message||'Unknown error');
@@ -266,6 +279,7 @@ window.addEventListener('unhandledrejection',function(e){
   }
 });
 const supa=supabase.createClient(SUPA_URL,SUPA_KEY);
+initAuthListener();
 
 const FREE_LIMIT=1,PRO_LIMIT=999999,TOPUP_LIMIT=999999;
 const Y='#F5E420',P='#E535A0',DK='#111',W='#fff',BH=46;
@@ -762,7 +776,7 @@ window.copyShareLink=function(link){
 }
 function fallbackCopy(text){const el=document.createElement('textarea');el.value=text;document.body.appendChild(el);el.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(el);}
 function rBnr(){if(S.bdDis)return'';return`<div class="sbnr"><button class="sbnr-x" onclick="st({bdDis:true})">✕</button><span class="sbnr-msg">Enjoying the app? Share it with a friend!</span><button class="sbnr-btn" onclick="share()">Share</button></div>`}
-function rNav(){const u=S.user,nm=(u?.firstName||'User');return`<div class="nav" style="top:${nt()}px"><div style="display:flex;align-items:center;gap:10px"><div class="nav-br">Experience <em>Travel</em></div></div><div style="display:flex;align-items:center;gap:8px">${navPill()}${S.scr!=='dash'?`<button onclick="st({scr:'dash'})" style="display:inline-flex;align-items:center;gap:4px;padding:6px 11px;background:rgba(0,0,0,.04);color:#555;border:1.5px solid rgba(0,0,0,.12);border-radius:9px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">← Home</button>`:''}<button onclick="st({showAc:true,acMsg:'',acPwMsg:'',acTab:'info'})" style="display:flex;align-items:center;gap:7px;background:rgba(0,0,0,.04);border:1.5px solid rgba(0,0,0,.1);border-radius:10px;padding:6px 12px 6px 8px;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#111"><div style="width:26px;height:26px;border-radius:7px;overflow:hidden;flex-shrink:0"><img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 56 56%22%3E%3Crect width=%2256%22 height=%2256%22 fill=%22%23F5E420%22 rx=%2212%22/%3E%3Crect x=%228%22 y=%228%22 width=%2224%22 height=%2238%22 rx=%224%22 fill=%22%23E535A0%22/%3E%3Crect x=%2212%22 y=%2214%22 width=%2216%22 height=%2222%22 rx=%222%22 fill=%22%23F5E420%22/%3E%3Ccircle cx=%2220%22 cy=%2240%22 r=%222.5%22 fill=%22%23F5E420%22/%3E%3Cpath d=%22M30 28 L50 22 L46 28 L50 34 Z%22 fill=%22%23111%22/%3E%3C/svg%3E" style="width:100%;height:100%;object-fit:cover"/></div>My Account</button></div></div>`}
+function rNav(){const u=S.user,nm=(u?.firstName||'User');return`<div class="nav" style="top:${nt()}px"><div style="display:flex;align-items:center;gap:10px"><div class="nav-br">Experience <em>Travel</em></div></div><div style="display:flex;align-items:center;gap:8px">${navPill()}${S.scr!=='dash'?bSm('← Home',"st({scr:'dash'})",P,W,'#C8208A'):''}<button onclick="st({showAc:true,acMsg:'',acPwMsg:'',acTab:'info'})" style="display:flex;align-items:center;gap:7px;background:rgba(0,0,0,.04);border:1.5px solid rgba(0,0,0,.1);border-radius:10px;padding:6px 12px 6px 8px;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#111"><div style="width:26px;height:26px;border-radius:7px;overflow:hidden;flex-shrink:0"><img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 56 56%22%3E%3Crect width=%2256%22 height=%2256%22 fill=%22%23F5E420%22 rx=%2212%22/%3E%3Crect x=%228%22 y=%228%22 width=%2224%22 height=%2238%22 rx=%224%22 fill=%22%23E535A0%22/%3E%3Crect x=%2212%22 y=%2214%22 width=%2216%22 height=%2222%22 rx=%222%22 fill=%22%23F5E420%22/%3E%3Ccircle cx=%2220%22 cy=%2240%22 r=%222.5%22 fill=%22%23F5E420%22/%3E%3Cpath d=%22M30 28 L50 22 L46 28 L50 34 Z%22 fill=%22%23111%22/%3E%3C/svg%3E" style="width:100%;height:100%;object-fit:cover"/></div>My Account</button></div></div>`}
 function logo(){return`<div style="width:56px;height:56px;border-radius:14px;overflow:hidden;flex-shrink:0;box-shadow:3px 3px 0 #E535A0"><img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 56 56%22%3E%3Crect width=%2256%22 height=%2256%22 fill=%22%23F5E420%22 rx=%2212%22/%3E%3Crect x=%228%22 y=%228%22 width=%2224%22 height=%2238%22 rx=%224%22 fill=%22%23E535A0%22/%3E%3Crect x=%2212%22 y=%2214%22 width=%2216%22 height=%2222%22 rx=%222%22 fill=%22%23F5E420%22/%3E%3Ccircle cx=%2220%22 cy=%2240%22 r=%222.5%22 fill=%22%23F5E420%22/%3E%3Cpath d=%22M30 28 L50 22 L46 28 L50 34 Z%22 fill=%22%23111%22/%3E%3C/svg%3E" style="width:100%;height:100%;object-fit:cover"/></div>`}
 function rLogin(){
   const b=S.bdDis?0:BH;
@@ -1039,6 +1053,30 @@ async function requestNotificationPermission(){
 }
 function checkSession(){
   const _search=window.location.search;
+  const _hash=window.location.hash;
+  // Handle Supabase email confirmation redirect
+  // Supabase appends #access_token=...&type=signup or ?token_hash=...&type=signup
+  const _isConfirmation=(_hash.includes('access_token')&&_hash.includes('type=signup'))||
+    (_search.includes('token_hash')&&_search.includes('type=signup'))||
+    (_search.includes('token_hash')&&_search.includes('type=email'));
+  if(_isConfirmation){
+    history.replaceState({},'','/');
+    // Let Supabase process the token then load user
+    supa.auth.getSession().then(({data:{session}})=>{
+      if(session){
+        loadUserFromSupabase(session.user,false,'');
+        setTimeout(()=>toast('✓ Email confirmed! Welcome to Experience Travel 🎉'),600);
+      }else{
+        // PKCE flow - exchange token
+        supa.auth.exchangeCodeForSession(new URLSearchParams(_search).get('token_hash')||'')
+          .then(({data:{session:s2}})=>{
+            if(s2)loadUserFromSupabase(s2.user,false,'');
+            else st({scr:'login',err:'Confirmation failed. Please try again.'});
+          }).catch(()=>st({scr:'login',err:'Confirmation link expired. Please sign up again.'}));
+      }
+    });
+    return;
+  }
   const _path=window.location.pathname;
   const _wasUpgraded=_search.includes('upgraded=true');
   const _wasCancelled=_search.includes('upgrade=cancelled');
@@ -1653,19 +1691,18 @@ function sc(s,tt){
   const cmpBg=isSel?P:'transparent';
   const cmpTick=isSel?'✓':'';
   const sharedBadge=isShared?' · <span style="color:#818CF8">Shared</span>':'';
-  let h='<div class="si" style="flex-direction:column;align-items:stretch;gap:8px">';
-  h+='<div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="openSaved(\''+s.id+'\',event)">';
-  h+='<div style="font-size:22px;flex-shrink:0">'+s.flag+'</div>';
-  h+='<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:14px;color:#fff;line-height:1.3;text-decoration:underline;text-underline-offset:2px;text-decoration-color:rgba(255,255,255,.25)">'+s.city+', '+s.country+'</div>';
+  let h='<div class="si">';
+  h+='<div onclick="openSaved(\''+s.id+'\',event)" style="font-size:26px;cursor:pointer">'+s.flag+'</div>';
+  h+='<div style="flex:1;cursor:pointer;min-width:0" onclick="openSaved(\''+s.id+'\',event)">';
+  h+='<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:14px;color:#fff;text-decoration:underline;text-underline-offset:2px;text-decoration-color:rgba(255,255,255,.25)">'+s.city+', '+s.country+'</div>';
+  h+='<div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px">'+s.score+'/100 · '+s.date+sharedBadge+'</div>';
   h+='</div>';
   h+='<div style="display:flex;align-items:center;gap:5px">';
   h+='<button onclick="event.stopPropagation();openNotesDirect(\''+s.id+'\')" style="background:'+noteBg+';border:1px solid '+noteBd+';border-radius:7px;padding:4px 9px;cursor:pointer;color:'+noteCol+';font-size:11.5px;font-weight:700">📋 Plan</button>';
   h+='<button onclick="event.stopPropagation();openShareDirect(\''+s.id+'\')" style="background:'+shrBg+';border:1px solid '+shrBd+';border-radius:7px;padding:4px 9px;cursor:pointer;color:'+shrCol+';font-size:11.5px;font-weight:700">🔗 Share</button>';
   h+='<button onclick="event.stopPropagation();archiveTrip(\''+s.id+'\')" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:4px 9px;cursor:pointer;color:rgba(255,255,255,.4);font-size:11.5px;font-weight:700" title="Archive">📦</button>';
   h+='<div style="width:22px;height:22px;border-radius:6px;border:2px solid '+cmpBd+';background:'+cmpBg+';display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;cursor:pointer" onclick="event.stopPropagation();toggleCmp(\''+s.id+'\',\''+tt+'\')">'+cmpTick+'</div>';
-  h+='</div>';
-  h+='<div style="font-size:11px;color:rgba(255,255,255,.35)">'+s.score+'/100 · '+s.date+sharedBadge+'</div>';
-  h+='</div>';
+  h+='</div></div>';
   return h;
 }
 let ltHtml='';
@@ -1756,11 +1793,11 @@ function rNotes(){
   <!-- Date Section -->
   <div style="margin-bottom:18px">
     ${isST?`<div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;margin-bottom:8px">Trip Dates</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div style="min-width:0"><div style="font-size:10px;color:#aaa;font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Departure</div>
-      <input type="date" id="dep-date" value="${n.depDate||''}" onchange="updNoteDate('${id}','depDate',this.value)" class="inp" style="padding:9px 8px;font-size:12px;width:100%"/></div>
-      <div style="min-width:0"><div style="font-size:10px;color:#aaa;font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Return</div>
-      <input type="date" id="ret-date" value="${n.retDate||''}" onchange="updNoteDate('${id}','retDate',this.value)" class="inp" style="padding:9px 8px;font-size:12px;width:100%"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><div style="font-size:10px;color:#aaa;font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Departure</div>
+      <input type="date" id="dep-date" value="${n.depDate||''}" onchange="updNoteDate('${id}','depDate',this.value)" class="inp" style="padding:9px 11px;font-size:13px;width:100%"/></div>
+      <div><div style="font-size:10px;color:#aaa;font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Return</div>
+      <input type="date" id="ret-date" value="${n.retDate||''}" onchange="updNoteDate('${id}','retDate',this.value)" class="inp" style="padding:9px 11px;font-size:13px;width:100%"/></div>
     </div>
     ${n.depDate&&n.retDate?`<div style="margin-top:8px;padding:8px 12px;background:#F0FDF4;border-radius:8px;font-size:12.5px;color:#16A34A;font-weight:600">✈️ ${new Date(n.depDate+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})} → ${new Date(n.retDate+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>`:''}`:`<div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;margin-bottom:8px">Planned Moving Date</div>
     <input type="date" id="dep-date" value="${n.depDate||''}" onchange="updNoteDate('${id}','depDate',this.value)" class="inp" style="padding:10px 12px;font-size:13px;width:100%"/>
