@@ -265,6 +265,11 @@ function getNotes(id){
 // Listen for auth state changes (handles email confirmation)
 function initAuthListener(){
   supa.auth.onAuthStateChange((event,session)=>{
+    if(event==='PASSWORD_RECOVERY'&&session){
+      // User clicked reset link - show password reset screen
+      st({scr:'reset_password'});
+      return;
+    }
     if(event==='SIGNED_IN'&&session&&!S.user?.id){
       console.log('Auth state change: SIGNED_IN');
       loadUserFromSupabase(session.user,false,'');
@@ -1060,23 +1065,38 @@ function checkSession(){
   const _hash=window.location.hash;
   // Handle Supabase email confirmation redirect
   // Supabase appends #access_token=...&type=signup or ?token_hash=...&type=signup
-  const _isRecovery=(_hash.includes('access_token')&&_hash.includes('type=recovery'))||
-    (_search.includes('token_hash')&&_search.includes('type=recovery'));
+  // Detect password recovery - check BEFORE clearing URL
+  const _hashParams=new URLSearchParams(_hash.replace('#',''));
+  const _searchParams=new URLSearchParams(_search);
+  const _isRecovery=(
+    (_hash.includes('type=recovery'))||
+    (_search.includes('type=recovery'))||
+    (window.location.pathname==='/reset-password')
+  );
   if(_isRecovery){
+    // Save token before clearing URL
+    const _tokenHash=_searchParams.get('token_hash')||_hashParams.get('token_hash')||'';
+    const _accessToken=_hashParams.get('access_token')||'';
     history.replaceState({},'','/');
-    // Show password reset form
-    supa.auth.getSession().then(({data:{session}})=>{
-      if(session){
-        // User is authenticated via recovery token - show change password screen
-        loadUserFromSupabase(session.user,false,'');
-        setTimeout(()=>{
-          toast('Set your new password in My Account → Change Password');
-          st({showAc:true,acTab:'password'});
-        },800);
-      }else{
-        st({scr:'login',err:'Reset link expired. Please request a new one.'});
-      }
-    });
+    console.log('Recovery detected — tokenHash:',_tokenHash,'accessToken:',!!_accessToken);
+    // Show reset screen immediately so user sees something
+    st({scr:'reset_password'});
+    // If we have an access_token in hash, Supabase already processed it
+    // If we have token_hash, we need to exchange it
+    if(_tokenHash){
+      supa.auth.verifyOtp({token_hash:_tokenHash,type:'recovery'})
+        .then(({data,error})=>{
+          if(error){
+            console.error('verifyOtp error:',error.message);
+            st({scr:'login',err:'Reset link expired. Please request a new one.'});
+          }else{
+            st({scr:'reset_password'});
+          }
+        }).catch(e=>{
+          console.error('verifyOtp catch:',e);
+          st({scr:'login',err:'Reset link expired. Please request a new one.'});
+        });
+    }
     return;
   }
   const _isConfirmation=(_hash.includes('access_token')&&_hash.includes('type=signup'))||
@@ -2446,7 +2466,7 @@ window.doForgot=async function(){
   if(btn){btn.disabled=true;btn.textContent='Sending...';}
   try{
     const {error}=await supa.auth.resetPasswordForEmail(email,{
-      redirectTo:'https://letsexperiencetravel.com/reset-password'
+      redirectTo:'https://letsexperiencetravel.com'
     });
     if(error){
       if(errEl)errEl.textContent=error.message;
@@ -2457,6 +2477,62 @@ window.doForgot=async function(){
   }catch(e){
     if(errEl)errEl.textContent='Something went wrong. Please try again.';
     if(btn){btn.disabled=false;btn.textContent='Send Reset Link →';}
+  }
+};
+
+
+function rResetPassword(){
+  return`<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;background:linear-gradient(135deg,#0A0A0F 0%,#12080F 60%)">
+    <div style="width:100%;max-width:400px">
+      <div style="text-align:center;font-size:52px;margin-bottom:20px">🔑</div>
+      <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:900;color:#fff;text-align:center;margin-bottom:10px">Set new password</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.55);text-align:center;margin-bottom:28px;line-height:1.6">Choose a strong password for your account.</div>
+
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.1em;margin-bottom:8px">NEW PASSWORD</label>
+        <input id="rp-pw1" type="password" placeholder="Min 6 characters"
+          style="width:100%;padding:14px 16px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;font-size:15px;color:#fff;box-sizing:border-box;outline:none"
+          onkeydown="if(event.key==='Enter')document.getElementById('rp-pw2').focus()"/>
+      </div>
+      <div style="margin-bottom:24px">
+        <label style="display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.1em;margin-bottom:8px">CONFIRM PASSWORD</label>
+        <input id="rp-pw2" type="password" placeholder="Repeat password"
+          style="width:100%;padding:14px 16px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;font-size:15px;color:#fff;box-sizing:border-box;outline:none"
+          onkeydown="if(event.key==='Enter')window.doResetPassword()"/>
+      </div>
+
+      <button onclick="window.doResetPassword()" id="rp-btn" style="display:block;width:100%;padding:15px;background:linear-gradient(135deg,#E535A0,#F5E420);border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#111;cursor:pointer;margin-bottom:12px">Update Password →</button>
+      <div id="rp-err" style="text-align:center;font-size:13px;color:#f87171;min-height:20px"></div>
+    </div>
+  </div>`;
+}
+
+window.doResetPassword=async function(){
+  const p1=document.getElementById('rp-pw1')?.value;
+  const p2=document.getElementById('rp-pw2')?.value;
+  const errEl=document.getElementById('rp-err');
+  const btn=document.getElementById('rp-btn');
+  if(!p1||p1.length<6){if(errEl)errEl.textContent='Password must be at least 6 characters';return;}
+  if(p1!==p2){if(errEl)errEl.textContent='Passwords do not match';return;}
+  if(errEl)errEl.textContent='';
+  if(btn){btn.disabled=true;btn.textContent='Updating...';}
+  try{
+    const {error}=await supa.auth.updateUser({password:p1});
+    if(error){
+      if(errEl)errEl.textContent=error.message;
+      if(btn){btn.disabled=false;btn.textContent='Update Password →';}
+    }else{
+      toast('✓ Password updated successfully!');
+      // Small delay then load session
+      setTimeout(async()=>{
+        const {data:{session}}=await supa.auth.getSession();
+        if(session)loadUserFromSupabase(session.user,false,'');
+        else st({scr:'login',err:'Password updated! Please log in with your new password.'});
+      },500);
+    }
+  }catch(e){
+    if(errEl)errEl.textContent='Something went wrong. Please try again.';
+    if(btn){btn.disabled=false;btn.textContent='Update Password →';}
   }
 };
 
@@ -2478,6 +2554,7 @@ function render(){
     case 'share_card':h=rShareCard();break;
     case 'privacy':h=rPrivacy();break;
     case 'forgot':h=rForgot();break;
+    case 'reset_password':h=rResetPassword();break;
     default:h=rLogin();
   }
   h=rBnr()+h;
