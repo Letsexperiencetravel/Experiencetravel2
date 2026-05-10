@@ -20,7 +20,7 @@
 <link rel="icon" type="image/x-icon" href="/favicon.ico"/>
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png"/>
 <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png"/>
-<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
 .dsh{overflow:visible;word-wrap:break-word;overflow-wrap:break-word;}
@@ -2736,4 +2736,14 @@ function render(){
 loadState();
 checkSession();
 checkA2HS();
+
+// Lock to portrait on mobile
+if(window.screen && window.screen.orientation && window.screen.orientation.lock){
+  window.screen.orientation.lock('portrait').catch(function(){});
+}
+window.addEventListener('orientationchange',function(){
+  if(window.screen && window.screen.orientation && window.screen.orientation.lock){
+    window.screen.orientation.lock('portrait').catch(function(){});
+  }
+});
 </script></body></html>
