@@ -1457,29 +1457,55 @@ function doSearch(){
   if(dealBreakers) rules+='\n- '+dealBreakers+'. Exclude ANY destination with these — this is mandatory.';
   if(budget) rules+='\n- Budget context: '+budget.split(': ').slice(1).join(': ')+'. Only recommend destinations that fit.';
 
-  const prompt='You are a world-class '+(isST?'travel':'relocation')+' expert who gives deeply personalised recommendations. Your recommendations MUST be completely different for different profiles — a retiree and a student should NEVER get the same cities.\n\n'
-    +(isST?'TRIP PROFILE':'RELOCATION PROFILE')+':'+'\n'+quizLines.join('\n')
-    +(fuLines.length?'\n\nFOLLOW-UP ANSWERS:\n'+fuLines.join('\n'):'')
-    +'\n\nCRITICAL PERSONALISATION RULES:'+rules
-    +'\n- The highlights field must explain specifically WHY this destination fits THIS person — not generic facts.'
-    +'\n- If retirement: recommend calm lifestyle, healthcare, low cost, expat retirement communities.'
-    +'\n- If education: recommend university cities, student culture, affordable living.'
-    +'\n- If career/remote work: recommend coworking, fast internet, tech scenes.'
-    +'\n- If adventure: recommend outdoor activities, varied terrain, active scenes.'
-    +'\n- Score differences MUST be meaningful — spread scores across a real range.'
-    +'\n\nRecommend the 4 best '+(isST?'short-term travel destinations':'cities to relocate to long-term')+' for this specific person.'
-    +'\n\nReturn ONLY valid JSON — no markdown, no explanation:\n{"results":[{"city":"City Name","country":"Country Name","flag":"🇵🇹","score":95,"scoreLabel":"Exceptional Match","highlights":["Specific reason for this person 1","Specific reason 2","Specific reason 3","Specific reason 4"]}]}';
+  // ── Build enriched prompt ───────────────────────────────
+  const tripType=isST?'short-term travel':'long-term relocation';
+
+  // All follow-up answers
+  const allFuLines=fuLines.join('\n');
+
+  // Key signals
+  const hasCountry=fuLines.find(l=>l.toLowerCase().includes('countries in mind'))||'';
+  const countryHint=hasCountry?hasCountry.split(': ').slice(1).join(': '):'';
+  const moveReason2=fuLines.find(l=>l.includes('moving abroad')||l.includes('Why are you moving'))||'';
+  const tripKind=fuLines.find(l=>l.includes('kind of trip'))||'';
+  const budget2=fuLines.find(l=>l.includes('budget'))||quizLines.find(l=>l.includes('Budget'))||'';
+  const duration=fuLines.find(l=>l.includes('long')&&(l.includes('stay')||l.includes('trip')))||'';
+  const dealBreakers2=quizLines.find(l=>l.includes('DEAL-BREAKER'))||'';
+  const climate2=quizLines.find(l=>l.includes('climate')||l.includes('Climate'))||'';
+  const work2=quizLines.find(l=>l.includes('work')||l.includes('Work')||l.includes('remote'))||'';
+  const companions=fuLines.find(l=>l.includes('traveling with')||l.includes('moving with'))||'';
+
+  const mandatoryRules=[];  if(countryHint)mandatoryRules.push('User expressed interest in: '+countryHint+'. Strongly prioritise destinations in or near this region.');  if(moveReason2)mandatoryRules.push('Primary motivation: '+moveReason2+'. Every recommendation must directly serve this.');  if(tripKind)mandatoryRules.push('Trip type desired: '+tripKind+'. Match destinations exactly.');  if(budget2)mandatoryRules.push('Budget: '+budget2+'. ONLY recommend destinations where this budget is comfortable.');  if(duration)mandatoryRules.push('Duration: '+duration+'. Factor visa requirements for this timeframe.');  if(climate2)mandatoryRules.push('Climate requirement: '+climate2+'. Exclude any destination that fails this.');  if(dealBreakers2)mandatoryRules.push(dealBreakers2+'. ABSOLUTE exclusions — forbidden destinations.');  if(companions)mandatoryRules.push('Travelling with: '+companions+'. Recommendations must suit this group.');  if(work2)mandatoryRules.push('Work: '+work2+'. Factor coworking, internet speed, and time zones.');
+
+  const prompt='You are a world-class '+(isST?'travel':'relocation')+' expert with deep real-world knowledge. Use your most current knowledge of destinations worldwide.\n\n'
+    +(isST?'TRIP':'RELOCATION')+' PROFILE:\n'+quizLines.join('\n')
+    +(allFuLines?'\n\nFOLLOW-UP DETAILS:\n'+allFuLines:'')
+    +'\n\nSCORING RULES:\n- Scores must span a real range (e.g. 94, 87, 79, 71) — never cluster them\n- Score 90+: nearly perfect match. Score 70-79: good match. Never recommend below 70\n- Labels: Perfect Match (95+), Exceptional Match (88-94), Excellent Match (80-87), Great Match (70-79)'
+    +(mandatoryRules.length?'\n\nMANDATORY PERSONALISATION:\n- '+mandatoryRules.join('\n- '):'')
+    +'\n\n- Highlights must explain WHY this city fits THIS specific person — no generic facts\n- A retiree on $2k/mo and a 25yo remote worker must never get the same cities'
+    +'\n\nFor each destination return these exact JSON fields with accurate current data:\n'
+    +'- costOfLiving: {monthly:"e.g. $1,800-$2,400/mo all-in", rent:"e.g. $600-$900/mo 1BR", food:"e.g. $300-$500/mo"}\n'
+    +'- visaInfo: {difficulty:"Easy/Moderate/Complex", summary:"best visa option for this person in 1 sentence", duration:"e.g. 90 days visa-free"}\n'
+    +'- safety: {rating:"High/Good/Moderate", note:"1 sentence safety context for this traveller type"}\n'
+    +'- neighbourhoods: ["Area 1 — why it suits you","Area 2 — why it suits you"]\n'
+    +(isST?'- bestTimeToVisit: "e.g. Oct-Apr, avoid Jun-Sep monsoon"\n':'')
+    +'\nRecommend the 4 best '+(isST?'short-term travel destinations':'cities to relocate to')+' for this person.\n'
+    +'Return ONLY valid JSON:\n'
+    +'{"results":[{"city":"City","country":"Country","flag":"\ud83c\uddf5\ud83c\uddf9","score":92,"scoreLabel":"Exceptional Match","highlights":["Reason 1","Reason 2","Reason 3","Reason 4"],"costOfLiving":{"monthly":"$1,800-$2,400/mo","rent":"$700-$1,000/mo 1BR","food":"$300-$450/mo"},"visaInfo":{"difficulty":"Easy","summary":"90-day visa-free for most passports","duration":"90 days visa-free"},"safety":{"rating":"High","note":"Safe for solo travellers"},"neighbourhoods":["Neighbourhood 1 — reason","Neighbourhood 2 — reason"],"bestTimeToVisit":"Nov-Apr"}]}';
 
   fetch('/api/proxy',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
-      model:'claude-haiku-4-5-20251001',
-      max_tokens:1500,
+      model:'claude-sonnet-4-20250514',
+      max_tokens:4000,
+      tools:[{type:'web_search_20250305',name:'web_search'}],
       messages:[{role:'user',content:prompt}]
     })
   }).then(r=>r.json()).then(data=>{
-    const txt=(data.content&&data.content[0]&&data.content[0].text)||'';
+    const txt=data.content
+      ?data.content.filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('')
+      :'';
     const s=txt.indexOf('{'),e=txt.lastIndexOf('}')+1;
     if(s>=0&&e>0){
       try{
