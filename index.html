@@ -1215,7 +1215,7 @@ function doFP(){
   });
 }
 function rReg(){const d=S.reg,step=d._step||1,b=S.bdDis?0:BH,fe=d._fe||{};return`<div class="pg pg-w" style="padding-top:${b+20}px"><div style="width:100%;max-width:440px"><div style="text-align:center;margin-bottom:20px">${logo()}<div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:#111;margin-top:10px">Experience <em style="color:${P};font-style:normal">Travel</em></div></div><div class="lc"><div class="dots"><div class="dot ${step>=1?'on':''}"></div><div class="dot ${step>=2?'on':''}"></div></div><p style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#111;margin-bottom:4px">Create Account</p><p style="color:#888;font-size:13.5px;margin-bottom:18px">Step ${step} of 2 — ${step===1?'Your Details':'Set Your Password'}</p>${step===1?`<div class="r2"><div class="fgrp"><label>First Name</label><input class="inp" id="rfn" type="text" placeholder="Jane" value="${d.fn||''}"/>${fe.fn?`<div class="ferr">⚠ ${fe.fn}</div>`:''}</div><div class="fgrp"><label>Last Name</label><input class="inp" id="rln" type="text" placeholder="Smith" value="${d.ln||''}"/>${fe.ln?`<div class="ferr">⚠ ${fe.ln}</div>`:''}</div></div><div class="fgrp"><label>Email</label><input class="inp" id="rem" type="email" placeholder="jane@email.com" value="${d.em||''}"/>${fe.em?`<div class="ferr">⚠ ${fe.em}</div>`:''}</div><div class="fgrp"><label>Phone</label><input class="inp" id="rph" type="tel" placeholder="+1 (555) 000-0000" value="${d.ph||''}"/>${fe.ph?`<div class="ferr">⚠ ${fe.ph}</div>`:''}</div><div class="fgrp"><label>Country of Origin</label><input class="inp" id="rco" type="text" placeholder="e.g. United States" value="${d.co||''}"/>${fe.co?`<div class="ferr">⚠ ${fe.co}</div>`:''}</div><div class="fgrp"><label>City</label><input class="inp" id="rcy" type="text" placeholder="e.g. New York" value="${d.cy||''}"/>${fe.cy?`<div class="ferr">⚠ ${fe.cy}</div>`:''}</div><div class="fgrp"><label>Date of Birth</label><input class="inp" id="rbday" type="date" value="${d.bday||''}" style="color:#333"/></div>${bY('Continue →','rs1()')}`:`<div class="fgrp"><label>New Password</label><input class="inp" id="rp1" type="password" placeholder="Min 6 characters" oninput="upS()"/>${fe.p1?`<div class="ferr">⚠ ${fe.p1}</div>`:''}<div id="pwstr"></div></div><div class="fgrp"><label>Confirm Password</label><input class="inp" id="rp2" type="password" placeholder="Confirm password"/>${fe.p2?`<div class="ferr">⚠ ${fe.p2}</div>`:''}</div>${bY('Continue →','rs2()')}${bPo('← Back',"st({reg:{...S.reg,_step:1,_fe:{}}})")}`}<p style="text-align:center;margin-top:14px;font-size:13px;color:#888">Have an account? <span style="cursor:pointer;font-weight:600;color:${P}" onclick="st({scr:'login',err:null})">Sign In</span></p>
-<div style="text-align:center;padding:12px 0 4px"><span style="font-size:11px;color:rgba(255,255,255,.4)">By continuing you agree to our </span><button onclick="st({scr:'privacy',prevScr:'reg'})" style="background:none;border:none;color:#E535A0;font-size:11px;cursor:pointer;text-decoration:underline">Privacy Policy</button></div>
+<div style="text-align:center;padding:12px 0 4px"><span style="font-size:11px;color:rgba(255,255,255,.4)">By continuing you agree to our </span><button onclick="st({scr:'privacy',prevScr:'reg'})" style="background:none;border:none;color:#E535A0;font-size:11px;cursor:pointer;text-decoration:underline">Privacy Policy</button><span style="font-size:11px;color:rgba(255,255,255,.4)"> &amp; </span><button onclick="st({scr:'terms',prevScr:'reg'})" style="background:none;border:none;color:#E535A0;font-size:11px;cursor:pointer;text-decoration:underline">Terms</button></div>
 </div></div></div>`}
 function pwS(v){
   if(!v)return{sc:0,lb:'',co:'#ccc'};
@@ -2031,7 +2031,7 @@ ${tab==='info'?`<div class="asec"><h4>Personal Info</h4>${S.acMsg?`<div style="p
 ${tab==='password'?`<div class="asec"><h4>Change Password</h4>${S.acPwMsg?`<div style="padding:8px 12px;border-radius:8px;font-size:12.5px;margin-bottom:12px;${S.acPwMsg.startsWith('✓')?'background:rgba(34,197,94,.12);color:#86EFAC;':'background:rgba(239,68,68,.15);color:#FCA5A5;'}">${S.acPwMsg}</div>`:''}<div class="fgdk" style="margin-bottom:9px"><label>Current Password</label><input class="inp-dk" id="pwc" type="password" placeholder="Current password"/></div><div class="fgdk" style="margin-bottom:4px"><label>New Password</label><input class="inp-dk" id="pw1" type="password" placeholder="Min 6 characters" oninput="upAcS()"/></div><div id="acpwstr" style="margin-bottom:9px"></div><div class="fgdk" style="margin-bottom:12px"><label>Confirm New Password</label><input class="inp-dk" id="pw2" type="password" placeholder="Confirm password"/></div><button onclick="chPw()" style="display:block;width:100%;padding:10px 18px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Update Password</button></div>`:''}
 ${tab==='profile'?`<div class="asec"><h4>Quiz Profile</h4><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div style="flex:1;background:var(--D3);border-radius:8px;overflow:hidden;height:6px"><div style="height:100%;background:linear-gradient(90deg,${Y},${P});width:${Math.round(Object.keys(S.ans).length/30*100)}%"></div></div><span style="font-size:12px;color:rgba(255,255,255,.5)">${Object.keys(S.ans).length}/30</span></div><p style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.6;margin-bottom:16px">Retake anytime to update and get fresh results.</p><button onclick="st({scr:'quiz_intro',ans:{},qi:0,showAc:false})" style="display:block;width:100%;padding:10px 18px;background:var(--D3);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff;cursor:pointer">Retake Quiz</button></div>`:''}
 ${!S.isPro?`<div class="asec"><button onclick="st({showPW:true,showAc:false})" style="display:block;width:100%;padding:10px 18px;background:${Y};color:${DK};border:2.5px solid #D4C000;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Upgrade to Pro — Unlimited Searches</button></div>`:''}
-<div style="padding:8px 18px 2px"><button onclick="st({scr:'privacy',prevScr:'dash'})" style="background:none;border:none;color:#888;font-size:13px;cursor:pointer;padding:0;text-decoration:underline">Privacy Policy</button></div>
+<div style="padding:8px 18px 2px"><button onclick="st({scr:'privacy',prevScr:'dash'})" style="background:none;border:none;color:#888;font-size:13px;cursor:pointer;padding:0;text-decoration:underline">Privacy Policy</button> &nbsp;<button onclick="st({scr:'terms',prevScr:'dash'})" style="background:none;border:none;color:#888;font-size:13px;cursor:pointer;padding:0;text-decoration:underline">Terms</button></div>
 <div style="padding:14px 18px">${bPo('Sign Out',"supa.auth.signOut();st({scr:'login',user:null,showAc:false,freeCnt:0,proCnt:0,topupCount:0,isPro:false,lc:0})")}</div>
 </div></div>`}
 window.upAcS=function(){const el=document.getElementById('acpwstr');if(!el)return;const v=document.getElementById('pw1')?.value||'';const{sc,lb,co}=pwS(v);if(sc>0){const sg=Array.from({length:4},(_,i)=>`<div class="pws-s ${i<sc?(sc<=1?'wk':sc<=2?'fr':'gd'):''}"></div>`).join('');el.innerHTML=`<div class="pws">${sg}</div><div style="font-size:10px;font-weight:600;color:${co};margin-top:4px">${lb}</div>`}else el.innerHTML=''};
@@ -2699,6 +2699,44 @@ function triggerAndroidInstall(){
   }else{hideA2HS();}
 }
 
+
+function rTerms(){
+  return`<div class="pg" style="min-height:100vh;background:#fff;color:#333">
+    <div style="position:sticky;top:0;background:#fff;border-bottom:1px solid #eee;padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:10">
+      <button onclick="st({scr:S.prevScr||'login'})" style="background:none;border:none;font-size:22px;cursor:pointer;color:#333;padding:0">\u2190</button>
+      <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#111">Terms of Service</div>
+    </div>
+    <div style="padding:24px 20px;max-width:700px;margin:0 auto;font-size:14px;line-height:1.7;color:#595959">
+      <div style="font-size:22px;font-weight:700;color:#111;margin-bottom:6px">Terms of Service</div>
+      <div style="color:#888;margin-bottom:24px">Last updated May 2026</div>
+      <p>Welcome to Experience Travel, operated by Experience Reality. By using letsexperiencetravel.com you agree to these Terms.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">1. Acceptance</h2>
+      <p>By creating an account you confirm you are at least 18 years old and agree to these Terms.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">2. Service Description</h2>
+      <p>Experience Travel is an AI-powered destination matching app. Results are informational only and should be verified before making travel or relocation decisions.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">3. User Accounts</h2>
+      <p>You are responsible for your account credentials. Notify us immediately of any unauthorised use. We may suspend accounts that violate these Terms.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">4. Subscriptions & Payments</h2>
+      <p>Pro subscriptions are billed on a recurring basis via Stripe. Fees are non-refundable except where required by law. Cancel anytime in account settings.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">5. AI-Generated Content</h2>
+      <p>Matches and recommendations are AI-generated and may not always be accurate. Experience Travel is not liable for decisions made based on our content.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">6. Acceptable Use</h2>
+      <p>You agree not to use the app for unlawful purposes, reverse engineer the service, scrape data, share your account, or submit harmful content.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">7. Intellectual Property</h2>
+      <p>All content, branding, and code is the property of Experience Reality. No reproduction without written permission.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">8. Disclaimers</h2>
+      <p>Experience Travel is provided "as is." We do not guarantee accuracy. Always verify visa requirements, costs, and travel conditions with official sources.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">9. Limitation of Liability</h2>
+      <p>To the fullest extent permitted by law, Experience Reality is not liable for indirect or consequential damages arising from use of the app.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">10. Governing Law</h2>
+      <p>These Terms are governed by the laws of the State of Delaware, United States.</p>
+      <h2 style="font-size:16px;font-weight:700;color:#111;margin-top:28px">11. Contact</h2>
+      <p>Questions? <a href="mailto:contact@theexperiencereality.com" style="color:#E535A0">contact@theexperiencereality.com</a></p>
+      <div style="margin-top:32px;padding-top:20px;border-top:1px solid #eee;font-size:12px;color:#aaa">\u00a9 2026 Experience Reality. All rights reserved.</div>
+    </div>
+  </div>`;
+}
+
 function render(){
   // Dismiss splash
   const _sp=document.getElementById('et-splash');
@@ -2722,6 +2760,7 @@ function render(){
     case 'search_error':h=rSearchError();break;
     case 'share_card':h=rShareCard();break;
     case 'privacy':h=rPrivacy();break;
+    case 'terms':h=rTerms();break;
     case 'forgot':h=rForgot();break;
     case 'reset_password':h=rResetPassword();break;
     default:h=rLogin();
