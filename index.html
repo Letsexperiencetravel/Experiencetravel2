@@ -1126,33 +1126,41 @@ function checkSession(){
   const _searchParams=new URLSearchParams(_search);
   const _isRecovery=(
     (_hash.includes('type=recovery'))||
+    (_hash.includes('type%3Drecovery'))||
     (_search.includes('type=recovery'))||
-    (window.location.pathname==='/reset-password')
+    (_search.includes('type%3Drecovery'))||
+    (window.location.pathname==='/reset-password')||
+    (_searchParams.get('type')==='recovery')
   );
   if(_isRecovery){
     const _tokenHash=_searchParams.get('token_hash')||_hashParams.get('token_hash')||'';
     // Show loading spinner while we verify the token
     st({scr:'reset_password',resetReady:false});
     (async()=>{
-      // Check if Supabase already auto-processed the token
-      const {data:{session:s0}}=await supa.auth.getSession();
-      if(s0&&s0.user){
-        history.replaceState({},'','/');
-        st({scr:'reset_password',resetReady:true});
-        return;
-      }
-      // Exchange token manually
+      // Try verifyOtp first if we have a token_hash (PKCE flow)
       if(_tokenHash){
         const {data,error}=await supa.auth.verifyOtp({token_hash:_tokenHash,type:'recovery'});
         history.replaceState({},'','/');
         if(error){
-          st({scr:'login',err:'Reset link expired or already used. Please request a new one.'});
+          // Maybe already processed - check session
+          const {data:{session:s0}}=await supa.auth.getSession();
+          if(s0&&s0.user){
+            st({scr:'reset_password',resetReady:true});
+          }else{
+            st({scr:'login',err:'Reset link expired or already used. Please request a new one.'});
+          }
         }else{
           st({scr:'reset_password',resetReady:true});
         }
+        return;
+      }
+      // No token_hash - check if Supabase already auto-processed via hash
+      const {data:{session:s1}}=await supa.auth.getSession();
+      history.replaceState({},'','/');
+      if(s1&&s1.user){
+        st({scr:'reset_password',resetReady:true});
       }else{
-        history.replaceState({},'','/');
-        st({scr:'login',err:'Invalid reset link. Please request a new one.'});
+        st({scr:'login',err:'Invalid or expired reset link. Please request a new one.'});
       }
     })();
     return;
@@ -2441,7 +2449,7 @@ window.shareCardNow=function(){
 function rPrivacy(){
   return`<div class="pg" style="min-height:100vh;background:#fff;color:#333">
     <div style="position:sticky;top:0;background:#fff;border-bottom:1px solid #eee;padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:10">
-      <button onclick="history.back?history.back():st({scr:S.prevScr||'login'})" style="background:none;border:none;font-size:22px;cursor:pointer;color:#333;padding:0">←</button>
+      <button onclick="st({scr:S.prevScr||'login'})" style="background:none;border:none;font-size:22px;cursor:pointer;color:#333;padding:0">←</button>
       <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#111">Privacy Policy</div>
     </div>
     <div style="padding:24px 20px;max-width:700px;margin:0 auto;font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#595959">
