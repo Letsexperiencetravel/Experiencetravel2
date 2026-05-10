@@ -306,8 +306,8 @@ window.addEventListener('appinstalled',()=>{
 function initAuthListener(){
   supa.auth.onAuthStateChange((event,session)=>{
     if(event==='PASSWORD_RECOVERY'&&session){
-      // User clicked reset link - show password reset screen
-      st({scr:'reset_password'});
+      history.replaceState({},'','/');
+      st({scr:'reset_password',resetReady:true});
       return;
     }
     if(event==='SIGNED_IN'&&session&&!S.user?.id){
@@ -1130,29 +1130,31 @@ function checkSession(){
     (window.location.pathname==='/reset-password')
   );
   if(_isRecovery){
-    // Save token before clearing URL
     const _tokenHash=_searchParams.get('token_hash')||_hashParams.get('token_hash')||'';
-    const _accessToken=_hashParams.get('access_token')||'';
-    history.replaceState({},'','/');
-    console.log('Recovery detected — tokenHash:',_tokenHash,'accessToken:',!!_accessToken);
-    // Show reset screen immediately so user sees something
-    st({scr:'reset_password'});
-    // If we have an access_token in hash, Supabase already processed it
-    // If we have token_hash, we need to exchange it
-    if(_tokenHash){
-      supa.auth.verifyOtp({token_hash:_tokenHash,type:'recovery'})
-        .then(({data,error})=>{
-          if(error){
-            console.error('verifyOtp error:',error.message);
-            st({scr:'login',err:'Reset link expired. Please request a new one.'});
-          }else{
-            st({scr:'reset_password'});
-          }
-        }).catch(e=>{
-          console.error('verifyOtp catch:',e);
-          st({scr:'login',err:'Reset link expired. Please request a new one.'});
-        });
-    }
+    // Show loading spinner while we verify the token
+    st({scr:'reset_password',resetReady:false});
+    (async()=>{
+      // Check if Supabase already auto-processed the token
+      const {data:{session:s0}}=await supa.auth.getSession();
+      if(s0&&s0.user){
+        history.replaceState({},'','/');
+        st({scr:'reset_password',resetReady:true});
+        return;
+      }
+      // Exchange token manually
+      if(_tokenHash){
+        const {data,error}=await supa.auth.verifyOtp({token_hash:_tokenHash,type:'recovery'});
+        history.replaceState({},'','/');
+        if(error){
+          st({scr:'login',err:'Reset link expired or already used. Please request a new one.'});
+        }else{
+          st({scr:'reset_password',resetReady:true});
+        }
+      }else{
+        history.replaceState({},'','/');
+        st({scr:'login',err:'Invalid reset link. Please request a new one.'});
+      }
+    })();
     return;
   }
   const _isConfirmation=(_hash.includes('access_token')&&_hash.includes('type=signup'))||
@@ -2543,6 +2545,14 @@ window.doForgot=async function(){
 
 
 function rResetPassword(){
+  if(!S.resetReady&&S.resetReady!==undefined){
+    return`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0A0A0F 0%,#12080F 60%)">
+      <div style="text-align:center">
+        <div style="width:44px;height:44px;border:3px solid rgba(229,53,160,.2);border-top-color:#E535A0;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px"></div>
+        <div style="font-size:15px;color:rgba(255,255,255,.5)">Verifying reset link...</div>
+      </div>
+    </div>`;
+  }
   return`<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;background:linear-gradient(135deg,#0A0A0F 0%,#12080F 60%)">
     <div style="width:100%;max-width:400px">
       <div style="text-align:center;font-size:52px;margin-bottom:20px">🔑</div>
@@ -2578,6 +2588,14 @@ window.doResetPassword=async function(){
   if(errEl)errEl.textContent='';
   if(btn){btn.disabled=true;btn.textContent='Updating...';}
   try{
+    // Confirm session is active before updating
+    const {data:{session:activeSess}}=await supa.auth.getSession();
+    if(!activeSess){
+      if(errEl)errEl.textContent='Session expired. Please request a new password reset link.';
+      if(btn){btn.disabled=false;btn.textContent='Update Password →';}
+      setTimeout(()=>st({scr:'forgot'}),2500);
+      return;
+    }
     const {error}=await supa.auth.updateUser({password:p1});
     if(error){
       if(errEl)errEl.textContent=error.message;
