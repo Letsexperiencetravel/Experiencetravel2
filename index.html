@@ -737,9 +737,8 @@ function sendRemovalEmail(toEmail,city,flag,fromName){
     subject:'Your access to '+flag+' '+city+' has been removed',
     html:'<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:20px">'
       +'<h2 style="color:#E535A0">'+flag+' Access Removed</h2>'
-      +'<p><strong>'+fromName+'</strong> has removed your access to the <strong>'+city+'</strong> trip plan on Experience Travel.</p>'
+      +'<p><strong>'+fromName+'</strong> has removed your access to the <strong>'+city+'</strong> trip plan.</p>'
       +'<p style="color:#888;font-size:13px">This destination has been removed from your saved destinations.</p>'
-      +'<p style="color:#888;font-size:13px">If you think this was a mistake, reach out to '+fromName+' directly.</p>'
       +'<hr style="border:none;border-top:1px solid #eee;margin:20px 0">'
       +'<p style="color:#aaa;font-size:11px">Experience Travel · letsexperiencetravel.com</p>'
       +'</div>'
@@ -815,43 +814,27 @@ window.removeSharePerson=function(idOrEl,email){
   const sd=S.shareData[id];
   const saved=S.saved.find(x=>x.id===id);
   if(sd&&em){
-    const removedPerson=(sd.people||[]).find(p=>p.email===em);
     sd.people=(sd.people||[]).filter(p=>p.email!==em);
     S.shareData[id]=sd;
     saveState();
     syncDestinationToSupabase(id);
     if(sd.token&&S.user?.id){
-      // 1. Update shared_trips people list
+      // Update shared_trips people list
       supa.from('shared_trips').update({people:JSON.stringify(sd.people)})
         .eq('token',sd.token).then(()=>{}).catch(()=>{});
-      // 2. Delete from recipient's saved_destinations
-      // Query shared_trips to get the freshest people list (has userId stored on join)
-      const deleteRecipientDest=(recipientUserId)=>{
-        supa.from('saved_destinations').delete()
-          .eq('user_id',recipientUserId).eq('city_id',id)
-          .then(()=>console.log('Removed shared dest from recipient',em))
-          .catch(e=>console.warn('Remove recipient dest error:',e));
-      };
-      if(removedPerson?.userId){
-        // userId was stored when they joined — use directly
-        deleteRecipientDest(removedPerson.userId);
-      } else {
-        // Fall back: query shared_trips for latest people list with userId
-        supa.from('shared_trips').select('people').eq('token',sd.token).maybeSingle()
-          .then(({data})=>{
-            if(data?.people){
-              const latest=JSON.parse(typeof data.people==='string'?data.people:JSON.stringify(data.people)||'[]');
-              const match=latest.find(p=>p.email===em);
-              if(match?.userId){deleteRecipientDest(match.userId);}
-              else{
-                // Last resort: look up by email in profiles
-                supa.from('profiles').select('id').eq('email',em).maybeSingle()
-                  .then(({data:prof})=>{if(prof?.id)deleteRecipientDest(prof.id);}).catch(()=>{});
-              }
-            }
-          }).catch(()=>{});
-      }
-      // 3. Send removal notification email
+      // Call server-side endpoint to delete recipient's row (bypasses RLS)
+      fetch('/api/remove-shared-dest',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({recipientEmail:em,cityId:id,requestingUserId:S.user.id})
+      })
+      .then(r=>r.json())
+      .then(d=>{
+        if(d.deleted)console.log('Removed shared dest from',em);
+        else console.log('Remove-shared-dest:',d.reason||'not deleted');
+      })
+      .catch(e=>console.warn('remove-shared-dest error:',e));
+      // Send removal notification email
       if(saved){
         const fromName=S.user?.firstName||S.user?.name||'Someone';
         sendRemovalEmail(em,saved.city,saved.flag||'',fromName);
@@ -1065,7 +1048,7 @@ function acceptSharedTrip(){
   // Store share token so recipient can push edits back
   if(!S.shareData[item.id])S.shareData[item.id]={people:[]};
   S.shareData[item.id].token=share.token;
-  S.shareData[item.id].isReceivedShare=true; // flag: this was shared with me, not owned by me
+  S.shareData[item.id].isReceivedShare=true;
   // Add to saved list
   if(!S.sIds.has(item.id)){
     S.saved=[...S.saved,item];
@@ -1746,7 +1729,6 @@ function sC(e,city,country,idx){
   const ns=new Set(S.sIds);
   if(ns.has(k)&&!S.archived[k]){ns.delete(k);S.saved=S.saved.filter(x=>x.id!==k)}
   else if(ns.has(k)&&S.archived[k]){
-    // Already saved but archived — unarchive it instead of removing
     delete S.archived[k];
     if(S.user?.id){supa.from('saved_destinations').update({is_archived:false}).eq('user_id',S.user.id).eq('city_id',k).then(()=>{}).catch(()=>{});}
     saveState();render();toast(k.split('-')[0]+' restored to active trips');return;
@@ -1869,7 +1851,7 @@ function genToken(){return Math.random().toString(36).slice(2,10)+Math.random().
 
 window.archiveTrip=function(id){
   event?.stopPropagation?.();
-  S.archived[id]=Date.now(); // store timestamp instead of boolean
+  S.archived[id]=Date.now();
   saveState();
   if(S.user?.id){
     supa.from('saved_destinations').update({is_archived:true,archived_at:new Date().toISOString()})
@@ -1907,7 +1889,7 @@ window.unarchiveTrip=function(id){
 function rSv(){
 const svTabMode=S.svTab||'active';
 const activeItems=S.saved.filter(x=>!S.archived[x.id]);
-const archivedItems=S.saved.filter(x=>!!S.archived[x.id]); // archived[id] is timestamp or legacy true
+const archivedItems=S.saved.filter(x=>!!S.archived[x.id]);
 const lS=activeItems.filter(x=>x.tt==='lt'),sS=activeItems.filter(x=>x.tt==='st'),tot=activeItems.length;
 const cmpLT=S.cmpSel.filter(x=>x.tt==='lt'),cmpST=S.cmpSel.filter(x=>x.tt==='st');
 const rqDone=Object.keys(S.rqA).length>=6;
