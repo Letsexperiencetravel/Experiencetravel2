@@ -731,6 +731,24 @@ function sendShareEmail(toEmail,city,flag,token,note,perm){
     .then(d=>{if(d.error)console.warn('Email error:',d.error);else console.log('Email sent to',toEmail);})
     .catch(e=>console.warn('Email send failed:',e));
 }
+function sendRemovalEmail(toEmail,city,flag,fromName){
+  const body={
+    to:toEmail,
+    subject:'Your access to '+flag+' '+city+' has been removed',
+    html:'<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:20px">'
+      +'<h2 style="color:#E535A0">'+flag+' Access Removed</h2>'
+      +'<p><strong>'+fromName+'</strong> has removed your access to the <strong>'+city+'</strong> trip plan on Experience Travel.</p>'
+      +'<p style="color:#888;font-size:13px">This destination has been removed from your saved destinations.</p>'
+      +'<p style="color:#888;font-size:13px">If you think this was a mistake, reach out to '+fromName+' directly.</p>'
+      +'<hr style="border:none;border-top:1px solid #eee;margin:20px 0">'
+      +'<p style="color:#aaa;font-size:11px">Experience Travel · letsexperiencetravel.com</p>'
+      +'</div>'
+  };
+  fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(r=>r.json())
+    .then(d=>{if(d.error)console.warn('Removal email error:',d.error);else console.log('Removal email sent to',toEmail);})
+    .catch(e=>console.warn('Removal email failed:',e));
+}
 window.addSharePerson=function(id){
   const inp=document.getElementById('sh-email');
   if(!inp||!inp.value.trim()){toast('Please enter a name or email');return;}
@@ -797,15 +815,41 @@ window.removeSharePerson=function(idOrEl,email){
   const id=typeof idOrEl==='string'?idOrEl:(idOrEl?.dataset?.id||S.shareId);
   const em=email||(typeof idOrEl==='object'?idOrEl?.dataset?.email:'');
   const sd=S.shareData[id];
+  const saved=S.saved.find(x=>x.id===id);
   if(sd&&em){
+    // Find the person record before removing (to get their userId if they joined)
+    const removedPerson=(sd.people||[]).find(p=>p.email===em);
     sd.people=(sd.people||[]).filter(p=>p.email!==em);
     S.shareData[id]=sd;
     saveState();
     syncDestinationToSupabase(id);
     if(sd.token&&S.user?.id){
+      // Update shared_trips people list
       supa.from('shared_trips').update({people:JSON.stringify(sd.people)})
         .eq('token',sd.token).then(()=>{}).catch(()=>{});
+      // Delete destination from recipient's saved_destinations
+      // Try userId stored at join time first, fall back to email lookup via profiles
+      const doDelete=(recipientId)=>{
+        supa.from('saved_destinations').delete()
+          .eq('user_id',recipientId).eq('city_id',id)
+          .then(()=>console.log('Removed shared dest from',em))
+          .catch(e=>console.warn('Remove recipient dest error:',e));
+      };
+      if(removedPerson?.userId){
+        doDelete(removedPerson.userId);
+      } else {
+        // Fall back: look up by email in profiles table
+        supa.from('profiles').select('id').eq('email',em).maybeSingle()
+          .then(({data:profile})=>{if(profile?.id)doDelete(profile.id);})
+          .catch(()=>{});
+      }
+      // Send removal notification email
+      if(saved){
+        const fromName=S.user?.firstName||S.user?.name||'Someone';
+        sendRemovalEmail(em,saved.city,saved.flag||'',fromName);
+      }
     }
+    toast('Access removed — '+em+' notified by email');
   }
   openShareDirect(id);
 }
@@ -1025,7 +1069,7 @@ function acceptSharedTrip(){
   if(share.token&&S.user?.email){
     try{
       const people=JSON.parse(share.people||'[]');
-      const updated=people.map(p=>p.email===S.user?.email?{...p,joined:true}:p);
+      const updated=people.map(p=>p.email===S.user?.email?{...p,joined:true,userId:S.user.id}:p);
       supa.from('shared_trips').update({people:JSON.stringify(updated)})
         .eq('token',share.token).then(()=>{}).catch(()=>{});
     }catch(e){}
