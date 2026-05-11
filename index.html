@@ -230,7 +230,8 @@ async function supaSaveDestination(userId,item){
       user_id:userId,city_id:item.id,city:item.city,
       country:item.country,flag:item.flag,score:item.score,
       score_label:item.scoreLabel,trip_type:item.tt,
-      notes_data:notes||null,share_data:share||null,dest_data:{highlights:item.highlights||[],costOfLiving:item.costOfLiving||null,visaInfo:item.visaInfo||null,safety:item.safety||null,neighbourhoods:item.neighbourhoods||[],bestTimeToVisit:item.bestTimeToVisit||null}
+      notes_data:notes||null,share_data:share||null,
+      dest_data:{highlights:item.highlights||[],costOfLiving:item.costOfLiving||null,visaInfo:item.visaInfo||null,safety:item.safety||null,neighbourhoods:item.neighbourhoods||[],bestTimeToVisit:item.bestTimeToVisit||null}
     };
     // Try update first, then insert if not exists
     const {data:existing,error:selErr}=await supa.from('saved_destinations')
@@ -762,7 +763,8 @@ window.addSharePerson=function(id){
       score_label:saved.scoreLabel,
       trip_type:saved.tt,
       share_note:sd.note||'',
-      people:JSON.stringify(sd.people)
+      people:JSON.stringify(sd.people),
+      dest_data:{highlights:saved.highlights||[],costOfLiving:saved.costOfLiving||null,visaInfo:saved.visaInfo||null,safety:saved.safety||null,neighbourhoods:saved.neighbourhoods||[],bestTimeToVisit:saved.bestTimeToVisit||null}
     };
     supa.from('shared_trips').upsert(shareRecord,{onConflict:'token'})
       .then(({error})=>{
@@ -989,10 +991,14 @@ function loadSharedTrip(token){
 function acceptSharedTrip(){
   const share=S.pendingShare?.data;
   if(!share||!S.user?.id)return;
+  const shareDd=share.dest_data||(typeof share.dest_data==='string'?JSON.parse(share.dest_data||'{}'):{});
   const item={
     id:share.city_id,city:share.city,country:share.country,
     flag:share.flag,score:share.score,scoreLabel:share.score_label,
-    tt:share.trip_type,date:new Date().toLocaleDateString()
+    tt:share.trip_type,date:new Date().toLocaleDateString(),
+    highlights:shareDd.highlights||[],costOfLiving:shareDd.costOfLiving||null,
+    visaInfo:shareDd.visaInfo||null,safety:shareDd.safety||null,
+    neighbourhoods:shareDd.neighbourhoods||[],bestTimeToVisit:shareDd.bestTimeToVisit||null
   };
   // Load master notes
   if(share.shared_notes){
@@ -1649,7 +1655,7 @@ function openSaved(id,e){
       s.highlights&&s.highlights[1]?s.highlights[1]:`Your profile is a strong match for life in ${s.city}`,
       s.highlights&&s.highlights[2]?s.highlights[2]:`${s.city} offers the right environment for your specific situation`],
     cost:{m:isST?"$80–$200/day":(col.monthly||"$1,000–$2,800/mo"),rent:isST?"Included":(col.rent||"$400–$1,400/mo"),food:isST?"$20–$60/day":(col.food||"$200–$500/mo"),tr:isST?"$5–$20/day":"$30–$80/mo",ut:isST?"N/A":"$40–$100/mo",cmp:"40–65% cheaper than US",areas:nb.length?nb:(CITYDB[s.country]?.areas?.[s.city]||['City centre — walkable and lively','Expat neighbourhoods — best services','Suburbs — quieter and more affordable'])},
-    sft:{sc:s.score>=90?8:s.score>=80?7:6,lb:sf.rating||( s.score>=90?"Very Safe":s.score>=80?"Generally Safe":"Research Recommended"),nt:sf.note||`${s.country} is considered a good destination for international travelers.`},
+    sft:{sc:s.score>=90?8:s.score>=80?7:6,lb:sf.rating||(s.score>=90?"Very Safe":s.score>=80?"Generally Safe":"Research Recommended"),nt:sf.note||`${s.country} is considered a good destination for international travelers.`},
     best:itin?[`Day 1: ${itin.days[0].m}`,`Day 2: ${itin.days[1].m}`,`Must eat: ${itin.eat[0]}`]:(s.highlights&&s.highlights.length>0?s.highlights:getBest(s.city,isST)),
     itin,pc:personalPC,
     visa:vi.summary?[{name:`${s.country} — ${vi.difficulty||'Check Requirements'} Entry`,dur:vi.duration||'Varies by passport',cost:'Check your consulate',proc:'Varies',req:[vi.summary,...(CITYDB[s.country]?.visas?.[0]?.req||['Valid passport (6+ months)','Proof of income or savings','Health insurance'])]}]:(CITYDB[s.country]?.visas||[{name:`${s.country} Long-Stay Visa`,dur:"1–2 years renewable",cost:"$50–$150 USD",proc:"4–10 weeks",req:["Valid passport with 6+ months","Proof of income or remote employment","Criminal background check","Health insurance","Proof of accommodation"]}]),
@@ -1990,15 +1996,18 @@ function rShare(){
   (sd.people||[]).forEach(p=>{
     const initial=(p.email||'?')[0].toUpperCase();
     const joined=p.joined||false;
-    const permView=p.perm==='view';
+    const isEditor=p.perm==='edit';
     peopleRows+=`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)">
       <div style="width:34px;height:34px;border-radius:50%;background:#E535A0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0">${initial}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.email}</div>
-        <div style="font-size:11px;color:${joined?'#4ade80':'#f59e0b'}">${joined?'&#10003; Joined':'Invite sent'}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+          <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:${isEditor?'rgba(74,222,128,.15)':'rgba(255,255,255,.1)'};color:${isEditor?'#4ade80':'#aaa'};border:1px solid ${isEditor?'rgba(74,222,128,.3)':'rgba(255,255,255,.15)'}">${isEditor?'✏️ Edit access':'👁 View access'}</span>
+          <span style="font-size:10px;color:${joined?'#4ade80':'#888'}">${joined?'✓ Has access':'Invite sent'}</span>
+        </div>
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0">
-        <button onclick="toggleSharePerm('${id}','${p.email}')" style="padding:4px 10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:6px;font-size:11px;font-weight:600;color:#fff;cursor:pointer">${permView?'View':'Edit'}</button>
+        <button onclick="toggleSharePerm('${id}','${p.email}')" style="padding:4px 10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:6px;font-size:11px;font-weight:600;color:#fff;cursor:pointer" title="Change permission">${isEditor?'→ View':'→ Edit'}</button>
         <button onclick="removeSharePerson(this)" data-id="${id}" data-email="${p.email}" style="padding:4px 10px;background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.3);border-radius:6px;font-size:11px;font-weight:600;color:#f87171;cursor:pointer">Remove</button>
       </div>
     </div>`;
