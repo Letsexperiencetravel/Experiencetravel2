@@ -745,9 +745,7 @@ function sendRemovalEmail(toEmail,city,flag,fromName){
       +'</div>'
   };
   fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-    .then(r=>r.json())
-    .then(d=>{if(d.error)console.warn('Removal email error:',d.error);else console.log('Removal email sent to',toEmail);})
-    .catch(e=>console.warn('Removal email failed:',e));
+    .then(r=>r.json()).then(d=>{if(d.error)console.warn('Removal email error:',d.error);}).catch(()=>{});
 }
 window.addSharePerson=function(id){
   const inp=document.getElementById('sh-email');
@@ -817,33 +815,43 @@ window.removeSharePerson=function(idOrEl,email){
   const sd=S.shareData[id];
   const saved=S.saved.find(x=>x.id===id);
   if(sd&&em){
-    // Find the person record before removing (to get their userId if they joined)
     const removedPerson=(sd.people||[]).find(p=>p.email===em);
     sd.people=(sd.people||[]).filter(p=>p.email!==em);
     S.shareData[id]=sd;
     saveState();
     syncDestinationToSupabase(id);
     if(sd.token&&S.user?.id){
-      // Update shared_trips people list
+      // 1. Update shared_trips people list
       supa.from('shared_trips').update({people:JSON.stringify(sd.people)})
         .eq('token',sd.token).then(()=>{}).catch(()=>{});
-      // Delete destination from recipient's saved_destinations
-      // Try userId stored at join time first, fall back to email lookup via profiles
-      const doDelete=(recipientId)=>{
+      // 2. Delete from recipient's saved_destinations
+      // Query shared_trips to get the freshest people list (has userId stored on join)
+      const deleteRecipientDest=(recipientUserId)=>{
         supa.from('saved_destinations').delete()
-          .eq('user_id',recipientId).eq('city_id',id)
-          .then(()=>console.log('Removed shared dest from',em))
+          .eq('user_id',recipientUserId).eq('city_id',id)
+          .then(()=>console.log('Removed shared dest from recipient',em))
           .catch(e=>console.warn('Remove recipient dest error:',e));
       };
       if(removedPerson?.userId){
-        doDelete(removedPerson.userId);
+        // userId was stored when they joined — use directly
+        deleteRecipientDest(removedPerson.userId);
       } else {
-        // Fall back: look up by email in profiles table
-        supa.from('profiles').select('id').eq('email',em).maybeSingle()
-          .then(({data:profile})=>{if(profile?.id)doDelete(profile.id);})
-          .catch(()=>{});
+        // Fall back: query shared_trips for latest people list with userId
+        supa.from('shared_trips').select('people').eq('token',sd.token).maybeSingle()
+          .then(({data})=>{
+            if(data?.people){
+              const latest=JSON.parse(typeof data.people==='string'?data.people:JSON.stringify(data.people)||'[]');
+              const match=latest.find(p=>p.email===em);
+              if(match?.userId){deleteRecipientDest(match.userId);}
+              else{
+                // Last resort: look up by email in profiles
+                supa.from('profiles').select('id').eq('email',em).maybeSingle()
+                  .then(({data:prof})=>{if(prof?.id)deleteRecipientDest(prof.id);}).catch(()=>{});
+              }
+            }
+          }).catch(()=>{});
       }
-      // Send removal notification email
+      // 3. Send removal notification email
       if(saved){
         const fromName=S.user?.firstName||S.user?.name||'Someone';
         sendRemovalEmail(em,saved.city,saved.flag||'',fromName);
@@ -974,8 +982,9 @@ function loadUserFromSupabase(u, wasUpgraded, sessionId){
           else if(r.notes_data&&typeof r.notes_data==='string'){try{S.notes[r.city_id]=JSON.parse(r.notes_data);}catch(e){}}
           if(r.share_data&&typeof r.share_data==='object')S.shareData[r.city_id]=r.share_data;
           else if(r.share_data&&typeof r.share_data==='string'){try{S.shareData[r.city_id]=JSON.parse(r.share_data);}catch(e){}}
-          if(r.is_archived)S.archived[r.city_id]=true;
+          if(r.is_archived)S.archived[r.city_id]=r.archived_at?new Date(r.archived_at).getTime():Date.now();
         });
+        purgeExpiredArchives();
         // After restoring shareData, subscribe to realtime for all shared trips with tokens
         setTimeout(()=>{
           rows.forEach(r=>{
@@ -1056,6 +1065,7 @@ function acceptSharedTrip(){
   // Store share token so recipient can push edits back
   if(!S.shareData[item.id])S.shareData[item.id]={people:[]};
   S.shareData[item.id].token=share.token;
+  S.shareData[item.id].isReceivedShare=true; // flag: this was shared with me, not owned by me
   // Add to saved list
   if(!S.sIds.has(item.id)){
     S.saved=[...S.saved,item];
@@ -1734,7 +1744,13 @@ function sC(e,city,country,idx){
   e.stopPropagation();
   const k=`${city}-${country}`;
   const ns=new Set(S.sIds);
-  if(ns.has(k)){ns.delete(k);S.saved=S.saved.filter(x=>x.id!==k)}
+  if(ns.has(k)&&!S.archived[k]){ns.delete(k);S.saved=S.saved.filter(x=>x.id!==k)}
+  else if(ns.has(k)&&S.archived[k]){
+    // Already saved but archived — unarchive it instead of removing
+    delete S.archived[k];
+    if(S.user?.id){supa.from('saved_destinations').update({is_archived:false}).eq('user_id',S.user.id).eq('city_id',k).then(()=>{}).catch(()=>{});}
+    saveState();render();toast(k.split('-')[0]+' restored to active trips');return;
+  }
   else{ns.add(k);const r=S.res[idx];S.saved=[...S.saved,{id:k,tt:S.tt,city,country,flag:r.flag,score:r.score,scoreLabel:r.scoreLabel,highlights:r.highlights,costOfLiving:r.costOfLiving||null,visaInfo:r.visaInfo||null,safety:r.safety||null,neighbourhoods:r.neighbourhoods||[],bestTimeToVisit:r.bestTimeToVisit||null,date:new Date().toLocaleDateString()}]}
   S.sIds=ns;
   // Update just the save button without re-rendering the whole page
@@ -1853,17 +1869,29 @@ function genToken(){return Math.random().toString(36).slice(2,10)+Math.random().
 
 window.archiveTrip=function(id){
   event?.stopPropagation?.();
-  S.archived[id]=true;
+  S.archived[id]=Date.now(); // store timestamp instead of boolean
   saveState();
-  // Mark as archived in Supabase
   if(S.user?.id){
-    supa.from('saved_destinations').update({is_archived:true})
+    supa.from('saved_destinations').update({is_archived:true,archived_at:new Date().toISOString()})
       .eq('user_id',S.user.id).eq('city_id',id)
       .then(()=>{}).catch(()=>{});
   }
   render();
   toast('Trip archived');
 };
+function purgeExpiredArchives(){
+  const YEAR=365*24*60*60*1000;
+  const expired=Object.entries(S.archived||{}).filter(([,ts])=>typeof ts==='number'&&Date.now()-ts>YEAR).map(([id])=>id);
+  if(!expired.length)return;
+  expired.forEach(id=>{
+    delete S.archived[id];
+    S.saved=S.saved.filter(x=>x.id!==id);
+    S.sIds.delete(id);
+    if(S.user?.id)supaDeleteDestination(S.user.id,id).catch(()=>{});
+  });
+  saveState();
+  console.log('Purged',expired.length,'expired archive(s)');
+}
 window.unarchiveTrip=function(id){
   event?.stopPropagation?.();
   delete S.archived[id];
@@ -1879,7 +1907,7 @@ window.unarchiveTrip=function(id){
 function rSv(){
 const svTabMode=S.svTab||'active';
 const activeItems=S.saved.filter(x=>!S.archived[x.id]);
-const archivedItems=S.saved.filter(x=>!!S.archived[x.id]);
+const archivedItems=S.saved.filter(x=>!!S.archived[x.id]); // archived[id] is timestamp or legacy true
 const lS=activeItems.filter(x=>x.tt==='lt'),sS=activeItems.filter(x=>x.tt==='st'),tot=activeItems.length;
 const cmpLT=S.cmpSel.filter(x=>x.tt==='lt'),cmpST=S.cmpSel.filter(x=>x.tt==='st');
 const rqDone=Object.keys(S.rqA).length>=6;
@@ -1988,7 +2016,8 @@ function rNotes(){
   const id=S.notesId;if(!id)return'';
   const saved=S.saved.find(x=>x.id===id);if(!saved)return'';
   // Free plan: only allow notes on the first saved trip
-  if(!S.isPro&&S.saved.length>0&&S.saved[0].id!==id){return rNotesLocked();}
+  const isReceivedShare=!!(S.shareData[id]?.isReceivedShare);
+  if(!S.isPro&&!isReceivedShare&&S.saved.length>0&&S.saved[0].id!==id){return rNotesLocked();}
 
   const isST=saved.tt==='st';const n=getNotes(id);
   const done=n.todos.filter(t=>t.done).length;
