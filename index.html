@@ -230,7 +230,7 @@ async function supaSaveDestination(userId,item){
       user_id:userId,city_id:item.id,city:item.city,
       country:item.country,flag:item.flag,score:item.score,
       score_label:item.scoreLabel,trip_type:item.tt,
-      notes_data:notes||null,share_data:share||null
+      notes_data:notes||null,share_data:share||null,dest_data:{highlights:item.highlights||[],costOfLiving:item.costOfLiving||null,visaInfo:item.visaInfo||null,safety:item.safety||null,neighbourhoods:item.neighbourhoods||[],bestTimeToVisit:item.bestTimeToVisit||null}
     };
     // Try update first, then insert if not exists
     const {data:existing,error:selErr}=await supa.from('saved_destinations')
@@ -914,11 +914,14 @@ function loadUserFromSupabase(u, wasUpgraded, sessionId){
     // Load saved destinations
     supa.from('saved_destinations').select('*').eq('user_id',u.id).then(({data:rows})=>{
       if(rows&&rows.length>0){
-        S.saved=rows.map(r=>({
+        S.saved=rows.map(r=>{const dd=r.dest_data||{};return({
           id:r.city_id,city:r.city,country:r.country,flag:r.flag,
           score:r.score,scoreLabel:r.score_label,tt:r.trip_type,
-          date:new Date(r.created_at).toLocaleDateString()
-        }));
+          date:new Date(r.created_at).toLocaleDateString(),
+          highlights:dd.highlights||[],costOfLiving:dd.costOfLiving||null,
+          visaInfo:dd.visaInfo||null,safety:dd.safety||null,
+          neighbourhoods:dd.neighbourhoods||[],bestTimeToVisit:dd.bestTimeToVisit||null
+        });});
         S.sIds=new Set(S.saved.map(x=>x.id));
         rows.forEach(r=>{
           if(r.notes_data&&typeof r.notes_data==='object')S.notes[r.city_id]=r.notes_data;
@@ -1625,11 +1628,32 @@ function openSaved(id,e){
   const isST=s.tt==='st';
   const itin=isST?IT[s.city]:null;
   const pc=gPC(s.country);
+  const col=s.costOfLiving||{};
+  const vi=s.visaInfo||{};
+  const sf=s.safety||{};
+  const nb=s.neighbourhoods||[];
+  const personalPC={
+    p:[
+      s.highlights&&s.highlights[0]?s.highlights[0]:pc.p[0]||'Lower cost of living',
+      s.highlights&&s.highlights[1]?s.highlights[1]:pc.p[1]||'Strong expat community',
+      s.highlights&&s.highlights[2]?s.highlights[2]:pc.p[2]||'High quality of life',
+      s.highlights&&s.highlights[3]?s.highlights[3]:pc.p[3]||'Welcoming to foreigners',
+      s.highlights&&s.highlights[4]?s.highlights[4]:pc.p[4]||'Great climate and lifestyle'
+    ].filter(Boolean).slice(0,5),
+    c:[pc.c[0]||'Language barrier possible',pc.c[1]||'Bureaucracy and paperwork',pc.c[2]||'Adjustment period takes time',isST?'Short visit limits full experience':'Visa requirements need careful planning'].filter(Boolean).slice(0,4)
+  };
   const det={why:[(S.userProfile?.fuLines?.find(l=>l.includes('Why are you moving'))||S.userProfile?.fuLines?.find(l=>l.includes('kind of trip')))?
         `${s.city} matches your goal — ${(S.userProfile?.fuLines?.find(l=>l.includes('Why are you moving'))||S.userProfile?.fuLines?.find(l=>l.includes('kind of trip'))||'').split(': ')[1]||''}`:
         `${s.city} aligns with your personality and travel preferences`,
-      `${s.country} has visa and lifestyle options that suit your situation`,
-      `Your profile is a strong match for life in ${s.city}`],cost:{m:isST?"$80–$200/day":"$1,000–$2,800/mo",rent:isST?"Included":"$400–$1,400/mo",food:isST?"$20–$60/day":"$200–$500/mo",tr:isST?"$5–$20/day":"$30–$80/mo",ut:isST?"N/A":"$40–$100/mo",cmp:"40–65% cheaper than US"},sft:{sc:s.score>=90?8:s.score>=80?7:6,lb:s.score>=90?"Very Safe":s.score>=80?"Generally Safe":"Research Recommended",nt:`${s.country} is considered a good destination for international travelers.`},best:itin?[`Day 1: ${itin.days[0].m}`,`Day 2: ${itin.days[1].m}`,`Must eat: ${itin.eat[0]}`]:[`Historic neighbourhoods of ${s.city}`,`World-renowned food scene`,`Strong expat community`],itin,pc,visa:[{name:`${s.country} Long-Stay Visa`,dur:"1–2 years renewable",cost:"$50–$150 USD",proc:"4–10 weeks",req:["Valid passport with 6+ months","Proof of income or remote employment","Criminal background check","Health insurance","Proof of accommodation"]}],steps:[`Research the specific visa for ${s.country}`,`Gather and apostille your documents`,`Arrange health insurance valid in ${s.country}`,`Book your consulate appointment early`,`Join expat groups for ${s.city}`,`Consider a 2-week scouting trip first`]};
+      s.highlights&&s.highlights[0]?s.highlights[0]:`${s.country} has visa and lifestyle options that suit your situation`,
+      s.highlights&&s.highlights[1]?s.highlights[1]:`Your profile is a strong match for life in ${s.city}`,
+      s.highlights&&s.highlights[2]?s.highlights[2]:`${s.city} offers the right environment for your specific situation`],
+    cost:{m:isST?"$80–$200/day":(col.monthly||"$1,000–$2,800/mo"),rent:isST?"Included":(col.rent||"$400–$1,400/mo"),food:isST?"$20–$60/day":(col.food||"$200–$500/mo"),tr:isST?"$5–$20/day":"$30–$80/mo",ut:isST?"N/A":"$40–$100/mo",cmp:"40–65% cheaper than US",areas:nb.length?nb:(CITYDB[s.country]?.areas?.[s.city]||['City centre — walkable and lively','Expat neighbourhoods — best services','Suburbs — quieter and more affordable'])},
+    sft:{sc:s.score>=90?8:s.score>=80?7:6,lb:sf.rating||( s.score>=90?"Very Safe":s.score>=80?"Generally Safe":"Research Recommended"),nt:sf.note||`${s.country} is considered a good destination for international travelers.`},
+    best:itin?[`Day 1: ${itin.days[0].m}`,`Day 2: ${itin.days[1].m}`,`Must eat: ${itin.eat[0]}`]:(s.highlights&&s.highlights.length>0?s.highlights:getBest(s.city,isST)),
+    itin,pc:personalPC,
+    visa:vi.summary?[{name:`${s.country} — ${vi.difficulty||'Check Requirements'} Entry`,dur:vi.duration||'Varies by passport',cost:'Check your consulate',proc:'Varies',req:[vi.summary,...(CITYDB[s.country]?.visas?.[0]?.req||['Valid passport (6+ months)','Proof of income or savings','Health insurance'])]}]:(CITYDB[s.country]?.visas||[{name:`${s.country} Long-Stay Visa`,dur:"1–2 years renewable",cost:"$50–$150 USD",proc:"4–10 weeks",req:["Valid passport with 6+ months","Proof of income or remote employment","Criminal background check","Health insurance","Proof of accommodation"]}]),
+    steps:[`Research the specific visa for ${s.country}`,`Gather and apostille your documents`,`Arrange health insurance valid in ${s.country}`,`Book your consulate appointment early`,`Join expat groups for ${s.city}`,`Consider a 2-week scouting trip first`]};
   S.tt=s.tt;
   st({selR:{city:s.city,country:s.country,flag:s.flag,score:s.score,scoreLabel:s.scoreLabel||'Match',highlights:s.highlights||[]},det,dTab:isST?'overview':'overview',showSv:false});
 }
@@ -1661,7 +1685,7 @@ function sC(e,city,country,idx){
   const k=`${city}-${country}`;
   const ns=new Set(S.sIds);
   if(ns.has(k)){ns.delete(k);S.saved=S.saved.filter(x=>x.id!==k)}
-  else{ns.add(k);const r=S.res[idx];S.saved=[...S.saved,{id:k,tt:S.tt,city,country,flag:r.flag,score:r.score,scoreLabel:r.scoreLabel,highlights:r.highlights,date:new Date().toLocaleDateString()}]}
+  else{ns.add(k);const r=S.res[idx];S.saved=[...S.saved,{id:k,tt:S.tt,city,country,flag:r.flag,score:r.score,scoreLabel:r.scoreLabel,highlights:r.highlights,costOfLiving:r.costOfLiving||null,visaInfo:r.visaInfo||null,safety:r.safety||null,neighbourhoods:r.neighbourhoods||[],bestTimeToVisit:r.bestTimeToVisit||null,date:new Date().toLocaleDateString()}]}
   S.sIds=ns;
   // Update just the save button without re-rendering the whole page
   const btn=e.target.closest('button');
