@@ -732,19 +732,8 @@ function sendShareEmail(toEmail,city,flag,token,note,perm){
     .catch(e=>console.warn('Email send failed:',e));
 }
 function sendRemovalEmail(toEmail,city,flag,fromName){
-  const body={
-    to:toEmail,
-    subject:'Your access to '+flag+' '+city+' has been removed',
-    html:'<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:20px">'
-      +'<h2 style="color:#E535A0">'+flag+' Access Removed</h2>'
-      +'<p><strong>'+fromName+'</strong> has removed your access to the <strong>'+city+'</strong> trip plan.</p>'
-      +'<p style="color:#888;font-size:13px">This destination has been removed from your saved destinations.</p>'
-      +'<hr style="border:none;border-top:1px solid #eee;margin:20px 0">'
-      +'<p style="color:#aaa;font-size:11px">Experience Travel · letsexperiencetravel.com</p>'
-      +'</div>'
-  };
-  fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-    .then(r=>r.json()).then(d=>{if(d.error)console.warn('Removal email error:',d.error);}).catch(()=>{});
+  const body={to:toEmail,subject:'Your access to '+flag+' '+city+' has been removed',html:'<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:20px"><h2 style="color:#E535A0">'+flag+' Access Removed</h2><p><strong>'+fromName+'</strong> has removed your access to the <strong>'+city+'</strong> trip plan.</p><p style="color:#888;font-size:13px">This destination has been removed from your saved destinations.</p><hr style="border:none;border-top:1px solid #eee;margin:20px 0"><p style="color:#aaa;font-size:11px">Experience Travel · letsexperiencetravel.com</p></div>'};
+  fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()).then(d=>{if(d.error)console.warn('Removal email error:',d.error);}).catch(()=>{});
 }
 window.addSharePerson=function(id){
   const inp=document.getElementById('sh-email');
@@ -819,26 +808,13 @@ window.removeSharePerson=function(idOrEl,email){
     saveState();
     syncDestinationToSupabase(id);
     if(sd.token&&S.user?.id){
-      // Update shared_trips people list
       supa.from('shared_trips').update({people:JSON.stringify(sd.people)})
         .eq('token',sd.token).then(()=>{}).catch(()=>{});
-      // Call server-side endpoint to delete recipient's row (bypasses RLS)
-      fetch('/api/remove-shared-dest',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({recipientEmail:em,cityId:id,requestingUserId:S.user.id})
-      })
-      .then(r=>r.json())
-      .then(d=>{
-        if(d.deleted)console.log('Removed shared dest from',em);
-        else console.log('Remove-shared-dest:',d.reason||'not deleted');
-      })
-      .catch(e=>console.warn('remove-shared-dest error:',e));
-      // Send removal notification email
-      if(saved){
-        const fromName=S.user?.firstName||S.user?.name||'Someone';
-        sendRemovalEmail(em,saved.city,saved.flag||'',fromName);
-      }
+      // Server-side delete (bypasses RLS) + triggers recipient's realtime listener
+      fetch('/api/remove-shared-dest',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({recipientEmail:em,cityId:id,requestingUserId:S.user.id})})
+        .then(r=>r.json()).then(d=>console.log('remove-shared-dest:',d)).catch(()=>{});
+      if(saved){sendRemovalEmail(em,saved.city,saved.flag||'',S.user?.firstName||S.user?.name||'Someone');}
     }
     toast('Access removed — '+em+' notified by email');
   }
@@ -1088,6 +1064,27 @@ function subscribeToSharedTrip(token, cityId, cityName){
       filter:'token=eq.'+token
     }, (payload)=>{
       console.log('Realtime update for', cityName, payload);
+      // Check if current user has been removed from the people list
+      if(payload.new?.people!==undefined){
+        const updatedPeople=typeof payload.new.people==='string'?JSON.parse(payload.new.people||'[]'):payload.new.people||[];
+        const stillHasAccess=updatedPeople.some(p=>p.email===S.user?.email);
+        if(!stillHasAccess&&S.shareData[cityId]?.isReceivedShare){
+          // Access was revoked — remove from local state immediately
+          S.saved=S.saved.filter(x=>x.id!==cityId);
+          S.sIds.delete(cityId);
+          delete S.shareData[cityId];
+          delete S.notes[cityId];
+          delete S.archived[cityId];
+          saveState();
+          saveQuizProgress();
+          // Close any open modals for this city
+          if(S.notesId===cityId)S.notesId=null;
+          if(S.shareId===cityId)S.shareId=null;
+          render();
+          toast('Your access to '+cityName+' has been removed');
+          return;
+        }
+      }
       const newNotes = payload.new?.shared_notes;
       if(!newNotes)return;
       const current = S.notes[cityId];
