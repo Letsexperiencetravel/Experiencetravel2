@@ -998,9 +998,28 @@ function rIntro(){
   +'</div>';
 }
 function rRegEmail(){
-  const d=S.reg,fe=d._fe||{};
+  const d=S.reg||{},fe=d._fe||{};
   const b=S.bdDis?0:BH;
-  return`<div class="pg" style="background:linear-gradient(135deg,#0d0d1a 0%,#1a0828 100%);min-height:100vh;padding-top:${b+30}px"><div style="width:100%;max-width:440px;margin:0 auto;padding:0 24px"><div style="text-align:center;margin-bottom:32px"><div style="font-family:'Syne',sans-serif;font-weight:900;font-size:26px;color:#fff;letter-spacing:-0.5px">Experience <em style="color:#E535A0;font-style:normal">Travel</em></div><p style="color:rgba(255,255,255,.55);font-size:14px;margin-top:6px">Create your account</p></div><div style="margin-bottom:20px"><label style="display:block;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">First Name</label><input id="re-fn" type="text" class="inp" placeholder="Jane" value="${d.fn||''}" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" oninput="this.style.borderColor='rgba(229,53,160,.6)'">${fe.fn?`<div style="color:#ff6b6b;font-size:12px;margin-top:4px">⚠ ${fe.fn}</div>`:''}</div><div style="margin-bottom:28px"><label style="display:block;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">Email Address</label><input id="re-em" type="email" class="inp" placeholder="jane@email.com" value="${d.em||''}" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" oninput="this.style.borderColor='rgba(229,53,160,.6)'">${fe.em?`<div style="color:#ff6b6b;font-size:12px;margin-top:4px">⚠ ${fe.em}</div>`:''}</div><button onclick="doSendOTP()" style="width:100%;padding:16px;background:#E535A0;color:#fff;border:none;border-radius:14px;font-family:'Syne',sans-serif;font-weight:700;font-size:17px;cursor:pointer;box-shadow:0 4px 20px rgba(229,53,160,.4)">Send Verification Code →</button><p style="text-align:center;margin-top:18px;font-size:13px;color:rgba(255,255,255,.45)">Already have an account? <span style="color:#E535A0;cursor:pointer;font-weight:600" onclick="st({scr:'login',err:null})">Sign In</span></p><div style="text-align:center;padding:16px 0 4px"><button onclick="st({scr:'privacy',prevScr:'reg_email'})" style="background:none;border:none;color:rgba(229,53,160,.7);font-size:11px;cursor:pointer;text-decoration:underline">Privacy Policy</button><span style="font-size:11px;color:rgba(255,255,255,.25)"> &amp; </span><button onclick="st({scr:'terms',prevScr:'reg_email'})" style="background:none;border:none;color:rgba(229,53,160,.7);font-size:11px;cursor:pointer;text-decoration:underline">Terms</button></div></div></div>`;
+  return`<div class="pg" style="background:linear-gradient(135deg,#0d0d1a 0%,#1a0828 100%);min-height:100vh;padding-top:${b+20}px"><div style="width:100%;max-width:440px;margin:0 auto;padding:0 24px">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:36px;margin-bottom:10px">✈️</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:900;font-size:26px;color:#fff;letter-spacing:-0.5px">Let's find your <em style="color:#E535A0;font-style:normal">perfect place</em></div>
+      <p style="color:rgba(255,255,255,.5);font-size:14px;margin-top:8px">Tell us who you are and we'll personalise your experience.</p>
+    </div>
+    <div style="margin-bottom:18px">
+      <label style="display:block;color:rgba(255,255,255,.7);font-size:12px;font-weight:700;margin-bottom:8px;letter-spacing:.8px;text-transform:uppercase">First Name</label>
+      <input id="re-fn" type="text" class="inp" placeholder="Jane" value="${d.fn||''}" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff;font-size:16px" oninput="this.style.borderColor='rgba(229,53,160,.6)'">
+      ${fe.fn?`<div style="color:#ff6b6b;font-size:12px;margin-top:4px">⚠ ${fe.fn}</div>`:''}
+    </div>
+    <div style="margin-bottom:28px">
+      <label style="display:block;color:rgba(255,255,255,.7);font-size:12px;font-weight:700;margin-bottom:8px;letter-spacing:.8px;text-transform:uppercase">Email Address</label>
+      <input id="re-em" type="email" class="inp" placeholder="jane@email.com" value="${d.em||''}" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff;font-size:16px" oninput="this.style.borderColor='rgba(229,53,160,.6)'">
+      ${fe.em?`<div style="color:#ff6b6b;font-size:12px;margin-top:4px">⚠ ${fe.em}</div>`:''}
+    </div>
+    <button onclick="doStartQuiz()" style="width:100%;padding:17px;background:linear-gradient(135deg,#E535A0,#c0208a);color:#fff;border:none;border-radius:14px;font-family:'Syne',sans-serif;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 4px 24px rgba(229,53,160,.45);letter-spacing:.3px">Start My Quiz →</button>
+    <p style="text-align:center;margin-top:18px;font-size:13px;color:rgba(255,255,255,.4)">Already have an account? <span style="color:#E535A0;cursor:pointer;font-weight:600" onclick="st({scr:'login',err:null})">Sign In</span></p>
+    <div style="text-align:center;padding:14px 0 4px"><button onclick="st({scr:'privacy',prevScr:'reg_email'})" style="background:none;border:none;color:rgba(229,53,160,.6);font-size:11px;cursor:pointer;text-decoration:underline">Privacy Policy</button><span style="font-size:11px;color:rgba(255,255,255,.2)"> &amp; </span><button onclick="st({scr:'terms',prevScr:'reg_email'})" style="background:none;border:none;color:rgba(229,53,160,.6);font-size:11px;cursor:pointer;text-decoration:underline">Terms</button></div>
+  </div></div>`;
 }
 function doSendOTP(){
   const fn=document.getElementById('re-fn')?.value.trim();
@@ -1036,7 +1055,11 @@ function doVerifyOTP(){
   st({reg:{...S.reg,_fe:{otp:'Verifying...'}},err:null});
   supa.auth.verifyOtp({email:S.reg.em,token,type:'email'}).then(({data,error})=>{
     if(error){st({reg:{...S.reg,_fe:{otp:error.message}}});return;}
-    S.user={id:data.user?.id,firstName:S.reg.fn,lastName:'',email:S.reg.em};S.needsProfile=true;
+    S.user={id:data.user?.id,firstName:S.reg.fn,lastName:'',email:S.reg.em};
+    // User came from finish-flow (has password stored) — complete profile then show results
+    if(S.reg.p1){S.needsProfile=true;doFinishProfile();return;}
+    // Legacy path: came from old sign-in OTP
+    S.needsProfile=true;
     st({scr:'quiz_intro',ans:{},qi:0,err:null,lc:1});
   });
 }
@@ -1046,24 +1069,87 @@ function rRegProfile(){
   return`<div class="pg" style="background:linear-gradient(135deg,#0d0d1a 0%,#1a0828 100%);min-height:100vh;padding-top:${b+30}px"><div style="width:100%;max-width:440px;margin:0 auto;padding:0 24px"><div style="text-align:center;margin-bottom:28px"><div style="font-size:40px;margin-bottom:10px">🎉</div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:#fff;margin-bottom:6px">Almost there, ${d.fn||''}!</div><p style="color:rgba(255,255,255,.55);font-size:14px">Set a password to secure your account.</p></div><div style="margin-bottom:16px"><label style="display:block;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">Password</label><input id="rp-p1" type="password" class="inp" placeholder="Min 6 characters" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" oninput="this.style.borderColor='rgba(229,53,160,.6)'">${fe.p1?`<div style="color:#ff6b6b;font-size:12px;margin-top:4px">⚠ ${fe.p1}</div>`:''}</div><div style="margin-bottom:16px"><label style="display:block;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">Confirm Password</label><input id="rp-p2" type="password" class="inp" placeholder="Confirm password" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" oninput="this.style.borderColor='rgba(229,53,160,.6)'">${fe.p2?`<div style="color:#ff6b6b;font-size:12px;margin-top:4px">⚠ ${fe.p2}</div>`:''}</div><div style="margin-bottom:16px"><label style="display:block;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">Phone (optional)</label><input id="rp-ph" type="tel" class="inp" placeholder="+1 (555) 000-0000" value="${d.ph||''}" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" oninput="this.style.borderColor='rgba(229,53,160,.6)'"></div><div style="margin-bottom:16px"><label style="display:block;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">Country</label><input id="rp-co" type="text" class="inp" placeholder="e.g. United States" value="${d.co||''}" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" oninput="this.style.borderColor='rgba(229,53,160,.6)'"></div><div style="margin-bottom:28px"><label style="display:block;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">City</label><input id="rp-cy" type="text" class="inp" placeholder="e.g. New York" value="${d.cy||''}" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" oninput="this.style.borderColor='rgba(229,53,160,.6)'"></div><button onclick="doFinishProfile()" style="width:100%;padding:16px;background:#E535A0;color:#fff;border:none;border-radius:14px;font-family:'Syne',sans-serif;font-weight:700;font-size:17px;cursor:pointer;box-shadow:0 4px 20px rgba(229,53,160,.4)">Complete Account →</button></div></div>`;
 }
 function doFinishProfile(){
-  const p1=document.getElementById('rp-p1')?.value;
-  const p2=document.getElementById('rp-p2')?.value;
-  const ph=document.getElementById('rp-ph')?.value.trim()||'';
-  const co=document.getElementById('rp-co')?.value.trim()||'';
-  const cy=document.getElementById('rp-cy')?.value.trim()||'';
+  // Password may come from reg_finish flow (stored in S.reg.p1) or reg_profile screen
+  const p1=S.reg?.p1||document.getElementById('rp-p1')?.value||'';
+  const p2=document.getElementById('rp-p2')?.value||p1;
+  const ph=S.reg?.ph||document.getElementById('rp-ph')?.value?.trim()||'';
+  const co=S.reg?.co||document.getElementById('rp-co')?.value?.trim()||'';
+  const cy=S.reg?.cy||document.getElementById('rp-cy')?.value?.trim()||'';
   const fe={};
   if(!p1||p1.length<6)fe.p1='Min 6 characters';
   if(p1&&p1.length>=6&&p2!==p1)fe.p2='Passwords do not match';
-  if(fe.p1||fe.p2){st({reg:{...S.reg,ph,co,cy,_fe:fe}});return;}
+  if(fe.p1||fe.p2){st({reg:{...S.reg,ph,co,cy,_fe:fe},scr:'reg_profile'});return;}
   st({reg:{...S.reg,_fe:{p1:'Saving...'}},err:null});
-  supa.auth.updateUser({password:p1,data:{first_name:S.reg.fn||'',last_name:''}}).then(({data,error})=>{
-    if(error){st({reg:{...S.reg,_fe:{p1:error.message}}});return;}
+  supa.auth.updateUser({password:p1,data:{first_name:S.reg?.fn||'',last_name:''}}).then(({data,error})=>{
+    if(error){st({reg:{...S.reg,_fe:{p1:error.message}},scr:'reg_profile'});return;}
     const uid=S.user?.id||data.user?.id;
-    supa.from('profiles').upsert({id:uid,email:S.reg.em,first_name:S.reg.fn||'',last_name:'',phone:ph,country:co,city:cy,is_pro:false,free_cnt:0,pro_cnt:0},{onConflict:'id'}).then(()=>{
+    supa.from('profiles').upsert({id:uid,email:S.reg?.em||'',first_name:S.reg?.fn||'',last_name:'',phone:ph,country:co,city:cy,is_pro:false,free_cnt:0,pro_cnt:0},{onConflict:'id'}).then(()=>{
       S.user={...S.user,phone:ph,country:co,city:cy};S.needsProfile=false;
       doSearch();
     });
   });
+}
+function doStartQuiz(){
+  const fn=document.getElementById('re-fn')?.value.trim();
+  const em=document.getElementById('re-em')?.value.trim();
+  const fe={};
+  if(!fn)fe.fn='Required';
+  if(!em)fe.em='Required';
+  else if(!/\S+@\S+\.\S+/.test(em))fe.em='Invalid email';
+  if(Object.keys(fe).length){st({reg:{...S.reg,fn,em,_fe:fe}});return;}
+  st({reg:{fn,em,_fe:{}},ans:{},qi:0,err:null,lc:1,scr:'quiz_intro'});
+}
+function rRegFinish(){
+  const d=S.reg||{},fe=d._fe||{};
+  const b=S.bdDis?0:BH;
+  return`<div class="pg" style="background:linear-gradient(135deg,#0d0d1a 0%,#1a0828 100%);min-height:100vh;padding-top:${b+20}px"><div style="width:100%;max-width:440px;margin:0 auto;padding:0 24px">
+    <div style="text-align:center;margin-bottom:26px">
+      <div style="font-size:40px;margin-bottom:10px">🎯</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:900;font-size:24px;color:#fff;line-height:1.2">Your results are <em style="color:#E535A0;font-style:normal">ready</em>, ${d.fn||''}!</div>
+      <p style="color:rgba(255,255,255,.5);font-size:13px;margin-top:8px;line-height:1.5">Create your free account to unlock your personalised destinations and save your results.</p>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;color:rgba(255,255,255,.7);font-size:12px;font-weight:700;margin-bottom:8px;letter-spacing:.8px;text-transform:uppercase">Password</label>
+      <input id="rf-p1" type="password" class="inp" placeholder="Min 6 characters" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff;font-size:16px" oninput="this.style.borderColor='rgba(229,53,160,.6)'">
+      ${fe.p1?`<div style="color:#ff6b6b;font-size:12px;margin-top:4px">⚠ ${fe.p1}</div>`:''}
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;color:rgba(255,255,255,.7);font-size:12px;font-weight:700;margin-bottom:8px;letter-spacing:.8px;text-transform:uppercase">Confirm Password</label>
+      <input id="rf-p2" type="password" class="inp" placeholder="Confirm password" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff;font-size:16px" oninput="this.style.borderColor='rgba(229,53,160,.6)'">
+      ${fe.p2?`<div style="color:#ff6b6b;font-size:12px;margin-top:4px">⚠ ${fe.p2}</div>`:''}
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;color:rgba(255,255,255,.7);font-size:12px;font-weight:700;margin-bottom:8px;letter-spacing:.8px;text-transform:uppercase">Phone <span style="color:rgba(255,255,255,.3);font-weight:400;text-transform:none">(optional)</span></label>
+      <input id="rf-ph" type="tel" class="inp" placeholder="+1 (555) 000-0000" value="${d.ph||''}" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff;font-size:16px" oninput="this.style.borderColor='rgba(229,53,160,.6)'">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;color:rgba(255,255,255,.7);font-size:12px;font-weight:700;margin-bottom:8px;letter-spacing:.8px;text-transform:uppercase">Country</label>
+      <input id="rf-co" type="text" class="inp" placeholder="e.g. United States" value="${d.co||''}" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff;font-size:16px" oninput="this.style.borderColor='rgba(229,53,160,.6)'">
+    </div>
+    <div style="margin-bottom:26px">
+      <label style="display:block;color:rgba(255,255,255,.7);font-size:12px;font-weight:700;margin-bottom:8px;letter-spacing:.8px;text-transform:uppercase">City</label>
+      <input id="rf-cy" type="text" class="inp" placeholder="e.g. New York" value="${d.cy||''}" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff;font-size:16px" oninput="this.style.borderColor='rgba(229,53,160,.6)'">
+    </div>
+    ${fe.gen?`<div style="color:#ff6b6b;font-size:13px;text-align:center;margin-bottom:12px;padding:10px;background:rgba(255,107,107,.1);border-radius:10px">⚠ ${fe.gen}</div>`:''}
+    <button onclick="doSendOTPFinish()" style="width:100%;padding:17px;background:linear-gradient(135deg,#E535A0,#c0208a);color:#fff;border:none;border-radius:14px;font-family:'Syne',sans-serif;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 4px 24px rgba(229,53,160,.45)">Unlock My Results →</button>
+    <p style="text-align:center;margin-top:12px;font-size:12px;color:rgba(255,255,255,.3)">We'll send a quick verification code to <strong style="color:rgba(255,255,255,.5)">${d.em||''}</strong></p>
+  </div></div>`;
+}
+function doSendOTPFinish(){
+  const p1=document.getElementById('rf-p1')?.value||'';
+  const p2=document.getElementById('rf-p2')?.value||'';
+  const ph=document.getElementById('rf-ph')?.value.trim()||'';
+  const co=document.getElementById('rf-co')?.value.trim()||'';
+  const cy=document.getElementById('rf-cy')?.value.trim()||'';
+  const fe={};
+  if(!p1||p1.length<6)fe.p1='Min 6 characters';
+  if(p1&&p1.length>=6&&p2!==p1)fe.p2='Passwords do not match';
+  if(Object.keys(fe).length){st({reg:{...S.reg,ph,co,cy,_fe:fe}});return;}
+  st({reg:{...S.reg,p1,ph,co,cy,_fe:{gen:'Sending verification code...'}},err:null});
+  supa.auth.signInWithOtp({email:S.reg.em,options:{shouldCreateUser:true}}).then(({error})=>{
+    if(error){st({reg:{...S.reg,p1,ph,co,cy,_fe:{gen:error.message}}});return;}
+    st({scr:'reg_otp',reg:{...S.reg,p1,ph,co,cy,_fe:{}}});
+  }).catch(err=>{st({reg:{...S.reg,p1,ph,co,cy,_fe:{gen:'Connection error — please check your internet.'}}});});
 }
 function rLogin(){
   const b=S.bdDis?0:BH;
@@ -1646,6 +1732,10 @@ function rDash(){
 function rFU(){const qs=S.tt==='lt'?LTQ:STQ,q=qs[S.fI],tot=qs.length,pct=Math.round((S.fI/tot)*100);const isL=S.fI===tot-1,isC=q.t==='companion',isM=q.t==='m';const sel=S.fA[S.fI]!==undefined?S.fA[S.fI]:null;const isText=q.t==='text';const hA=isText?true:isC?csOk():isM?(Array.isArray(sel)&&sel.length>0):(sel!==null);let opt='';if(isC){opt=`<div style="margin-top:12px"><div id="c-solo" class="crow ${CS.solo?'s':''}"><div class="cleft" onclick="tgC('solo')"><div class="cchk">${CS.solo?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.solo?P:'#555'}">🧳 Moving Solo — Just Me</span></div></div><div id="c-partner" class="crow ${CS.partner?'s':''}"><div class="cleft" onclick="tgC('partner')"><div class="cchk">${CS.partner?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.partner?P:'#555'}">💑 Partner / Spouse</span></div></div><div id="c-kids" class="crow ${CS.kids>0?'s':''}"><div class="cleft" onclick="tgC('kids-toggle')" style="flex:1"><div class="cchk">${CS.kids>0?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.kids>0?P:'#555'}">👶 Children</span></div><div class="counter"><button class="cbtn" onclick="event.stopPropagation();adjC('kids',-1)">−</button><span class="cval" id="cv-kids">${CS.kids}</span><button class="cbtn" onclick="event.stopPropagation();adjC('kids',1)">+</button></div></div><div id="c-pets" class="crow ${CS.pets>0?'s':''}"><div class="cleft" onclick="tgC('pets-toggle')" style="flex:1"><div class="cchk">${CS.pets>0?'✓':''}</div><span class="clbl" style="font-size:14px;color:${CS.pets>0?P:'#555'}">🐾 Pets</span></div><div class="counter"><button class="cbtn" onclick="event.stopPropagation();adjC('pets',-1)">−</button><span class="cval" id="cv-pets">${CS.pets}</span><button class="cbtn" onclick="event.stopPropagation();adjC('pets',1)">+</button></div></div></div>`}else if(isM){const sa=Array.isArray(sel)?sel:[];opt=`<div style="margin-top:10px"><div class="chips">${q.o.map((o,i)=>`<div class="chip fc ${sa.includes(i)?'s':''}" onclick="tFC(${i})">${o}</div>`).join('')}</div></div>`}else if(isText){const tv=typeof sel==='string'?sel:'';opt=`<div style="margin-top:14px"><input class="inp-dk" type="text" id="txt-ans" placeholder="e.g. Portugal, Japan, Mexico... (optional)" value="${tv}" oninput="sFT(this.value)" style="font-size:15px;padding:14px 16px;width:100%;"/><div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:10px">Leave blank to get recommendations across all countries</div></div>`}else{opt=`<div class="opts-d" style="margin-top:10px">${q.o.map((o,i)=>`<div class="opt-d ${sel===i?'s':''}" onclick="sFL(${i})"><div class="qdot"><div class="qdin"></div></div>${o}</div>`).join('')}</div>`}return`<div style="min-height:100vh;background:#fff">${rNav()}<div style="padding-top:${pp()}px;padding-bottom:30px;display:flex;justify-content:center;padding-left:16px;padding-right:16px"><div class="dc" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span class="bdg bp">${S.tt==='lt'?'Moving Abroad':'Short-Term Travel'}</span><span style="font-size:11.5px;color:rgba(255,255,255,.35);font-weight:600">${S.fI+1} / ${tot}</span></div><div class="prog prog-d"><div class="prog-b" style="width:${pct}%"></div></div><p style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#fff;line-height:1.45;margin-bottom:2px">${q.q}</p><p style="font-size:12px;color:rgba(255,255,255,.4);margin-top:2px">${isM?'Select all that apply':isC?'Select all that apply':'Choose one'}</p>${opt}<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">${S.fI>0?bSm('← Back','pF()',P,W,'#C8208A'):bSm('← Home',"st({scr:'dash'})",P,W,'#C8208A')} ${!isL?`<button id="nb" onclick="nF()" style="display:inline-flex;align-items:center;padding:10px 20px;background:${hA?P:'#333'};color:${hA?W:'#777'};border:2.5px solid ${hA?'#C8208A':'#444'};border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;opacity:1">Next →</button>`:`<button id="sb" onclick="doSearch()" style="display:inline-flex;align-items:center;padding:10px 20px;background:${hA?Y:'#333'};color:${hA?DK:'#777'};border:2.5px solid ${hA?'#D4C000':'#444'};border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;opacity:1">Find My Places →</button>`}</div></div></div></div>`}
 function doSearch(){
   saveQuizProgress();
+  // If guest user has completed quiz, send them to finish registration
+  if(!S.user&&S.reg?.em&&Object.keys(S.ans||{}).length>0){
+    st({scr:'reg_finish'});return;
+  }
   // Check result cache (1 hour TTL)
   const cacheKey=(S.tt||'')+'|'+JSON.stringify(S.ans)+'|'+JSON.stringify(S.fA||{});
   if(!S.searchCache)S.searchCache={};
@@ -3133,11 +3223,11 @@ function render(){
   const _sp=document.getElementById('et-splash');
   if(_sp&&!_sp._done){_sp._done=true;setTimeout(()=>{_sp.classList.add('fade');setTimeout(()=>_sp.remove(),600);},1400);}
   // Guard: no user on protected screen → login
-  const _pub=['login','reg','onboarding','shared_preview','forgot','reset_password','privacy','share_card','intro','reg_email','reg_otp','reg_profile'];
+  const _pub=['login','reg','onboarding','shared_preview','forgot','reset_password','privacy','share_card','intro','reg_email','reg_otp','reg_profile','reg_finish'];
   if(!S.user&&!_pub.includes(S.scr)){S.scr='login';}
   const app=document.getElementById('app');let h='';
   switch(S.scr){
-    case 'intro':h=rIntro();break;case 'login':h=rLogin();break;case 'reg':h=rReg();break;case 'reg_email':h=rRegEmail();break;case 'reg_otp':h=rRegOTP();break;case 'reg_profile':h=rRegProfile();break;
+    case 'intro':h=rIntro();break;case 'login':h=rLogin();break;case 'reg':h=rReg();break;case 'reg_email':h=rRegEmail();break;case 'reg_otp':h=rRegOTP();break;case 'reg_profile':h=rRegProfile();break;case 'reg_finish':h=rRegFinish();break;
     case 'quiz_intro':h=rQI();break;case 'questionnaire':h=rQ();break;
     case 'qd':h=rQD();break;case 'chapter':h=rCh();break;
     case 'quiz_review':h=rRev();break;case 'dash':h=rDash();break;
