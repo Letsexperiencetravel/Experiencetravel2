@@ -15,10 +15,12 @@
 <link rel="apple-touch-startup-image" media="(device-width: 540px) and (device-height: 1170px) and (-webkit-device-pixel-ratio: 2)" href="/splash-iphone-13-mini.png"/>
 <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" href="/splash-iphone-xr.png"/>
 <style>
-#et-splash{position:fixed;inset:0;z-index:999999;background:#F5E420;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s ease}
+#et-splash{position:fixed;inset:0;z-index:999999;background:#F5E420;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .6s ease}
 #et-splash.fade{opacity:0;pointer-events:none}
-#et-splash img{width:180px;height:180px;border-radius:36px;box-shadow:0 20px 60px rgba(0,0,0,.15);animation:sp .9s ease infinite alternate}
-@keyframes sp{from{transform:scale(1)}to{transform:scale(1.05)}}
+#et-splash img{width:160px;height:160px;border-radius:32px;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:sp 1s ease infinite alternate}
+#et-splash-name{font-family:'Syne',sans-serif;font-weight:900;font-size:26px;color:#111;letter-spacing:-0.5px;animation:spfade 1s ease forwards}
+@keyframes sp{from{transform:scale(1)}to{transform:scale(1.08)}}
+@keyframes spfade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
@@ -200,7 +202,7 @@ html,body{min-height:100%;font-family:'Inter',sans-serif;background:#fff}
   <meta name="twitter:image" content="https://letsexperiencetravel.com/cover-art.png">
 
 </head><body>
-<div id="et-splash"><img src="/favicon-192.png" alt="Experience Travel"/></div><div id="app"></div><script>
+<div id="et-splash"><img src="/favicon-192.png" alt="Experience Travel"/><div id="et-splash-name">Experience <em style="color:#E535A0;font-style:normal">Travel</em></div></div><div id="app"></div><script>
 const SUPA_URL='https://dttjiokwquspfffjjutv.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0dGppb2t3cXVzcGZmZmpqdXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNDQ3OTAsImV4cCI6MjA5MjgyMDc5MH0.91qTmSnBGfUKeNSxpxcAzS9VtLJxPKTXc4uj-5NyPk8';
 
@@ -942,7 +944,7 @@ function doSendOTP(){
   supa.auth.signInWithOtp({email:em,options:{shouldCreateUser:true}}).then(({error})=>{
     if(error){st({reg:{...S.reg,fn,em,_fe:{em:error.message}}});return;}
     st({scr:'reg_otp',reg:{...S.reg,fn,em,_fe:{}}});
-  });
+  }).catch(err=>{st({reg:{...S.reg,fn,em,_fe:{em:'Connection error — please check your internet.'}}});});
 }
 function rRegOTP(){
   const d=S.reg,fe=d._fe||{};
@@ -1029,7 +1031,7 @@ function doLogin(){
   supa.auth.signInWithPassword({email:e,password:p}).then(({data,error})=>{
     if(error){st({err:error.message});return;}
     loadUserFromSupabase(data.user,false,'');
-  });
+  }).catch(err=>{st({err:'Connection error — please check your internet and try again.'});});
 }
 
 function loadUserFromSupabase(u, wasUpgraded, sessionId){
@@ -3039,7 +3041,7 @@ const INTRO_DESTS=[
 function render(){
   // Dismiss splash
   const _sp=document.getElementById('et-splash');
-  if(_sp&&!_sp._done){_sp._done=true;_sp.classList.add('fade');setTimeout(()=>_sp.remove(),520);}
+  if(_sp&&!_sp._done){_sp._done=true;setTimeout(()=>{_sp.classList.add('fade');setTimeout(()=>_sp.remove(),600);},1400);}
   // Guard: no user on protected screen → login
   const _pub=['login','reg','onboarding','shared_preview','forgot','reset_password','privacy','share_card','intro','reg_email','reg_otp','reg_profile'];
   if(!S.user&&!_pub.includes(S.scr)){S.scr='login';}
